@@ -1,5 +1,5 @@
 Name:                   cobalt-kiosk-data-template
-Version:                0.0.0
+Version:                1.0.0
 Author:                 Lingpo Huang <lingpo.huang@plowtech.net>
 Maintainer:             Lingpo Huang <lingpo.huang@plowtech.net>
 License:                BSD3
@@ -18,7 +18,7 @@ Library
   Exposed-Modules:      Kiosk.Backend.Data
   Other-Modules:        Kiosk.Backend.Data.Internal
   Build-Depends:        base >= 4 && < 5
-                      , cobalt-kiosk-data-template >= 1.0
+                      , cobalt-kiosk-form-template >= 1.0
 
 Test-Suite spec
   Type:                 exitcode-stdio-1.0
