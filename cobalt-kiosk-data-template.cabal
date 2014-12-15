@@ -1,0 +1,35 @@
+Name:                   cobalt-kiosk-data-template
+Version:                0.0.0
+Author:                 Lingpo Huang <lingpo.huang@plowtech.net>
+Maintainer:             Lingpo Huang <lingpo.huang@plowtech.net>
+License:                BSD3
+License-File:           LICENSE
+Category:               Apple
+Synopsis:               Combined Form Data and Form Template for Cobalt Kiosk Application Backend
+Description:            Combined Form Data and Form Template for Cobalt Kiosk Application Backend
+Cabal-Version:          >= 1.10
+Build-Type:             Simple
+Extra-source-files:     README.md
+
+Library
+  Default-Language:     Haskell2010
+  HS-Source-Dirs:       src
+  GHC-Options:          -Wall
+  Exposed-Modules:      Kiosk.Backend.Data
+  Other-Modules:        Kiosk.Backend.Data.Internal
+  Build-Depends:        base >= 4 && < 5
+                      , cobalt-kiosk-data-template >= 1.0
+
+Test-Suite spec
+  Type:                 exitcode-stdio-1.0
+  Default-Language:     Haskell2010
+  Hs-Source-Dirs:       src
+                      , test
+  Ghc-Options:          -Wall
+  Main-Is:              Spec.hs
+  Build-Depends:        base
+                      , hspec
+
+Source-Repository head
+  Type:                 git
+  Location:             git@github.com:plow-technologies/cobalt-kiosk-data-template.git
