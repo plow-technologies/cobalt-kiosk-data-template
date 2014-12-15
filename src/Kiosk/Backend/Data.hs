@@ -2,7 +2,11 @@
 module Kiosk.Backend.Data where
 
 -- import Kiosk.Backend.Data.Internal
-import Kiosk.Backend.Form (Item(..),Form(..))
+import Kiosk.Backend.Form (Item(..)
+                          ,Form(..)
+                          ,Company (..)
+                          ,Address(..)
+                          ,Input(..))
 import Data.Aeson
 import  Data.Aeson.Types  
 import Data.Text (Text)
@@ -31,7 +35,7 @@ encodeTemplateItemsAsObject :: [TemplateItem] -> Value
 encodeTemplateItemsAsObject items = object $ fmap objectMaker items
                       where
                        objectMaker (TemplateItem { label=l,
-                                            value=v}) = l .= v
+                                            templateValue=v}) = l .= v
 decodeInput :: Value -> Parser Input
 decodeInput = parseJSON 
 

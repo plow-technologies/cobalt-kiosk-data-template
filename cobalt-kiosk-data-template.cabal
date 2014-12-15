@@ -33,7 +33,14 @@ Test-Suite spec
   Ghc-Options:          -Wall
   Main-Is:              Spec.hs
   Build-Depends:        base
+                      , QuickCheck
+                      , primitive-generator-mocks
                       , hspec
+                      , cobalt-kiosk-form-template 
+                      , aeson                      
+                      , text                       
+                      , unordered-containers
+                      , lens
 
 Source-Repository head
   Type:                 git
