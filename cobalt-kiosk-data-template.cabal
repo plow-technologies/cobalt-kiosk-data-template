@@ -17,8 +17,13 @@ Library
   GHC-Options:          -Wall
   Exposed-Modules:      Kiosk.Backend.Data
   Other-Modules:        Kiosk.Backend.Data.Internal
-  Build-Depends:        base >= 4 && < 5
+  Build-Depends:        base                       >= 4 && < 5
                       , cobalt-kiosk-form-template >= 1.0
+                      , aeson                      >= 0.7.0.6
+                      , text                       >= 1.1.1.3 && < 1.2
+                      , unordered-containers
+                      , lens
+                      
 
 Test-Suite spec
   Type:                 exitcode-stdio-1.0
