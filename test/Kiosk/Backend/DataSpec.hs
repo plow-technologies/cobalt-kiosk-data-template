@@ -1,8 +1,9 @@
 module Kiosk.Backend.DataSpec (main, spec) where
 
-import Kiosk.Backend.Form
-
-import Test.Hspec
+import           Kiosk.Backend.Form
+import           Mocks.Primitive.Generators
+import           Test.Hspec
+import           Test.QuickCheck
 
 main :: IO ()
 main = hspec spec
@@ -14,6 +15,5 @@ spec = do
       True `shouldBe` False
 
 
-
 generateForm :: Gen [Form]
-generateForm Static = Form
+generateForm Static = undefined
