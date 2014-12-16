@@ -80,8 +80,7 @@ instance FromJSON DataTemplate where
 data ArgConstructor a b c = EmptyItem (a -> b -> c) | OneArgument (b -> c) | FullItem c
 type TemplateItemConstructor = ArgConstructor Text InputType TemplateItem
 
-makePrisms ''ArgConstructor                                                                                             
-           
+makePrisms ''ArgConstructor                                                                                                        
 fromFormToDataTemplate :: Form -> DataTemplate
 fromFormToDataTemplate (Form c a rs)  = DataTemplate c a (extractData rs)
                        where extractData :: [Row] -> [TemplateItem]
@@ -91,7 +90,7 @@ fromFormToDataTemplate (Form c a rs)  = DataTemplate c a (extractData rs)
                              sequencingFunction :: [TemplateItemConstructor] -> ItemType -> [TemplateItemConstructor]
                              sequencingFunction (EmptyItem f:items) (ItemLabel (Label l _) ) = OneArgument (f l):items
                              sequencingFunction (OneArgument f:items) (ItemInput (Input i _ )) = FullItem (f i):items
-                             sequencingFunction (OneArgument f:items) _ = items
+                             sequencingFunction (OneArgument _:items) _ = items
                              sequencingFunction items _ = items
 
 
