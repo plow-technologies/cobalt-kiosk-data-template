@@ -1,19 +1,32 @@
 {-# LANGUAGE OverloadedStrings, TemplateHaskell #-}
-module Kiosk.Backend.Data where
+module Kiosk.Backend.Data (fromFormToDataTemplate
+                          ,TemplateItem(..)
+                          ,DataTemplate(..)
+                          ,) where
 
--- import Kiosk.Backend.Data.Internal
 import Kiosk.Backend.Form (Item(..)
+                          ,ItemType(..)
+                          ,Label(..)
                           ,Form(..)
+                          ,Row(..)
                           ,Company (..)
                           ,Address(..)
-                          ,Input(..))
+                          ,Input(..)
+                          ,InputType)
 import Data.Aeson
 import  Data.Aeson.Types  
 import Data.Text (Text)
+
 import Control.Applicative ((<$>), (<*>) )
 import           Control.Monad             (mzero)
 import qualified Data.HashMap.Strict as HM (toList)
-import Control.Lens (makeLenses)
+import Data.Foldable (foldl')
+import Control.Lens (makeLenses
+                    ,makePrisms
+                    ,traverse
+                    ,folding
+                    ,folded
+                    ,(^..) )
 
 -- Data Template Type
 data DataTemplate = DataTemplate { company::Company,
@@ -21,11 +34,16 @@ data DataTemplate = DataTemplate { company::Company,
                                    templateItems :: [TemplateItem]}
 data TemplateItem = TemplateItem {
             label :: Text
-            , templateValue :: Input }
+            , templateValue :: InputType }
 
 -- Make Lenses
 
 makeLenses ''Form
+makeLenses ''Row             
+makeLenses ''Item
+makeLenses ''Input                        
+makeLenses ''Label           
+makePrisms ''ItemType                                    
 makeLenses ''DataTemplate            
 
 
@@ -36,7 +54,7 @@ encodeTemplateItemsAsObject items = object $ fmap objectMaker items
                       where
                        objectMaker (TemplateItem { label=l,
                                             templateValue=v}) = l .= v
-decodeInput :: Value -> Parser Input
+decodeInput :: Value -> Parser InputType
 decodeInput = parseJSON 
 
 
@@ -59,8 +77,20 @@ instance FromJSON DataTemplate where
          parseJSON _ = mzero
 
 
+data ArgConstructor a b c = EmptyItem (a -> b -> c) | OneArgument (b -> c) | FullItem c
+type TemplateItemConstructor = ArgConstructor Text InputType TemplateItem
+
+makePrisms ''ArgConstructor                                                                                             
+           
 fromFormToDataTemplate :: Form -> DataTemplate
-fromFormToDataTemplate f = DataTemplate (extractCompany f) (extractAddress f) (extractData f)
-                       where extractCompany f = undefined
-                             extractAddress f = undefined
-                             extractData f = undefined
+fromFormToDataTemplate (Form c a rs)  = DataTemplate c a (extractData rs)
+                       where extractData :: [Row] -> [TemplateItem]
+                             extractData rows = rows ^.. traverse.rowItem.traverse.item.folding itemMakerFcn
+                             itemMakerFcn :: [ItemType] -> [TemplateItem]
+                             itemMakerFcn  its = foldl' sequencingFunction [EmptyItem TemplateItem] its ^.. folded._FullItem
+                             sequencingFunction :: [TemplateItemConstructor] -> ItemType -> [TemplateItemConstructor]
+                             sequencingFunction (EmptyItem f:items) (ItemLabel (Label l _) ) = OneArgument (f l):items
+                             sequencingFunction (OneArgument f:items) (ItemInput (Input i _ )) = FullItem (f i):items
+                             sequencingFunction items _ = items
+
+
