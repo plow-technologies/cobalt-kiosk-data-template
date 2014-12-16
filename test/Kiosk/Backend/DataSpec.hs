@@ -22,7 +22,7 @@ spec = do
         dataTemplates = fromFormToDataTemplate <$> restrictedForms
         isEmpty = null dataTemplates
       -- print restrictedForms
-      -- print . encode $  dataTemplates
+      print . encode $  dataTemplates
       isEmpty `shouldBe` False
 
   describe "fromFormToDataTemplate" $ do

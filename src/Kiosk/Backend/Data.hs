@@ -54,10 +54,12 @@ encodeTemplateItemsAsObject items = object $ fmap objectMaker items
                       where
                        objectMaker (TemplateItem { label=l,
                                             templateValue=v}) = l .= v
+
+-- Decode Input Function                                                                
 decodeInput :: Value -> Parser InputType
 decodeInput = parseJSON 
 
-
+-- Decode Object Function
 decodeObjectAsTemplateItems :: Value -> Parser [TemplateItem]                         
 decodeObjectAsTemplateItems (Object o) = sequence $ itemMakingFcn <$> HM.toList o
                             where itemMakingFcn (k,v) = TemplateItem k <$> decodeInput v
@@ -76,11 +78,14 @@ instance FromJSON DataTemplate where
                                               <*> ((o .: "data") >>= decodeObjectAsTemplateItems) 
          parseJSON _ = mzero
 
-
+-- Type for tranform function
 data ArgConstructor a b c = EmptyItem (a -> b -> c) | OneArgument (b -> c) | FullItem c
 type TemplateItemConstructor = ArgConstructor Text InputType TemplateItem
 
-makePrisms ''ArgConstructor                                                                                                        
+-- Lens
+makePrisms ''ArgConstructor
+
+-- Function to convert Form to DataTemplate
 fromFormToDataTemplate :: Form -> DataTemplate
 fromFormToDataTemplate (Form c a rs)  = DataTemplate c a (extractData rs)
                        where extractData :: [Row] -> [TemplateItem]
