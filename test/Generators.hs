@@ -103,7 +103,8 @@ generateButton gtype = flip Button [] . head <$>
 generateEmptyBlock gtype = return Null
 
 -- | TableTopHeader
-generateTableTopHeader = undefined
-
+generateTableTopHeader gtype = TableTopHeader . head <$>
+                               generateTexts gtype
 -- | TableLeftHeader   
-generateTableLefts = undefined
+generateTableLefts gtype = TableLeftHeader . head <$>
+                           generateTexts gtype
