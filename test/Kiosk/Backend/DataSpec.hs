@@ -1,10 +1,12 @@
 module Kiosk.Backend.DataSpec (main, spec) where
 
 import           Generators (generateForm
-                            ,GeneratorType)
+                            ,GeneratorType(..))
 import Kiosk.Backend.Data (fromFormToDataTemplate)
 import           Test.Hspec
 import           Test.QuickCheck
+import Control.Applicative ((<$>))
+import Data.Aeson (encode)
 
 main :: IO ()
 main = hspec spec
@@ -13,4 +15,9 @@ spec :: Spec
 spec = do
   describe "fromFormToDataTemplate" $ do
     it "should transform a Form to a DataTemplate" $ do      
-      True `shouldBe` False
+      forms <- generate.generateForm $ Static
+      let 
+        dataTemplates = fromFormToDataTemplate <$> forms         
+        isEmpty = null dataTemplates 
+      print . encode $  dataTemplates        
+      isEmpty `shouldBe` False
