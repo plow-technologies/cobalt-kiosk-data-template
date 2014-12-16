@@ -19,6 +19,7 @@ module Generators (GeneratorType (..)
 import           Kiosk.Backend.Form
 import           Mocks.Primitive.Generators
 import           Test.QuickCheck
+import Data.Text (unpack)
 import Control.Applicative ((<$>)
                            ,(<*>))
 
@@ -51,16 +52,58 @@ generateRows gtype = listOf $ generateRow gtype
 -- | Item Generator 
 
 generateItem :: GeneratorType -> Gen Item 
-generateItem gtype = do itemTypes <- generateItemTypes
+generateItem gtype = do itemTypes <- generateItemTypes gtype
                         return $ Item itemTypes []
 
 generateItems :: GeneratorType -> Gen [Item]
 generateItems gtype = listOf $ generateItem gtype
 -- | ItemType Generator    
-   
-generateItemTypes = undefined   
+
+generateItemTypes :: GeneratorType -> Gen [ItemType]   
+generateItemTypes gtype = do lbls <- listOf $ generateLabel gtype
+                             inputs <- listOf $ generateInput gtype
+                             buttons <- listOf $ generateButton gtype
+                             empties <- listOf $ generateEmptyBlock gtype
+                             tabletops <- listOf $ generateTableTopHeader gtype
+                             tablelefts <- listOf $ generateTableLefts gtype
+                             return . concat $[ItemLabel <$> lbls
+                                             ,ItemInput <$> inputs
+                                             ,ItemButton <$> buttons
+                                             ,ItemEmptyBlock <$> empties
+                                             ,ItemTableTopHeader <$> tabletops
+                                             ,ItemTableLeftHeader <$> tablelefts ]
 -- | Label Generator
+
+generateLabel gtype =  flip Label [] . head <$>
+                       generateTexts gtype
+
+-- | Input Generator
+generateInput gtype = flip Input [] . head <$>
+                      generateInputType gtype
+
+generateInputType :: GeneratorType -> Gen [InputType]
+generateInputType gtype = do
+          inputTexts <- generateInputText gtype
+          inputSigs  <- generateInputSignatures gtype
+          return . concat $ [ InputTypeText <$> inputTexts
+                            , InputTypeSignature <$> inputSigs ]
+
+generateInputText :: GeneratorType -> Gen [InputText]
+generateInputText gtype = fmap InputText  
+                          <$> generateTexts gtype
+
+
+generateInputSignatures gtype = do txts <- fmap unpack <$> generateTexts gtype
+                                   return $ Signature <$> txts
+
 -- | Button Generator
+generateButton gtype = flip Button [] . head <$>
+                       generateTexts gtype
 -- | EmptyBlock Generator
+generateEmptyBlock gtype = return Null
+
 -- | TableTopHeader
+generateTableTopHeader = undefined
+
 -- | TableLeftHeader   
+generateTableLefts = undefined
