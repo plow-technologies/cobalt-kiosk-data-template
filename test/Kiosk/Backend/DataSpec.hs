@@ -15,9 +15,12 @@ spec :: Spec
 spec = do
   describe "fromFormToDataTemplate" $ do
     it "should transform a Form to a DataTemplate" $ do      
-      forms <- generate.generateForm $ Static
+      forms <- generate.generateForm $ Dynamic
       let 
-        dataTemplates = fromFormToDataTemplate <$> forms         
+        restrictedForms = take 8 forms
+
+        dataTemplates = fromFormToDataTemplate <$> restrictedForms
         isEmpty = null dataTemplates 
+--      print restrictedForms
       print . encode $  dataTemplates        
       isEmpty `shouldBe` False

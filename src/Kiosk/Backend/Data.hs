@@ -91,6 +91,7 @@ fromFormToDataTemplate (Form c a rs)  = DataTemplate c a (extractData rs)
                              sequencingFunction :: [TemplateItemConstructor] -> ItemType -> [TemplateItemConstructor]
                              sequencingFunction (EmptyItem f:items) (ItemLabel (Label l _) ) = OneArgument (f l):items
                              sequencingFunction (OneArgument f:items) (ItemInput (Input i _ )) = FullItem (f i):items
+                             sequencingFunction (OneArgument f:items) _ = items
                              sequencingFunction items _ = items
 
 
