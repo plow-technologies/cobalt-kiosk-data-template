@@ -1,4 +1,4 @@
-# cobalt-kiosk-data-template
+# cobalt-kiosk-data-template [![Circle CI](https://circleci.com/gh/plow-technologies/cobalt-kiosk-data-template.svg?style=shield)](https://circleci.com/gh/plow-technologies/cobalt-kiosk-data-template)
 
 TODO: Write description here
 
