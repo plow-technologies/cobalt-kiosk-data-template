@@ -41,6 +41,8 @@ Test-Suite spec
                       , text                       
                       , unordered-containers
                       , lens
+                      , serial-test-generators
+                      , template-haskell
 
 Source-Repository head
   Type:                 git
