@@ -55,7 +55,7 @@ encodeTemplateItemsAsObject items = object $ fmap objectMaker items
                        objectMaker (TemplateItem { label=l,
                                             templateValue=v}) = l .= (codeAsInputType v)
                        codeAsInputType (InputTypeText t ) = toJSON t
-                       codeAsInputType (InputxTypeSignature s) = toJSON s
+                       codeAsInputType (InputTypeSignature s) = toJSON s
 
 -- Decode Input Function                                                                
 decodeInput :: Value -> Parser InputType
