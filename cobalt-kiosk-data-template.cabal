@@ -39,7 +39,8 @@ Test-Suite spec
                       , hspec
                       , cobalt-kiosk-form-template 
                       , aeson                      
-                      , text                       
+                      , text     
+                      , bytestring                  
                       , unordered-containers
                       , lens
                       , serial-test-generators

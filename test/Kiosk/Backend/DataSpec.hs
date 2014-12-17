@@ -1,17 +1,17 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Kiosk.Backend.DataSpec (main, spec) where
 
-import           Control.Applicative ((<$>))
-import           Data.Aeson          (encode)
-import           Generators          (GeneratorType (..), generateForm)
-import           Kiosk.Backend.Data  (fromFormToDataTemplate
-                                     ,DataTemplate(..))
-import           Kiosk.Backend.Form  (defaultForm
-                                     ,Form)
+import           Control.Applicative             ((<$>))
+import           Data.Aeson                      (encode)
+import           Generators                      (GeneratorType (..),
+                                                  generateForm)
+import           Kiosk.Backend.Data.DataTemplate (DataTemplate (..),
+                                                  fromFormToDataTemplate)
+import           Kiosk.Backend.Form              (Form, defaultForm)
+import           Language.Haskell.TH
 import           Test.Hspec
-import Language.Haskell.TH
 import           Test.QuickCheck
-import Test.Serial (runAesonSerializationTest)
+import           Test.Serial                     (runAesonSerializationTest)
 
 main :: IO ()
 main = hspec spec
@@ -37,8 +37,8 @@ spec = do
         isEmpty = null dataTemplates
       print . encode $  dataTemplates
       isEmpty `shouldBe` False
-  describe (concat [nameBase ''DataTemplate ,"Aeson Serialization Test" ]) $ do 
-   it "should serialize data and be consistent" $ do 
+  describe (concat [nameBase ''DataTemplate ,"Aeson Serialization Test" ]) $ do
+   it "should serialize data and be consistent" $ do
      forms <- generate.generateForm $ Static
      let
        restrictedForms = take 8 forms
