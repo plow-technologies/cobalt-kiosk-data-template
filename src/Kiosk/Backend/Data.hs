@@ -12,12 +12,12 @@ import Kiosk.Backend.Form (Item(..)
                           ,Company (..)
                           ,Address(..)
                           ,Input(..)
-                          ,InputType)
+                          ,InputType(..))
 import Data.Aeson
 import  Data.Aeson.Types  
 import Data.Text (Text)
 
-import Control.Applicative ((<$>), (<*>) )
+import Control.Applicative ((<$>), (<*>),(<|>),pure )
 import           Control.Monad             (mzero)
 import qualified Data.HashMap.Strict as HM (toList)
 import Data.Foldable (foldl')
@@ -53,12 +53,16 @@ encodeTemplateItemsAsObject :: [TemplateItem] -> Value
 encodeTemplateItemsAsObject items = object $ fmap objectMaker items
                       where
                        objectMaker (TemplateItem { label=l,
-                                            templateValue=v}) = l .= v
+                                            templateValue=v}) = l .= (codeAsInputType v)
+                       codeAsInputType (InputTypeText t ) = toJSON t
+                       codeAsInputType (InputxTypeSignature s) = toJSON s
 
 -- Decode Input Function                                                                
 decodeInput :: Value -> Parser InputType
-decodeInput = parseJSON 
-
+decodeInput v = InputTypeText  <$> parseJSON v  <|>
+                InputTypeSignature <$> parseJSON v
+    where 
+       allParsers = InputTypeText                    
 -- Decode Object Function
 decodeObjectAsTemplateItems :: Value -> Parser [TemplateItem]                         
 decodeObjectAsTemplateItems (Object o) = sequence $ itemMakingFcn <$> HM.toList o
