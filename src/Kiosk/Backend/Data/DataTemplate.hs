@@ -38,12 +38,13 @@ import Control.Lens (makeLenses
                     ,(^..) )
 
 
+
 -- Data Template Type
 data DataTemplate = DataTemplate { company::Company,
                                    address :: Address, 
-                                   templateItems :: [TemplateItem]}
+                                   templateItems :: [TemplateItem]} 
 
-instance Tabular
+-- instance Tabular DataTemplate where
 
 data TemplateItem = TemplateItem {
             label :: Text
