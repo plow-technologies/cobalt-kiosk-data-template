@@ -38,11 +38,12 @@ import Control.Lens (makeLenses
 data DataTemplate = DataTemplate { company::Company,
                                    address :: Address, 
                                    templateItems :: [TemplateItem]}
-                    
+
+instance Tabular
+
 data TemplateItem = TemplateItem {
             label :: Text
             , templateValue :: InputType } deriving (Show)
-
 
 -- Make Lenses
 

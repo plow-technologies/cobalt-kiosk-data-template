@@ -17,6 +17,7 @@ Library
   GHC-Options:          -Wall
   Exposed-Modules:      Kiosk.Backend.Data
   Other-Modules:        Kiosk.Backend.Data.DataTemplate
+                        Kiosk.Backend.Table
   Build-Depends:        base                       >= 4 && < 5
                       , cobalt-kiosk-form-template >= 1.0
                       , aeson                      >= 0.7.0.6
@@ -24,6 +25,7 @@ Library
                       , bytestring
                       , unordered-containers
                       , lens
+                      , tables
                       
 
 Test-Suite spec
@@ -45,6 +47,7 @@ Test-Suite spec
                       , lens
                       , serial-test-generators
                       , template-haskell
+                      , tables
 
 Source-Repository head
   Type:                 git
