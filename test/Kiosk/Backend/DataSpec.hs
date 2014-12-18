@@ -1,18 +1,20 @@
 {-# LANGUAGE TemplateHaskell #-}
-module Kiosk.Backend.DataSpec (main, spec) where
+module Kiosk.Backend.DataSpec (main, spec, testGenerateDataTemplate) where
 
 import           Control.Applicative             ((<$>))
 import           Data.Aeson                      (Value (..), decode, encode,
                                                   toJSON)
+import           Data.ByteString.Lazy.Internal   (ByteString)
 import           Data.Either                     (isRight)
-import           Data.Maybe                      (fromJust)
 import           Generators                      (GeneratorType (..),
+                                                  generateDataTemplateEntry,
                                                   generateForm)
+import           Kiosk.Backend.Data              (DataTemplateEntry (..))
 import           Kiosk.Backend.Data.DataTemplate (DataTemplate (..),
                                                   decodeObjectAsTemplateItems,
                                                   fromFormToDataTemplate,
                                                   fromJSONToDataTemplate)
-import           Kiosk.Backend.Form              
+import           Kiosk.Backend.Form
 import           Language.Haskell.TH
 import           Test.Hspec
 import           Test.QuickCheck
@@ -32,7 +34,6 @@ spec = do
         restrictedForms = take 8 forms
         dataTemplates = fromFormToDataTemplate <$> restrictedForms
         isEmpty = null dataTemplates
-      -- print restrictedForms
       print . encode $  dataTemplates
       isEmpty `shouldBe` False
 
@@ -45,31 +46,41 @@ spec = do
       print . encode $  dataTemplates
       isEmpty `shouldBe` False
 
-  describe (concat [nameBase ''DataTemplate ,"Aeson Serialization Test" ]) $
+  describe (nameBase ''DataTemplate ++ " Aeson Serialization Test") $
    it "should serialize data and be consistent" $ do
      forms <- generate.generateForm $ Static
      let
        restrictedForms = take 8 forms
        dataTemplates = fromFormToDataTemplate <$> restrictedForms
-     (Right tst) <- runAesonSerializationTest dataTemplates "aeson-datatemplate.json"
-     True `shouldBe` True -- The real test is the Right
+     tst <- runAesonSerializationTest dataTemplates "aeson-datatemplate.json"
+     isRight tst `shouldBe` True
+
+  describe (nameBase ''DataTemplateEntry ++ " Aeson Serialization Test") $
+   it "should serialize the entry type and be consistent" $ do
+     entries <- generate.generateDataTemplateEntry $ Static
+     let
+       restrictedEntries = take 8 entries
+     tst <- runAesonSerializationTest restrictedEntries "aeson-datatemplateentry.json"
+     isRight tst `shouldBe` True
 
   describe (nameBase 'fromJSONToDataTemplate ++ " IPAD Serialization Test") $
    it "check to make sure IPAD serialization matches ours" $ do
      let
        (Right result) = testJSONIpadEncoding
        recodedJSON    = encode result
-     (decodeToValue recodedJSON) `shouldBe` (decodeToValue testJSON)
+     decodeToValue recodedJSON `shouldBe` decodeToValue testJSON
 
+testJSONIpadEncoding :: Either String DataTemplate
 testJSONIpadEncoding = fromJSONToDataTemplate testJSON
 
+decodeToValue :: ByteString -> Maybe Value
 decodeToValue v = decode v :: Maybe Value
 
--- testGenerateDataTemplate :: IO ByteString
+testGenerateDataTemplate :: IO ByteString
 testGenerateDataTemplate = do
-  forms <- generate.generateForm $ Static
+  _forms <- generate.generateForm $ Static
   let
     forms = [defaultForm]
     dataTemplates = fromFormToDataTemplate <$> forms
-  return $ encode $ dataTemplates
-  
+  return . encode $ dataTemplates
+

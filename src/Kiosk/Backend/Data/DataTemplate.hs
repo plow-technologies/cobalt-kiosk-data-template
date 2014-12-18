@@ -36,6 +36,7 @@ import Control.Lens (makeLenses
                     ,folding
                     ,folded
                     ,(^..) )
+import Data.Typeable
 
 
 
@@ -139,5 +140,10 @@ fromFormToDataTemplate (Form c a rs)  = DataTemplate c a (extractData rs)
 fromJSONToDataTemplate :: ByteString -> Either String DataTemplate
 fromJSONToDataTemplate bs = eitherDecode bs :: Either String DataTemplate
 
+checkType a b = typeOf a == typeOf b
 
+checkCompanyType a b = checkType a b
 
+-- validateDataTemplate (DataTemplate c1 a1 d1) (DataTemplate c2 a2 d2) =
+--                                    where companyValid = checkCompanyType c1 c2
+                                         
