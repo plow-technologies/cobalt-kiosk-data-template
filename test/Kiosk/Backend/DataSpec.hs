@@ -12,7 +12,7 @@ import           Kiosk.Backend.Data.DataTemplate (DataTemplate (..),
                                                   decodeObjectAsTemplateItems,
                                                   fromFormToDataTemplate,
                                                   fromJSONToDataTemplate)
-import           Kiosk.Backend.Form              (Form, defaultForm)
+import           Kiosk.Backend.Form              
 import           Language.Haskell.TH
 import           Test.Hspec
 import           Test.QuickCheck
@@ -54,20 +54,22 @@ spec = do
      (Right tst) <- runAesonSerializationTest dataTemplates "aeson-datatemplate.json"
      True `shouldBe` True -- The real test is the Right
 
-  describe (nameBase 'fromJSONToDataTemplate ++ " Aseson Serialization Test") $
-   it "should serialize data and be consistent" $ do
+  describe (nameBase 'fromJSONToDataTemplate ++ " IPAD Serialization Test") $
+   it "check to make sure IPAD serialization matches ours" $ do
      let
-       result = fromJSONToDataTemplate testJSON
-     print. toJSON $ result
-     True `shouldBe` True
-     -- isRight result `shouldBe` True
+       (Right result) = testJSONIpadEncoding
+       recodedJSON    = encode result
+     (decodeToValue recodedJSON) `shouldBe` (decodeToValue testJSON)
 
-  -- describe (nameBase 'decodeObjectAsTemplateItems ++ " JSON Decoding Test") $
-  --  it "should decode the piece of data" $ do
-  --    let
-  --      value = decode testData :: Maybe Value
-  --    result <- decodeObjectAsTemplateItems .fromJust $ value
-  --    print . toJSON $ result
-  --    (isRight result) `shouldBe` True -- The real test is the Right
+testJSONIpadEncoding = fromJSONToDataTemplate testJSON
 
+decodeToValue v = decode v :: Maybe Value
 
+-- testGenerateDataTemplate :: IO ByteString
+testGenerateDataTemplate = do
+  forms <- generate.generateForm $ Static
+  let
+    forms = [defaultForm]
+    dataTemplates = fromFormToDataTemplate <$> forms
+  return $ encode $ dataTemplates
+  
