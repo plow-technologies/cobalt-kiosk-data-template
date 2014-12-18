@@ -13,7 +13,7 @@ Portability :  portable
 Create Test forms for use in modules
 
 -}
-{-# LA97NGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Generators (GeneratorType (..)
                   ,generateForm, generateDataTemplateEntry) where
 import           Control.Applicative             ((<$>), (<*>))

@@ -1,11 +1,23 @@
 {-# LANGUAGE OverloadedStrings, TemplateHaskell #-}
-module Kiosk.Backend.Data.DataTemplate (
-                           fromFormToDataTemplate
-                          ,fromJSONToDataTemplate
-                          ,decodeObjectAsTemplateItems
-                          ,TemplateItem(..)
-                          ,DataTemplate(..)
-                           ) where
+module Kiosk.Backend.Data.DataTemplate ( fromFormToDataTemplate
+                                        ,fromJSONToDataTemplate
+                                        ,decodeObjectAsTemplateItems
+                                        ,TemplateItem(..)
+                                        ,DataTemplate(..)
+                                       , checkCompanyType
+                                       , getCompany
+                                       , row
+                                       , rowAttrib
+                                       , itemAttrib
+                                       , getLabelText
+                                       , labelAttrib
+                                       , getInput
+                                       , inputAttrib
+                                       , checkType
+                                       , decodeStringAsCompany
+                                       , decodeStringAsAddress
+
+                                        ,getAddress) where
 
 import Kiosk.Backend.Form (Item(..)
                           ,ItemType(..)
@@ -44,12 +56,13 @@ import Data.Typeable
 data DataTemplate = DataTemplate { company::Company,
                                    address :: Address, 
                                    templateItems :: [TemplateItem]} 
+                                   deriving (Ord,Eq,Show)
 
 -- instance Tabular DataTemplate where
 
 data TemplateItem = TemplateItem {
             label :: Text
-            , templateValue :: InputType } deriving (Show)
+            , templateValue :: InputType } deriving (Show,Ord,Eq)
 
 -- Make Lenses
 
@@ -140,8 +153,10 @@ fromFormToDataTemplate (Form c a rs)  = DataTemplate c a (extractData rs)
 fromJSONToDataTemplate :: ByteString -> Either String DataTemplate
 fromJSONToDataTemplate bs = eitherDecode bs :: Either String DataTemplate
 
+checkType :: (Typeable a1, Typeable a) => a -> a1 -> Bool
 checkType a b = typeOf a == typeOf b
 
+checkCompanyType :: (Typeable a1, Typeable a) => a -> a1 -> Bool
 checkCompanyType a b = checkType a b
 
 -- validateDataTemplate (DataTemplate c1 a1 d1) (DataTemplate c2 a2 d2) =
