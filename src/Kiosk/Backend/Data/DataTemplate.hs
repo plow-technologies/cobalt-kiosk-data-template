@@ -14,8 +14,12 @@ import Kiosk.Backend.Form (Item(..)
                           ,Row(..)
                           ,Company (..)
                           ,Address(..)
+                          ,Signature (..)
                           ,Input(..)
                           ,InputType(..)
+                          ,InputText(..)
+                          ,InputInt(..)
+                          ,InputDouble(..)
                           )
 import Data.Aeson
 import  Data.Aeson.Types  
@@ -63,16 +67,20 @@ encodeTemplateItemsAsObject items = object $ fmap objectMaker items
                       where
                        objectMaker (TemplateItem { label=l,
                                             templateValue=v}) = l .= codeAsInputType v
-                       codeAsInputType (InputTypeText t ) = toJSON t
-                       codeAsInputType (InputTypeSignature s) = toJSON s
+                       codeAsInputType (InputTypeText (InputText t) ) = toJSON t
+                       codeAsInputType (InputTypeSignature (Signature s)) = toJSON s
+                       codeAsInputType (InputTypeInt (InputInt s)) = toJSON s                                                             
+                       codeAsInputType (InputTypeDouble (InputDouble s)) = toJSON s                                                                    
 
 
-                                
+
 -- Decode Input Function                                                                
 decodeInput :: Value -> Parser InputType
-decodeInput v = InputTypeText  <$> parseJSON v  <|>
-                InputTypeSignature <$> parseJSON v
- 
+decodeInput v = InputTypeText . InputText  <$> parseJSON v  <|>
+                InputTypeSignature . Signature <$> parseJSON v <|>
+                InputTypeInt . InputInt <$> parseJSON v        <|>     
+                InputTypeDouble . InputDouble <$> parseJSON v                
+
 -- Decode Object Function
 decodeObjectAsTemplateItems :: Value -> Parser [TemplateItem]                         
 decodeObjectAsTemplateItems (Object o) = sequence $ itemMakingFcn <$> HM.toList o
@@ -93,14 +101,16 @@ decodeStringAsAddress _ = fail "Expected String, Received Other."
 
 
 instance ToJSON DataTemplate where 
-         toJSON (DataTemplate c a ts) =
+         toJSON (DataTemplate (Company c _ ) (Address a _) ts) =
                 object [ "company".=  c
-                       , "address" .= a
+                       ,  "address" .= a
                        , "data" .= encodeTemplateItemsAsObject ts]
  
 instance FromJSON DataTemplate where 
-         parseJSON (Object o) =  DataTemplate <$> o .: "company"             
-                                              <*> o .: "address"               
+         parseJSON (Object o) =  DataTemplate <$> (flip Company [] 
+                                                   <$>  o .: "company"  )            
+                                              <*> (flip Address []
+                                                    <$> o .: "address")              
                                               <*> ((o .: "data") >>= decodeObjectAsTemplateItems) 
          parseJSON _ = mzero
 

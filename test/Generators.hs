@@ -13,7 +13,7 @@ Portability :  portable
 Create Test forms for use in modules 
 
 -}
-{-# LANGUAGE OverloadedStrings #-}        
+{-# LA97NGUAGE OverloadedStrings #-}        
 module Generators (GeneratorType (..)
                   ,generateForm) where
 import           Kiosk.Backend.Form
@@ -93,7 +93,7 @@ generateInputText gtype = fmap InputText
                           <$> generateTexts gtype
 
 
-generateInputSignatures gtype = do txts <- fmap unpack <$> generateTexts gtype
+generateInputSignatures gtype = do txts <- generateTexts gtype
                                    return $ Signature <$> txts
 
 -- | Button Generator
