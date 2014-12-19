@@ -19,6 +19,7 @@ module Kiosk.Backend.Data.DataTemplate ( fromFormToDataTemplate
 
                                         ,getAddress) where
 
+
 import Kiosk.Backend.Form (Item(..)
                           ,ItemType(..)
                           ,Label(..)

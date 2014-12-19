@@ -3,11 +3,13 @@
 {-# LANGUAGE GADTs #-}
 {-# Language RankNTypes #-}
 {-# LANGUAGE OverloadedStrings #-}
-
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Kiosk.Backend.Data ( DataTemplateEntry (..)
                            ,DataTemplateEntryKey (..)
+                          , TemplateTable (TemplateTable)
                           , dataTemplateEntryKey
                           , dataTemplateValue
+                          , getTemplateTable
                           , TemplateTable) where
 
 -- Types
@@ -17,9 +19,19 @@ import           Data.Aeson                      (FromJSON, ToJSON,
 import           Data.UUID                       (UUID, fromString, toString)
 -- Control
 import           Control.Applicative             ((<$>), (<*>))
-import           Data.Aeson.Types                (Parser ())
+import           Data.Aeson.Types                (Parser ()
+                                                 ,Value(..))
+import Data.Aeson.Serialize (putToJSON
+                            ,getFromJSON)
+import Data.Serialize (Serialize
+                      ,get
+                      ,put)
 import           Kiosk.Backend.Data.DataTemplate (DataTemplate)
-import Control.Lens (makeLenses)
+import Data.Foldable (toList)
+import Control.Lens (makeLenses
+                    ,(^.)
+                    ,views
+                    )
 import Data.Table  (Table
                    ,Tabular
                    ,PKT
@@ -27,6 +39,8 @@ import Data.Table  (Table
                    ,Tab
                    ,Primary
                    ,Supplemental
+                   ,fromList
+                   ,table
                    ,fetch
                    ,primary
                    ,primarily
@@ -84,8 +98,25 @@ instance FromJSON DataTemplateEntry where
   parseJSON _          = fail "Expecting DateTemplateEntry object, Received Other"
 
 
+
 -- | Tabular Instances
-type TemplateTable = Table DataTemplateEntry
+newtype TemplateTable = TemplateTable {_getTemplateTable ::  Table DataTemplateEntry}
+                     deriving (Show)
+makeLenses ''TemplateTable
+
+
+
+instance ToJSON TemplateTable where 
+      toJSON = views getTemplateTable (toJSON.toList)
+
+instance FromJSON TemplateTable where 
+      parseJSON v = TemplateTable . fromList <$> 
+                        parseJSON v
+
+
+instance Serialize TemplateTable where 
+         put = putToJSON
+         get = getFromJSON
 
 instance Tabular DataTemplateEntry where 
       type PKT DataTemplateEntry  = DataTemplateEntryKey
