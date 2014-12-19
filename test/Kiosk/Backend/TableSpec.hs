@@ -3,12 +3,15 @@
 module Kiosk.Backend.TableSpec (main, spec) where
 
 import Kiosk.Backend.Data
-import Kiosk.Backend.Data.DataTemplate (fromFormToDataTemplate)
-import           Language.Haskell.TH
+
+
 import           Test.Hspec
 import Data.Table 
 import Control.Lens  
+
+import Test.Serial              
 import Generators 
+
 import           Test.QuickCheck       
                  
                  
@@ -17,8 +20,10 @@ main = hspec spec
 
 spec :: Spec
 spec = do
-  describe (nameBase 'fromFormToDataTemplate) $
+  describe ("Serialization test TemplateTable") $
     it "should transform a Form to a DataTemplate" $ do
+     tables <- testTable
+     runCerealSerializationTest tables "template-table.serial"
      False `shouldBe` False
 
 
@@ -27,4 +32,6 @@ spec = do
 
 testTable :: IO TemplateTable
 testTable = do templateEntries <- generate $ generateDataTemplateEntry Static
-               return $ (take 10 templateEntries) ^. table
+               return $   getTemplateTable  #  ( (take 10 templateEntries) ^. table)
+
+
