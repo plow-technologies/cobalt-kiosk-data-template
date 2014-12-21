@@ -5,15 +5,20 @@ import           Control.Applicative             ((<$>))
 import           Data.Aeson                      (Value (..), decode, encode,
                                                   toJSON)
 import           Data.ByteString.Lazy.Internal   (ByteString)
-import           Data.Either                     (isRight)
+
 import           Generators                      (GeneratorType (..),
-                                                  generateDataTemplateEntry,
-                                                  generateForm)
+                                                  generateDataTemplateEntry
+                                                 , generateForm
+                                                )
+import           Mocks.Primitive.Generators (generateTexts)
 import           Kiosk.Backend.Data              (DataTemplateEntry (..))
 import           Kiosk.Backend.Data.DataTemplate (DataTemplate (..),
                                                   decodeObjectAsTemplateItems,
                                                   fromFormToDataTemplate,
-                                                  fromJSONToDataTemplate)
+                                                  fromJSONToDataTemplate
+                                                 ,unmakeUniqueLabels
+                                                 ,makeUniqueLabels
+                                                 ,Appender(..))
 import           Kiosk.Backend.Form
 import           Language.Haskell.TH
 import           Test.Hspec
@@ -52,16 +57,23 @@ spec = do
      let
        restrictedForms = take 8 forms
        dataTemplates = fromFormToDataTemplate <$> restrictedForms
-     tst <- runAesonSerializationTest dataTemplates "aeson-datatemplate.json"
-     isRight tst `shouldBe` True
+     (Right tst) <- runAesonSerializationTest dataTemplates "aeson-datatemplate.json"
+     tst `shouldBe` dataTemplates
 
   describe (nameBase ''DataTemplateEntry ++ " Aeson Serialization Test") $
    it "should serialize the entry type and be consistent" $ do
      entries <- generate.generateDataTemplateEntry $ Static
      let
        restrictedEntries = take 8 entries
-     tst <- runAesonSerializationTest restrictedEntries "aeson-datatemplateentry.json"
-     isRight tst `shouldBe` True
+     (Right tst) <- runAesonSerializationTest restrictedEntries "aeson-datatemplateentry.json"
+     tst `shouldBe` restrictedEntries
+  describe (nameBase 'makeUniqueLabels ++ " " ++ nameBase 'unmakeUniqueLabels) $ do 
+   it "should return the same label it started with"$ do 
+     txts <- generate $ generateTexts Dynamic
+     let coded = makeUniqueLabels AppendUnderScoredNumber txts
+         uncoded = unmakeUniqueLabels AppendUnderScoredNumber coded
+     txts `shouldBe` uncoded
+
 
   describe (nameBase 'fromJSONToDataTemplate ++ " IPAD Serialization Test") $
    it "check to make sure IPAD serialization matches ours" $ do

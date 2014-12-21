@@ -5,8 +5,8 @@ module TestImport  ( testCompany
                    ) where
 
 import           Data.ByteString.Lazy.Internal (ByteString)
-import Kiosk.Backend.Data.DataTemplate
-import Kiosk.Backend.Form (Item(..)
+
+
                           ,ItemType(..)
                           ,Label(..)
                           ,Form(..)

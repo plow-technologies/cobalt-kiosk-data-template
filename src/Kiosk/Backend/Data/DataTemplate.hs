@@ -14,6 +14,10 @@ module Kiosk.Backend.Data.DataTemplate ( fromFormToDataTemplate
                                        , getInput
                                        , inputAttrib
                                        , checkType
+                                       -- Label Uniqueness Functions
+                                       , Appender(..)
+                                       , makeUniqueLabels
+                                       , unmakeUniqueLabels
                                        , decodeStringAsCompany
                                        , decodeStringAsAddress
 
@@ -34,12 +38,27 @@ import Kiosk.Backend.Form (Item(..)
                           ,InputInt(..)
                           ,InputDouble(..)
                           )
-import Data.Aeson
-import  Data.Aeson.Types  
+import Data.Aeson (ToJSON 
+                  ,FromJSON
+                  ,toJSON
+                  ,parseJSON
+                  ,Value(..)
+                  ,object
+                  ,(.=)                    
+                  ,(.:)
+                  ,eitherDecode)
+import  Data.Aeson.Types  (Parser)
+import qualified Data.Text as T
 import Data.Text (Text)
 import Data.ByteString.Lazy.Internal (ByteString)
+import Data.Attoparsec.Text (parseOnly
+                            ,decimal
+                            ,char
+                            ,takeText
+                            ,anyChar
+                            ,atEnd)
 
-import Control.Applicative ((<$>), (<*>), (<|>))
+import Control.Applicative ((<$>), (<*>), (<|>),(*>),(<*))
 import           Control.Monad             (mzero)
 import qualified Data.HashMap.Strict as HM (toList)
 import Data.Foldable (foldl')
@@ -65,8 +84,7 @@ data TemplateItem = TemplateItem {
             label :: Text
             , templateValue :: InputType } deriving (Show,Ord,Eq)
 
--- Make Lenses
-
+-- Make Lenses   
 makeLenses ''Form
 makeLenses ''Row             
 makeLenses ''Item
@@ -82,7 +100,7 @@ encodeTemplateItemsAsObject :: [TemplateItem] -> Value
 encodeTemplateItemsAsObject items = object $ fmap objectMaker items
                       where
                        objectMaker (TemplateItem { label=l,
-                                            templateValue=v}) = l .= codeAsInputType v
+                                            templateValue=v}) = l .= codeAsInputType v                                                                                     
                        codeAsInputType (InputTypeText (InputText t) ) = toJSON t
                        codeAsInputType (InputTypeSignature (Signature s)) = toJSON s
                        codeAsInputType (InputTypeInt (InputInt s)) = toJSON s                                                             
@@ -90,7 +108,32 @@ encodeTemplateItemsAsObject items = object $ fmap objectMaker items
 
 
 
--- Decode Input Function                                                                
+data Appender = AppendUnderScoredNumber
+  deriving (Eq,Ord,Show)     
+
+makeUniqueLabels :: Appender -> [Text] -> [Text]
+makeUniqueLabels AppendUnderScoredNumber incoming = zipWith T.append incoming appender 
+        where 
+          appender = T.append "_" . T.pack . show <$>
+                     [1 .. ]
+
+unmakeUniqueLabels :: Appender -> [Text] -> [Text]
+unmakeUniqueLabels AppendUnderScoredNumber incoming = pullOffAppender <$> incoming
+  where
+    underScorePlusNumberLength = 2
+    pullOffAppender = parseReversedUnderscoreIncrementor
+
+parseReversedUnderscoreIncrementor :: Text -> Text  
+parseReversedUnderscoreIncrementor txt  = replaceTextWithReversedOriginalOnLeft . reverseTextThenParse $ txt 
+
+       where reverseParser = decimal *> 
+                             char '_' *> takeText
+             reverseTextThenParse txt' = parseOnly reverseParser (T.reverse txt')
+             replaceTextWithReversedOriginalOnLeft (Left _) = txt
+             replaceTextWithReversedOriginalOnLeft (Right t) = T.reverse t
+
+-- --------------------------------------------------
+-- Decode Input Function 
 decodeInput :: Value -> Parser InputType
 decodeInput v = InputTypeText . InputText  <$> parseJSON v  <|>
                 InputTypeSignature . Signature <$> parseJSON v <|>

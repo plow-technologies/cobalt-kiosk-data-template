@@ -6,9 +6,9 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Kiosk.Backend.Data ( DataTemplateEntry (..)
                            ,DataTemplateEntryKey (..)
-                          , TemplateTable (TemplateTable)
+                          , TemplateTable (..)
                           , dataTemplateEntryKey
-                          , dataTemplateValue
+                          , dataTemplateEntryValue
                           , getTemplateTable
                           , TemplateTable) where
 
@@ -82,9 +82,9 @@ decodeUUID v = do
 -- |Data Template Entry defines a return value of a form
 data DataTemplateEntry = DataTemplateEntry {
                        _dataTemplateEntryKey :: DataTemplateEntryKey,
-                       _dataTemplateValue    :: DataTemplate
-                                            }
-           deriving (Show)
+                       _dataTemplateEntryValue    :: DataTemplate
+                                                 }
+           deriving (Show,Eq)
 
 makeLenses ''DataTemplateEntry
 -- | Aeson Instances                                           
@@ -101,13 +101,13 @@ instance FromJSON DataTemplateEntry where
 
 -- | Tabular Instances
 newtype TemplateTable = TemplateTable {_getTemplateTable ::  Table DataTemplateEntry}
-                     deriving (Show)
+                    deriving (Show,Eq)
 makeLenses ''TemplateTable
 
 
 
 instance ToJSON TemplateTable where 
-      toJSON = views getTemplateTable (toJSON.toList)
+      toJSON = toJSON.toList._getTemplateTable
 
 instance FromJSON TemplateTable where 
       parseJSON v = TemplateTable . fromList <$> 
@@ -125,7 +125,7 @@ instance Tabular DataTemplateEntry where
         DValue :: Key Supplemental DataTemplateEntry DataTemplate
       data Tab DataTemplateEntry i = DTab (i Primary DataTemplateEntryKey) (i Supplemental DataTemplate)
       fetch Key = _dataTemplateEntryKey
-      fetch DValue = _dataTemplateValue
+      fetch DValue = _dataTemplateEntryValue
       primary = Key 
       primarily Key r = r
       mkTab f = DTab <$> f Key <*> f DValue
