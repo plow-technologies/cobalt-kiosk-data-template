@@ -50,17 +50,18 @@ import Data.Aeson (ToJSON
 import  Data.Aeson.Types  (Parser)
 import qualified Data.Text as T
 import Data.Text (Text)
+import Data.Monoid ((<>))
 import Data.ByteString.Lazy.Internal (ByteString)
 import Data.Attoparsec.Text (parseOnly
-                            ,decimal
-                            ,char
-                            ,takeText
-                            ,anyChar
-                            ,atEnd)
+                             ,decimal
+                             ,char
+                             ,takeText
+                             ,anyChar
+                             ,atEnd)
 
 import Control.Applicative ((<$>), (<*>), (<|>),(*>),(<*))
 import           Control.Monad             (mzero)
-import qualified Data.HashMap.Strict as HM (toList)
+import qualified Data.HashMap.Strict as HM 
 import Data.Foldable (foldl')
 import Control.Lens (makeLenses
                     ,makePrisms
@@ -97,7 +98,7 @@ makeLenses ''DataTemplate
 -- JSON Instances
 -- | encode a list of items as a flat single object instead of as an array of objects
 encodeTemplateItemsAsObject :: [TemplateItem] -> Value
-encodeTemplateItemsAsObject items = object $ fmap objectMaker items
+encodeTemplateItemsAsObject items = object $ fmap objectMaker $ labelIncrementor  items
                       where
                        objectMaker (TemplateItem { label=l,
                                             templateValue=v}) = l .= codeAsInputType v                                                                                     
@@ -105,20 +106,29 @@ encodeTemplateItemsAsObject items = object $ fmap objectMaker items
                        codeAsInputType (InputTypeSignature (Signature s)) = toJSON s
                        codeAsInputType (InputTypeInt (InputInt s)) = toJSON s                                                             
                        codeAsInputType (InputTypeDouble (InputDouble s)) = toJSON s                                                                    
-
+                       labelIncrementor templateItems = replaceOldLabels templateItems . 
+                                                          makeUniqueLabels AppendUnderScoredNumber . 
+                                                          makeTexts $ templateItems
+                       makeTexts = fmap label
+                       replaceOldLabels templateItems labels = zipWith (\ti l -> ti {label = l}) templateItems labels
 
 
 data Appender = AppendUnderScoredNumber
   deriving (Eq,Ord,Show)     
 
-makeUniqueLabels :: Appender -> [Text] -> [Text]
-makeUniqueLabels AppendUnderScoredNumber incoming = zipWith T.append incoming appender 
-        where 
-          appender = T.append "_" . T.pack . show <$>
-                     [1 .. ]
 
-unmakeUniqueLabels :: Appender -> [Text] -> [Text]
-unmakeUniqueLabels AppendUnderScoredNumber incoming = pullOffAppender <$> incoming
+{- | labels need to be indexed so they can be decoded correctly: 
+   label, label -> label_1 label_2 -}
+makeUniqueLabels :: Appender -> [Text] -> [Text]
+makeUniqueLabels AppendUnderScoredNumber incoming = reverse.snd $ foldl' appender (HM.empty,[]) incoming
+        where 
+          appender (labelMap,transformedLabels) incomingLabel = case HM.lookup incomingLabel labelMap of
+                                                                  Nothing -> ( HM.insert incomingLabel 1 labelMap , T.append incomingLabel "_1":transformedLabels)
+                                                                  (Just i) ->let i' = succ i
+                                                                             in ( HM.insert incomingLabel i' labelMap , (incomingLabel <> "_" <> (T.pack.show $ i)):transformedLabels)
+
+unmakeUniqueLabels :: Appender -> Text -> Text
+unmakeUniqueLabels AppendUnderScoredNumber incoming = pullOffAppender incoming
   where
     underScorePlusNumberLength = 2
     pullOffAppender = parseReversedUnderscoreIncrementor
@@ -143,7 +153,7 @@ decodeInput v = InputTypeText . InputText  <$> parseJSON v  <|>
 -- Decode Object Function
 decodeObjectAsTemplateItems :: Value -> Parser [TemplateItem]                         
 decodeObjectAsTemplateItems (Object o) = sequence $ itemMakingFcn <$> HM.toList o
-                            where itemMakingFcn (k,v) = TemplateItem k <$> decodeInput v
+                            where itemMakingFcn (k,v) = (TemplateItem . unmakeUniqueLabels AppendUnderScoredNumber $ k) <$> decodeInput v
 decodeObjectAsTemplateItems _ = fail "Expected Object, Received Other."
 
 -- Decode Company

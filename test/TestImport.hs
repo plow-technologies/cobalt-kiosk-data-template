@@ -6,16 +6,6 @@ module TestImport  ( testCompany
 
 import           Data.ByteString.Lazy.Internal (ByteString)
 
-
-                          ,ItemType(..)
-                          ,Label(..)
-                          ,Form(..)
-                          ,Row(..)
-                          ,Company (..)
-                          ,Address(..)
-                          ,Input(..)
-                          ,InputType(..)
-                          ) 
 testCompany :: ByteString
 testCompany = "{\"company\":\"testCompany\"}"
 

@@ -24,8 +24,9 @@ import           Language.Haskell.TH
 import           Test.Hspec
 import           Test.QuickCheck
 import           Test.Serial                     (runAesonSerializationTest)
-import           TestImport                      (testCompany, testData,
-                                                  testJSON)
+import           TestImport                      (testCompany
+                                                 ,testData
+                                                 ,testJSON)
 
 main :: IO ()
 main = hspec spec
@@ -39,7 +40,6 @@ spec = do
         restrictedForms = take 8 forms
         dataTemplates = fromFormToDataTemplate <$> restrictedForms
         isEmpty = null dataTemplates
-      print . encode $  dataTemplates
       isEmpty `shouldBe` False
 
   describe (nameBase 'fromFormToDataTemplate) $
@@ -48,7 +48,7 @@ spec = do
         forms = [defaultForm]
         dataTemplates = fromFormToDataTemplate <$> forms
         isEmpty = null dataTemplates
-      print . encode $  dataTemplates
+
       isEmpty `shouldBe` False
 
   describe (nameBase ''DataTemplate ++ " Aeson Serialization Test") $
@@ -57,21 +57,21 @@ spec = do
      let
        restrictedForms = take 8 forms
        dataTemplates = fromFormToDataTemplate <$> restrictedForms
-     (Right tst) <- runAesonSerializationTest dataTemplates "aeson-datatemplate.json"
-     tst `shouldBe` dataTemplates
+     (tst) <- runAesonSerializationTest dataTemplates "aeson-datatemplate.json"
+     tst `shouldBe` (Right dataTemplates)
 
   describe (nameBase ''DataTemplateEntry ++ " Aeson Serialization Test") $
    it "should serialize the entry type and be consistent" $ do
      entries <- generate.generateDataTemplateEntry $ Static
      let
        restrictedEntries = take 8 entries
-     (Right tst) <- runAesonSerializationTest restrictedEntries "aeson-datatemplateentry.json"
-     tst `shouldBe` restrictedEntries
+     (tst) <- runAesonSerializationTest restrictedEntries "aeson-datatemplateentry.json"
+     tst `shouldBe` (Right restrictedEntries)
   describe (nameBase 'makeUniqueLabels ++ " " ++ nameBase 'unmakeUniqueLabels) $ do 
    it "should return the same label it started with"$ do 
      txts <- generate $ generateTexts Dynamic
      let coded = makeUniqueLabels AppendUnderScoredNumber txts
-         uncoded = unmakeUniqueLabels AppendUnderScoredNumber coded
+         uncoded = unmakeUniqueLabels AppendUnderScoredNumber <$> coded
      txts `shouldBe` uncoded
 
 
@@ -90,7 +90,7 @@ decodeToValue v = decode v :: Maybe Value
 
 testGenerateDataTemplate :: IO ByteString
 testGenerateDataTemplate = do
-  _forms <- generate.generateForm $ Static
+  _forms <- generate.generateForm $ Dynamic          
   let
     forms = [defaultForm]
     dataTemplates = fromFormToDataTemplate <$> forms
