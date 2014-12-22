@@ -1,15 +1,16 @@
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE GADTs #-}
-{-# Language RankNTypes #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeFamilies               #-}
 module Kiosk.Backend.Data ( DataTemplateEntry (..)
                            ,DataTemplateEntryKey (..)
                           , TemplateTable (..)
                           , dataTemplateEntryKey
                           , dataTemplateEntryValue
                           , getTemplateTable
+                          , decodeUUID
                           , TemplateTable) where
 
 -- Types
@@ -19,40 +20,23 @@ import           Data.Aeson                      (FromJSON, ToJSON,
 import           Data.UUID                       (UUID, fromString, toString)
 -- Control
 import           Control.Applicative             ((<$>), (<*>))
-import           Data.Aeson.Types                (Parser ()
-                                                 ,Value(..))
-import Data.Aeson.Serialize (putToJSON
-                            ,getFromJSON)
-import Data.Serialize (Serialize
-                      ,get
-                      ,put)
+import           Control.Lens                    (makeLenses, views, (^.))
+import           Data.Aeson.Serialize            (getFromJSON, putToJSON)
+import           Data.Aeson.Types                (Parser (), Value (..))
+import           Data.Foldable                   (toList)
+import           Data.Serialize                  (Serialize, get, put)
+import           Data.Table                      (Key, PKT, Primary,
+                                                  Supplemental, Tab, Table,
+                                                  Tabular, fetch, forTab,
+                                                  fromList, ixTab, mkTab,
+                                                  primarily, primary, table)
 import           Kiosk.Backend.Data.DataTemplate (DataTemplate)
-import Data.Foldable (toList)
-import Control.Lens (makeLenses
-                    ,(^.)
-                    ,views
-                    )
-import Data.Table  (Table
-                   ,Tabular
-                   ,PKT
-                   ,Key
-                   ,Tab
-                   ,Primary
-                   ,Supplemental
-                   ,fromList
-                   ,table
-                   ,fetch
-                   ,primary
-                   ,primarily
-                   ,mkTab
-                   ,ixTab
-                   ,forTab)
 
 
 -- |Key for Data Template
-   
+
 data DataTemplateEntryKey = DataTemplateEntryKey {
-                          _getDate   :: Int , 
+                          _getDate   :: Int ,
                           _getUUID   :: UUID,
                           _getFormId :: Int
                           }
@@ -67,7 +51,7 @@ instance ToJSON DataTemplateEntryKey where
 instance FromJSON DataTemplateEntryKey where
   parseJSON (Object o) = DataTemplateEntryKey <$> o .: "date"
                                               <*> ((o .: "uuid") >>= decodeUUID)
-                                              <*> o .: "formid" 
+                                              <*> o .: "formid"
   parseJSON _ = fail "Expecting DataTemplateEntryKey Object, Received Other"
 
 decodeUUID :: Value -> Parser UUID
@@ -81,13 +65,13 @@ decodeUUID v = do
 
 -- |Data Template Entry defines a return value of a form
 data DataTemplateEntry = DataTemplateEntry {
-                       _dataTemplateEntryKey :: DataTemplateEntryKey,
-                       _dataTemplateEntryValue    :: DataTemplate
+                       _dataTemplateEntryKey   :: DataTemplateEntryKey,
+                       _dataTemplateEntryValue :: DataTemplate
                                                  }
            deriving (Show,Eq)
 
 makeLenses ''DataTemplateEntry
--- | Aeson Instances                                           
+-- | Aeson Instances
 instance ToJSON DataTemplateEntry where
   toJSON (DataTemplateEntry k v) = object ["key" .= k
                                           ,"value" .= v]
@@ -106,27 +90,27 @@ makeLenses ''TemplateTable
 
 
 
-instance ToJSON TemplateTable where 
+instance ToJSON TemplateTable where
       toJSON = toJSON.toList._getTemplateTable
 
-instance FromJSON TemplateTable where 
-      parseJSON v = TemplateTable . fromList <$> 
+instance FromJSON TemplateTable where
+      parseJSON v = TemplateTable . fromList <$>
                         parseJSON v
 
 
-instance Serialize TemplateTable where 
+instance Serialize TemplateTable where
          put = putToJSON
          get = getFromJSON
 
-instance Tabular DataTemplateEntry where 
+instance Tabular DataTemplateEntry where
       type PKT DataTemplateEntry  = DataTemplateEntryKey
-      data Key k DataTemplateEntry b where 
+      data Key k DataTemplateEntry b where
         Key :: Key Primary DataTemplateEntry DataTemplateEntryKey
         DValue :: Key Supplemental DataTemplateEntry DataTemplate
       data Tab DataTemplateEntry i = DTab (i Primary DataTemplateEntryKey) (i Supplemental DataTemplate)
       fetch Key = _dataTemplateEntryKey
       fetch DValue = _dataTemplateEntryValue
-      primary = Key 
+      primary = Key
       primarily Key r = r
       mkTab f = DTab <$> f Key <*> f DValue
       forTab (DTab i s) f = DTab <$> f Key i <*> f DValue s
