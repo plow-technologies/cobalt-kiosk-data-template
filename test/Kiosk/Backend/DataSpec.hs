@@ -49,14 +49,13 @@ spec = do
         forms = [defaultForm]
         dataTemplates = fromFormToDataTemplate <$> forms
         isEmpty = null dataTemplates
-
       isEmpty `shouldBe` False
 
   describe (nameBase ''DataTemplate ++ " Static Aeson Serialization Test") $
    it "should serialize data and be consistent" $ do
      forms <- generate.generateForm $ Static
      let
-       restrictedForms = take 8 forms
+       restrictedForms = take 1 forms
        dataTemplates = fromFormToDataTemplate <$> restrictedForms
      (tst) <- runAesonSerializationTest dataTemplates "aeson-datatemplate.json"
      tst `shouldBe` (Right dataTemplates)
@@ -95,7 +94,7 @@ spec = do
 
 encodeDecodeDataTemplate :: IO (Either String [DataTemplate],Either String [DataTemplate])
 encodeDecodeDataTemplate = do
-       forms <- generate.generateForm $ Static
+       forms <- generate.generateForm $ Dynamic
        let
          restrictedForms = take 1 forms
          dataTemplates = fromFormToDataTemplate <$> restrictedForms
