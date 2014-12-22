@@ -2,7 +2,7 @@
 module Kiosk.Backend.DataSpec (main, spec, testGenerateDataTemplate) where
 
 import           Control.Applicative             ((<$>))
-import           Data.Aeson                      (Value (..), decode, encode,
+import           Data.Aeson                      (Value (..), decode, encode, eitherDecode,
                                                   toJSON)
 import           Data.ByteString.Lazy.Internal   (ByteString)
 
@@ -19,6 +19,7 @@ import           Kiosk.Backend.Data.DataTemplate (DataTemplate (..),
                                                  ,unmakeUniqueLabels
                                                  ,makeUniqueLabels
                                                  ,Appender(..))
+import Control.Arrow ((***))
 import           Kiosk.Backend.Form
 import           Language.Haskell.TH
 import           Test.Hspec
@@ -51,7 +52,7 @@ spec = do
 
       isEmpty `shouldBe` False
 
-  describe (nameBase ''DataTemplate ++ " Aeson Serialization Test") $
+  describe (nameBase ''DataTemplate ++ " Static Aeson Serialization Test") $
    it "should serialize data and be consistent" $ do
      forms <- generate.generateForm $ Static
      let
@@ -59,13 +60,22 @@ spec = do
        dataTemplates = fromFormToDataTemplate <$> restrictedForms
      (tst) <- runAesonSerializationTest dataTemplates "aeson-datatemplate.json"
      tst `shouldBe` (Right dataTemplates)
-
+  describe (nameBase ''DataTemplate ++ " Dynamic Aeson Serialization Test") $
+   it "should serialize data and be consistent for multiple inputs" $ do
+     (tst,expected) <- encodeDecodeDataTemplate
+     let (tst_companies,expected_companies) = ((fmap.fmap $ company) *** (fmap.fmap $ company)) (tst,expected)
+         (tst_address,expected_address) = ((fmap.fmap $ address) *** (fmap.fmap $ address)) (tst,expected)
+         (tst_items,expected_items) = ((fmap.fmap $ templateItems) *** (fmap.fmap $ templateItems )) (tst,expected)
+     tst_companies `shouldBe` expected_companies                                                                                           
+     tst_address `shouldBe` expected_address
+     tst_items `shouldBe` expected_items
+     tst `shouldBe` expected
   describe (nameBase ''DataTemplateEntry ++ " Aeson Serialization Test") $
    it "should serialize the entry type and be consistent" $ do
      entries <- generate.generateDataTemplateEntry $ Static
      let
-       restrictedEntries = take 8 entries
-     (tst) <- runAesonSerializationTest restrictedEntries "aeson-datatemplateentry.json"
+       restrictedEntries = take 1 entries
+     (tst) <- runAesonSerializationTest restrictedEntries "aeson-datatemplateentry.json"                                     
      tst `shouldBe` (Right restrictedEntries)
   describe (nameBase 'makeUniqueLabels ++ " " ++ nameBase 'unmakeUniqueLabels) $ do 
    it "should return the same label it started with"$ do 
@@ -81,6 +91,17 @@ spec = do
        (Right result) = testJSONIpadEncoding
        recodedJSON    = encode result
      decodeToValue recodedJSON `shouldBe` decodeToValue testJSON
+
+
+encodeDecodeDataTemplate :: IO (Either String [DataTemplate],Either String [DataTemplate])
+encodeDecodeDataTemplate = do
+       forms <- generate.generateForm $ Static
+       let
+         restrictedForms = take 1 forms
+         dataTemplates = fromFormToDataTemplate <$> restrictedForms
+         tst = eitherDecode . encode $ dataTemplates
+       return (tst,Right dataTemplates)         
+
 
 testJSONIpadEncoding :: Either String DataTemplate
 testJSONIpadEncoding = fromJSONToDataTemplate testJSON

@@ -125,7 +125,7 @@ makeUniqueLabels AppendUnderScoredNumber incoming = reverse.snd $ foldl' appende
           appender (labelMap,transformedLabels) incomingLabel = case HM.lookup incomingLabel labelMap of
                                                                   Nothing -> ( HM.insert incomingLabel 1 labelMap , T.append incomingLabel "_1":transformedLabels)
                                                                   (Just i) ->let i' = succ i
-                                                                             in ( HM.insert incomingLabel i' labelMap , (incomingLabel <> "_" <> (T.pack.show $ i)):transformedLabels)
+                                                                             in ( HM.insert incomingLabel i' labelMap , (incomingLabel <> "_" <> (T.pack.show $ i')):transformedLabels)
 
 unmakeUniqueLabels :: Appender -> Text -> Text
 unmakeUniqueLabels AppendUnderScoredNumber incoming = pullOffAppender incoming
@@ -152,7 +152,7 @@ decodeInput v = InputTypeText . InputText  <$> parseJSON v  <|>
 
 -- Decode Object Function
 decodeObjectAsTemplateItems :: Value -> Parser [TemplateItem]                         
-decodeObjectAsTemplateItems (Object o) = sequence $ itemMakingFcn <$> HM.toList o
+decodeObjectAsTemplateItems (Object o) = fmap reverse . sequence $ itemMakingFcn <$> HM.toList o
                             where itemMakingFcn (k,v) = (TemplateItem . unmakeUniqueLabels AppendUnderScoredNumber $ k) <$> decodeInput v
 decodeObjectAsTemplateItems _ = fail "Expected Object, Received Other."
 
