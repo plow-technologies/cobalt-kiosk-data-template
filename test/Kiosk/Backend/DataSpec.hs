@@ -104,10 +104,13 @@ encodeDecodeDataTemplate :: IO (Either String [DataTemplate],Either String [Data
 encodeDecodeDataTemplate = do
        forms <- generate.generateForm $ Dynamic
        let
-         restrictedForms = take 1 forms
-         dataTemplates = fromFormToDataTemplate <$> restrictedForms
-         tst = eitherDecode . encode $ dataTemplates
-       return (tst,Right dataTemplates)
+         makeDataTemplates :: [Form] -> [DataTemplate]
+         makeDataTemplates restrictedForms 
+           |null restrictedForms = [] 
+           |otherwise = fromFormToDataTemplate <$> 
+                        take 1 restrictedForms
+         tst = eitherDecode . encode . makeDataTemplates $ forms
+       return (tst,Right . makeDataTemplates $ forms)
 
 
 testJSONIpadEncoding :: Either String DataTemplate

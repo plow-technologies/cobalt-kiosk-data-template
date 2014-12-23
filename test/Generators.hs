@@ -51,7 +51,8 @@ generateRow gtype = do items <- generateItems gtype
                        return $ Row items []
 
 generateRows :: GeneratorType -> Gen [Row]
-generateRows gtype = listOf $ generateRow gtype
+generateRows Dynamic = listOf $ generateRow Dynamic
+generateRows Static = staticListOf 5 <$> generateRow Static
 -- | Item Generator
 
 generateItem :: GeneratorType -> Gen Item
@@ -59,22 +60,38 @@ generateItem gtype = do itemTypes <- generateItemTypes gtype
                         return $ Item itemTypes []
 
 generateItems :: GeneratorType -> Gen [Item]
-generateItems gtype = listOf $ generateItem gtype
--- | ItemType Generator
+generateItems Dynamic = listOf $ generateItem Dynamic
+generateItems Static = staticListOf 5  <$>  generateItem Static
+
+              -- | ItemType Generator
+staticListOf :: Int -> a -> [a]
+staticListOf n = take n . repeat
 
 generateItemTypes :: GeneratorType -> Gen [ItemType]
-generateItemTypes gtype = do lbls <- listOf $ generateLabel gtype
-                             inputs <- listOf $ generateInput gtype
-                             buttons <- listOf $ generateButton gtype
-                             empties <- listOf $ generateEmptyBlock gtype
-                             tabletops <- listOf $ generateTableTopHeader gtype
-                             tablelefts <- listOf $ generateTableLefts gtype
-                             return . concat $[ItemLabel <$> lbls
-                                             ,ItemInput <$> inputs
-                                             ,ItemButton <$> buttons
-                                             ,ItemEmptyBlock <$> empties
-                                             ,ItemTableTopHeader <$> tabletops
-                                             ,ItemTableLeftHeader <$> tablelefts ]
+generateItemTypes Dynamic = do lbls <- listOf $ generateLabel Dynamic
+                               inputs <- listOf $ generateInput Dynamic
+                               buttons <- listOf $ generateButton Dynamic
+                               empties <- listOf $ generateEmptyBlock Dynamic
+                               tabletops <- listOf $ generateTableTopHeader Dynamic
+                               tablelefts <- listOf $ generateTableLefts Dynamic
+                               return . concat $[ItemLabel <$> lbls
+                                                    ,ItemInput <$> inputs
+                                                    ,ItemButton <$> buttons
+                                                    ,ItemEmptyBlock <$> empties
+                                                    ,ItemTableTopHeader <$> tabletops
+                                                    ,ItemTableLeftHeader <$> tablelefts ]
+generateItemTypes Static = do lbls <- staticListOf 5 <$> generateLabel Static
+                              inputs <- staticListOf 5 <$> generateInput Static
+                              buttons <- staticListOf 5 <$> generateButton Static
+                              empties <- staticListOf 5 <$> generateEmptyBlock Static
+                              tabletops <- staticListOf 5 <$> generateTableTopHeader Static
+                              tablelefts <- staticListOf 5 <$> generateTableLefts Static
+                              return . concat $[ItemLabel <$> lbls
+                                                          ,ItemInput <$> inputs
+                                                          ,ItemButton <$> buttons
+                                                          ,ItemEmptyBlock <$> empties
+                                                          ,ItemTableTopHeader <$> tabletops
+                                                          ,ItemTableLeftHeader <$> tablelefts ]                                                     
 -- | Label Generator
 
 generateLabel :: GeneratorType -> Gen Label
@@ -129,7 +146,8 @@ generateTemplateItem gtype = TemplateItem <$>  (head <$> generateTexts gtype)
                                           <*>  (head <$> generateInputType gtype)
 
 generateTemplateItems :: GeneratorType -> Gen [TemplateItem]
-generateTemplateItems gtype = listOf $ generateTemplateItem gtype
+generateTemplateItems Dynamic = listOf $ generateTemplateItem Dynamic
+generateTemplateItems Static = take 100 . repeat <$> generateTemplateItem Static                                                              
 
 -- | DataTemplateEntryKey
 generateDataTemplateEntryKey :: GeneratorType -> Gen [DataTemplateEntryKey]
