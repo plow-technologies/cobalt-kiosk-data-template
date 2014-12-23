@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings, TemplateHaskell #-}
 module Kiosk.Backend.Data.DataTemplate ( fromFormToDataTemplate
                                         ,fromJSONToDataTemplate
+                                        ,fromDataTemplateToCSV
                                         ,decodeObjectAsTemplateItems
                                         ,TemplateItem(..)
                                         ,DataTemplate(..)
@@ -70,7 +71,8 @@ import Control.Lens (makeLenses
                     ,folded
                     ,(^..) )
 import Data.Typeable
-
+import qualified Data.Csv as C
+import qualified Data.Vector as V
 
 
 -- Data Template Type
@@ -79,11 +81,23 @@ data DataTemplate = DataTemplate { company::Company,
                                    templateItems :: [TemplateItem]} 
                                    deriving (Ord,Eq,Show)
 
+instance C.ToRecord DataTemplate where
+  toRecord (DataTemplate _c _a ts) = V.fromList $ C.toField <$> ts
+
 -- instance Tabular DataTemplate where
 
 data TemplateItem = TemplateItem {
             label :: Text
             , templateValue :: InputType } deriving (Show,Ord,Eq)
+
+instance C.ToField TemplateItem where
+  toField (TemplateItem _ (InputTypeText (InputText t))) = C.toField t
+  toField (TemplateItem _ (InputTypeInt (InputInt i))) = C.toField i
+  toField (TemplateItem _ (InputTypeDouble (InputDouble d))) = C.toField d
+  toField (TemplateItem _ (InputTypeSignature (Signature s))) = C.toField s
+
+  
+instance C.FromField TemplateItem where
 
 -- Make Lenses   
 makeLenses ''Form
@@ -206,6 +220,10 @@ fromFormToDataTemplate (Form c a rs)  = DataTemplate c a (extractData rs)
 
 fromJSONToDataTemplate :: ByteString -> Either String DataTemplate
 fromJSONToDataTemplate bs = eitherDecode bs :: Either String DataTemplate
+
+-- fromDataTemplateToCSV :: V.Vector DataTemplate -> ByteString
+fromDataTemplateToCSV :: C.ToRecord a => [a] -> ByteString
+fromDataTemplateToCSV dts =  C.encode dts
 
 checkType :: (Typeable a1, Typeable a) => a -> a1 -> Bool
 checkType a b = typeOf a == typeOf b

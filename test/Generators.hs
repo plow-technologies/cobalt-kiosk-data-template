@@ -15,7 +15,7 @@ Create Test forms for use in modules
 -}
 {-# LANGUAGE OverloadedStrings #-}
 module Generators (GeneratorType (..)
-                  ,generateForm, generateDataTemplateEntry) where
+                  ,generateForm, generateDataTemplate, generateDataTemplateEntry) where
 import           Control.Applicative             ((<$>), (<*>))
 import           Data.UUID                       (nil)
 import           Kiosk.Backend.Data              (DataTemplateEntry (..),
@@ -91,7 +91,7 @@ generateItemTypes Static = do lbls <- staticListOf 5 <$> generateLabel Static
                                                           ,ItemButton <$> buttons
                                                           ,ItemEmptyBlock <$> empties
                                                           ,ItemTableTopHeader <$> tabletops
-                                                          ,ItemTableLeftHeader <$> tablelefts ]                                                     
+                                                          ,ItemTableLeftHeader <$> tablelefts ]
 -- | Label Generator
 
 generateLabel :: GeneratorType -> Gen Label
@@ -147,7 +147,7 @@ generateTemplateItem gtype = TemplateItem <$>  (head <$> generateTexts gtype)
 
 generateTemplateItems :: GeneratorType -> Gen [TemplateItem]
 generateTemplateItems Dynamic = listOf $ generateTemplateItem Dynamic
-generateTemplateItems Static = take 100 . repeat <$> generateTemplateItem Static                                                              
+generateTemplateItems Static = take 100 . repeat <$> generateTemplateItem Static
 
 -- | DataTemplateEntryKey
 generateDataTemplateEntryKey :: GeneratorType -> Gen [DataTemplateEntryKey]
