@@ -52,14 +52,13 @@ import qualified Data.Text as T
 import Data.Text (Text)
 import Data.Monoid ((<>))
 import Data.ByteString.Lazy.Internal (ByteString)
-import Data.Attoparsec.Text (parseOnly
+import Data.Attoparsec.Text ( parseOnly
                              ,decimal
                              ,char
                              ,takeText
-                             ,anyChar
-                             ,atEnd)
+                             )
 
-import Control.Applicative ((<$>), (<*>), (<|>),(*>),(<*))
+import Control.Applicative ((<$>), (<*>), (<|>),(*>))
 import           Control.Monad             (mzero)
 import qualified Data.HashMap.Strict as HM 
 import Data.Foldable (foldl')
@@ -106,11 +105,11 @@ encodeTemplateItemsAsObject items = object $ fmap objectMaker $ labelIncrementor
                        codeAsInputType (InputTypeSignature (Signature s)) = toJSON s
                        codeAsInputType (InputTypeInt (InputInt s)) = toJSON s                                                             
                        codeAsInputType (InputTypeDouble (InputDouble s)) = toJSON s                                                                    
-                       labelIncrementor templateItems = replaceOldLabels templateItems . 
-                                                          makeUniqueLabels AppendUnderScoredNumber . 
-                                                          makeTexts $ templateItems
+                       labelIncrementor templateItems' = replaceOldLabels templateItems' . 
+                                                           makeUniqueLabels AppendUnderScoredNumber . 
+                                                           makeTexts $ templateItems'
                        makeTexts = fmap label
-                       replaceOldLabels templateItems labels = zipWith (\ti l -> ti {label = l}) templateItems labels
+                       replaceOldLabels templateItems' labels = zipWith (\ti l -> ti {label = l}) templateItems' labels
 
 
 data Appender = AppendUnderScoredNumber

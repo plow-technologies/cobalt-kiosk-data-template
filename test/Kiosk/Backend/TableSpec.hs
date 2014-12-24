@@ -6,10 +6,11 @@ import           Kiosk.Backend.Data
 
 
 import           Control.Lens
-import           Data.Aeson
-import           Data.Foldable
-import           Data.Table
-import           Generators
+
+
+import           Data.Table  
+import           Generators (generateDataTemplateEntry
+                            ,GeneratorType(..))
 import           Test.Hspec
 import           Test.Serial
 
@@ -24,8 +25,8 @@ spec = do
   describe ("Serialization test TemplateTable") $
     it "should transform a Form to a DataTemplate" $ do
      tables <- testTable
-     (Right rslt) <- runCerealSerializationTest tables "template-table.serial"
-     rslt `shouldBe` tables
+     rslt <- runCerealSerializationTest tables "template-table.serial"
+     rslt `shouldBe` (Right tables)
 
 
 
@@ -35,5 +36,3 @@ testTableEntries = generate $ generateDataTemplateEntry Static
 testTable :: IO TemplateTable
 testTable = do templateEntries <- testTableEntries
                return $   getTemplateTable  #  ( (take 10 templateEntries) ^. table)
-
-

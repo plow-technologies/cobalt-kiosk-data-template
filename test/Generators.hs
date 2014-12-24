@@ -15,15 +15,20 @@ Create Test forms for use in modules
 -}
 {-# LANGUAGE OverloadedStrings #-}
 module Generators (GeneratorType (..)
-                  ,generateForm, generateDataTemplateEntry) where
+                  ,generateForm
+                  ,generateDataTemplateEntry
+                  ,checkStaticGeneratorConsistency) where
+
 import           Control.Applicative             ((<$>), (<*>))
 import           Data.UUID                       (nil)
 import           Kiosk.Backend.Data              (DataTemplateEntry (..),
                                                   DataTemplateEntryKey (..))
 import           Kiosk.Backend.Data.DataTemplate (DataTemplate (..),
                                                   TemplateItem (..))
-import           Kiosk.Backend.Form
-import           Mocks.Primitive.Generators
+import           Kiosk.Backend.Form 
+import           Mocks.Primitive.Generators (GeneratorType(..)
+                                            ,generateTexts
+                                            ,generateInts)
 import           Test.QuickCheck
 
 -- | Form Generator
@@ -68,39 +73,39 @@ staticListOf :: Int -> a -> [a]
 staticListOf n = take n . repeat
 
 generateItemTypes :: GeneratorType -> Gen [ItemType]
-generateItemTypes Dynamic = do lbls <- listOf $ generateLabel Dynamic
-                               inputs <- listOf $ generateInput Dynamic
-                               buttons <- listOf $ generateButton Dynamic
+generateItemTypes Dynamic = do lbls <- generateLabel Dynamic
+                               inputs <- generateInput Dynamic
+                               buttons <-  generateButton Dynamic
                                empties <- listOf $ generateEmptyBlock Dynamic
-                               tabletops <- listOf $ generateTableTopHeader Dynamic
-                               tablelefts <- listOf $ generateTableLefts Dynamic
+                               tabletops <-  generateTableTopHeader Dynamic
+                               tablelefts <- generateTableLefts Dynamic
                                return . concat $[ItemLabel <$> lbls
                                                     ,ItemInput <$> inputs
                                                     ,ItemButton <$> buttons
                                                     ,ItemEmptyBlock <$> empties
                                                     ,ItemTableTopHeader <$> tabletops
                                                     ,ItemTableLeftHeader <$> tablelefts ]
-generateItemTypes Static = do lbls <- staticListOf 5 <$> generateLabel Static
-                              inputs <- staticListOf 5 <$> generateInput Static
-                              buttons <- staticListOf 5 <$> generateButton Static
+generateItemTypes Static = do lbls <- take 5 <$> generateLabel Static
+                              inputs <- take 5 <$> generateInput Static
+                              buttons <- take 5 <$> generateButton Static
                               empties <- staticListOf 5 <$> generateEmptyBlock Static
-                              tabletops <- staticListOf 5 <$> generateTableTopHeader Static
-                              tablelefts <- staticListOf 5 <$> generateTableLefts Static
+                              tabletops <- take 5 <$> generateTableTopHeader Static
+                              tablelefts <- take 5 <$> generateTableLefts Static
                               return . concat $[ItemLabel <$> lbls
-                                                          ,ItemInput <$> inputs
-                                                          ,ItemButton <$> buttons
-                                                          ,ItemEmptyBlock <$> empties
-                                                          ,ItemTableTopHeader <$> tabletops
-                                                          ,ItemTableLeftHeader <$> tablelefts ]                                                     
+                                               ,ItemInput <$> inputs
+                                               ,ItemButton <$> buttons
+                                               ,ItemEmptyBlock <$> empties
+                                               ,ItemTableTopHeader <$> tabletops
+                                               ,ItemTableLeftHeader <$> tablelefts ]                                                     
 -- | Label Generator
 
-generateLabel :: GeneratorType -> Gen Label
-generateLabel gtype =  flip Label [] . head <$>
+generateLabel :: GeneratorType -> Gen [Label]
+generateLabel gtype =  (fmap (flip Label []))  <$>
                        generateTexts gtype
 
 -- | Input Generator
-generateInput :: GeneratorType -> Gen Input
-generateInput gtype = flip Input [] . head <$>
+generateInput :: GeneratorType -> Gen [Input]
+generateInput gtype = (fmap  (flip Input [])) <$>
                       generateInputType gtype
 
 generateInputType :: GeneratorType -> Gen [InputType]
@@ -119,8 +124,8 @@ generateInputSignatures gtype = do txts <- generateTexts gtype
                                    return $ Signature <$> txts
 
 -- | Button Generator
-generateButton :: GeneratorType -> Gen Button
-generateButton gtype = flip Button [] . head <$>
+generateButton :: GeneratorType -> Gen [Button]
+generateButton gtype = (fmap (flip Button [] )) <$>
                        generateTexts gtype
 
 -- | EmptyBlock Generator
@@ -128,12 +133,12 @@ generateEmptyBlock :: Monad m => t -> m EmptyBlock
 generateEmptyBlock _gtype = return Null
 
 -- | TableTopHeader
-generateTableTopHeader :: GeneratorType -> Gen TableTopHeader
-generateTableTopHeader gtype = TableTopHeader . head <$>
-                               generateTexts gtype
+generateTableTopHeader :: GeneratorType -> Gen [TableTopHeader]
+generateTableTopHeader gtype = fmap TableTopHeader <$>
+                                 generateTexts gtype
 -- | TableLeftHeader
-generateTableLefts :: GeneratorType -> Gen TableLeftHeader
-generateTableLefts gtype = TableLeftHeader . head <$>
+generateTableLefts :: GeneratorType -> Gen [TableLeftHeader]
+generateTableLefts gtype = fmap TableLeftHeader  <$>
                            generateTexts gtype
 
 
@@ -141,13 +146,13 @@ generateTableLefts gtype = TableLeftHeader . head <$>
 
 
 -- | TemplateItem Generator
-generateTemplateItem :: GeneratorType -> Gen TemplateItem
-generateTemplateItem gtype = TemplateItem <$>  (head <$> generateTexts gtype)
-                                          <*>  (head <$> generateInputType gtype)
+generateTemplateItem :: GeneratorType -> Gen [TemplateItem]
+generateTemplateItem gtype = ((<*>).fmap TemplateItem) <$>  generateTexts gtype
+                                                          <*>  generateInputType gtype
 
 generateTemplateItems :: GeneratorType -> Gen [TemplateItem]
-generateTemplateItems Dynamic = listOf $ generateTemplateItem Dynamic
-generateTemplateItems Static = take 100 . repeat <$> generateTemplateItem Static                                                              
+generateTemplateItems Dynamic = generateTemplateItem Dynamic
+generateTemplateItems Static = take 10 <$> generateTemplateItem Static                                                              
 
 -- | DataTemplateEntryKey
 generateDataTemplateEntryKey :: GeneratorType -> Gen [DataTemplateEntryKey]
@@ -176,4 +181,9 @@ generateDataTemplateEntry gtype = do
                            return $ DataTemplateEntry <$> dEntryKey
                                                       <*> dEntry
 
+
+checkStaticGeneratorConsistency :: Int -> Gen Bool
+checkStaticGeneratorConsistency i = let x = (take i) <$> (generateDataTemplateEntry Static)
+                                        y =  (take i) <$> (generateDataTemplateEntry Static)
+                                    in (==) <$> x <*>  y
 

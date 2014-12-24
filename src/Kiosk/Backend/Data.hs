@@ -10,8 +10,7 @@ module Kiosk.Backend.Data ( DataTemplateEntry (..)
                           , dataTemplateEntryKey
                           , dataTemplateEntryValue
                           , getTemplateTable
-                          , decodeUUID
-                          , TemplateTable) where
+                          , decodeUUID  ) where
 
 -- Types
 import           Data.Aeson                      (FromJSON, ToJSON,
@@ -20,16 +19,16 @@ import           Data.Aeson                      (FromJSON, ToJSON,
 import           Data.UUID                       (UUID, fromString, toString)
 -- Control
 import           Control.Applicative             ((<$>), (<*>))
-import           Control.Lens                    (makeLenses, views, (^.))
+import           Control.Lens                    (makeLenses)
 import           Data.Aeson.Serialize            (getFromJSON, putToJSON)
-import           Data.Aeson.Types                (Parser (), Value (..))
+import           Data.Aeson.Types                (Parser ())
 import           Data.Foldable                   (toList)
 import           Data.Serialize                  (Serialize, get, put)
 import           Data.Table                      (Key, PKT, Primary,
                                                   Supplemental, Tab, Table,
                                                   Tabular, fetch, forTab,
                                                   fromList, ixTab, mkTab,
-                                                  primarily, primary, table)
+                                                  primarily, primary)
 import           Kiosk.Backend.Data.DataTemplate (DataTemplate)
 
 

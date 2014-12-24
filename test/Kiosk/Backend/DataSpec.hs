@@ -9,6 +9,7 @@ import           Data.ByteString.Lazy.Internal   (ByteString)
 import           Control.Arrow                   ((***))
 import           Generators                      (GeneratorType (..),
                                                   generateDataTemplateEntry,
+                                                  checkStaticGeneratorConsistency,
                                                   generateForm)
 import           Kiosk.Backend.Data              (DataTemplateEntry (..))
 import           Kiosk.Backend.Data.DataTemplate (Appender (..),
@@ -32,6 +33,10 @@ main = hspec spec
 
 spec :: Spec
 spec = do
+  describe (nameBase 'checkStaticGeneratorConsistency) $ do 
+    it "should check that the generative tests hold equivalence for static cases" $ do
+      property $ checkStaticGeneratorConsistency                                                        
+
   describe (nameBase 'fromFormToDataTemplate) $
     it "should transform a Form to a DataTemplate" $ do
       forms <- generate.generateForm $ Static
@@ -65,7 +70,7 @@ spec = do
      putStrLn "\nDataTemplates:" >> print dataTemplates
      tst `shouldBe` (Right dataTemplates)
 
-  describe (nameBase ''DataTemplate ++ " Dynamic Aeson Serialization Test") $
+  describe (nameBase ''DataTemplate ++ " Dynamic Aeson Serialization Test") $ do
    it "should serialize data and be consistent for multiple inputs" $ do
      (tst,expected) <- encodeDecodeDataTemplate
      let (tst_companies,expected_companies) = ((fmap.fmap $ company) *** (fmap.fmap $ company)) (tst,expected)
@@ -73,7 +78,7 @@ spec = do
          (tst_items,expected_items) = ((fmap.fmap $ templateItems) *** (fmap.fmap $ templateItems )) (tst,expected)
      tst_companies `shouldBe` expected_companies
      tst_address `shouldBe` expected_address
-     tst_items `shouldBe` expected_items
+     (concat <$> tst_items) `shouldBe` (concat <$> expected_items)
      tst `shouldBe` expected
 
   describe (nameBase ''DataTemplateEntry ++ " Aeson Serialization Test") $
@@ -105,10 +110,8 @@ encodeDecodeDataTemplate = do
        forms <- generate.generateForm $ Dynamic
        let
          makeDataTemplates :: [Form] -> [DataTemplate]
-         makeDataTemplates restrictedForms 
-           |null restrictedForms = [] 
-           |otherwise = fromFormToDataTemplate <$> 
-                        take 1 restrictedForms
+         makeDataTemplates restrictedForms = fromFormToDataTemplate <$> 
+                                             take 1 restrictedForms
          tst = eitherDecode . encode . makeDataTemplates $ forms
        return (tst,Right . makeDataTemplates $ forms)
 
