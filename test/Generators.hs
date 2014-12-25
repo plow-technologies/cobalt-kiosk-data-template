@@ -18,7 +18,7 @@ module Generators (GeneratorType (..)
                   ,generateForm
                   ,generateDataTemplateEntry
                   ,checkStaticGeneratorConsistency) where
-
+import Data.Aeson (toJSON)
 import           Control.Applicative             ((<$>), (<*>))
 import           Data.UUID                       (nil)
 import           Kiosk.Backend.Data              (DataTemplateEntry (..),
@@ -185,5 +185,6 @@ generateDataTemplateEntry gtype = do
 checkStaticGeneratorConsistency :: Int -> Gen Bool
 checkStaticGeneratorConsistency i = let x = (take i) <$> (generateDataTemplateEntry Static)
                                         y =  (take i) <$> (generateDataTemplateEntry Static)
-                                    in (==) <$> x <*>  y
+                                    in (==) <$> (toJSON <$> x )
+                                            <*> (toJSON <$> y)
 

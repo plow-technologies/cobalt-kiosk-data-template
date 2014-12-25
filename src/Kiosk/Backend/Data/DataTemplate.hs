@@ -129,7 +129,6 @@ makeUniqueLabels AppendUnderScoredNumber incoming = reverse.snd $ foldl' appende
 unmakeUniqueLabels :: Appender -> Text -> Text
 unmakeUniqueLabels AppendUnderScoredNumber incoming = pullOffAppender incoming
   where
-    underScorePlusNumberLength = 2
     pullOffAppender = parseReversedUnderscoreIncrementor
 
 parseReversedUnderscoreIncrementor :: Text -> Text  
@@ -151,7 +150,7 @@ decodeInput v = InputTypeText . InputText  <$> parseJSON v  <|>
 
 -- Decode Object Function
 decodeObjectAsTemplateItems :: Value -> Parser [TemplateItem]                         
-decodeObjectAsTemplateItems (Object o) = fmap reverse . sequence $ itemMakingFcn <$> HM.toList o
+decodeObjectAsTemplateItems (Object o) = fmap reverse . traverse itemMakingFcn $ HM.toList o
                             where itemMakingFcn (k,v) = (TemplateItem . unmakeUniqueLabels AppendUnderScoredNumber $ k) <$> decodeInput v
 decodeObjectAsTemplateItems _ = fail "Expected Object, Received Other."
 

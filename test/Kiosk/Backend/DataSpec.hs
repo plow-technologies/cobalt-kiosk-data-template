@@ -14,13 +14,14 @@ import           Generators                      (GeneratorType (..),
 import           Kiosk.Backend.Data              (DataTemplateEntry (..))
 import           Kiosk.Backend.Data.DataTemplate (Appender (..),
                                                   DataTemplate (..),
-                                                  decodeObjectAsTemplateItems,
                                                   fromFormToDataTemplate,
                                                   fromJSONToDataTemplate,
                                                   makeUniqueLabels,
                                                   unmakeUniqueLabels)
 import           Kiosk.Backend.Form
+import Data.List (sort)
 import           Language.Haskell.TH
+import qualified Data.HashMap.Strict as HM 
 import           Mocks.Primitive.Generators      (generateTexts)
 import           Test.Hspec
 import           Test.QuickCheck
@@ -69,7 +70,7 @@ spec = do
      putStrLn "\nTest JSON :" >> print tst
      putStrLn "\nDataTemplates:" >> print dataTemplates
      tst `shouldBe` (Right dataTemplates)
-
+  
   describe (nameBase ''DataTemplate ++ " Dynamic Aeson Serialization Test") $ do
    it "should serialize data and be consistent for multiple inputs" $ do
      (tst,expected) <- encodeDecodeDataTemplate
@@ -78,7 +79,11 @@ spec = do
          (tst_items,expected_items) = ((fmap.fmap $ templateItems) *** (fmap.fmap $ templateItems )) (tst,expected)
      tst_companies `shouldBe` expected_companies
      tst_address `shouldBe` expected_address
-     (concat <$> tst_items) `shouldBe` (concat <$> expected_items)
+     (sort.concat <$> tst_items) `shouldBe` (sort.concat <$> expected_items)
+     tst `shouldBe` expected
+  describe (nameBase ''DataTemplateEntry ++ " Dynamic Aeson Test") $ do
+   it "should show that serialization works for lots of tests" $ do 
+     (tst,expected) <- encodeDecodeDataTemplateEntry
      tst `shouldBe` expected
 
   describe (nameBase ''DataTemplateEntry ++ " Aeson Serialization Test") $
@@ -107,7 +112,7 @@ spec = do
 
 encodeDecodeDataTemplate :: IO (Either String [DataTemplate],Either String [DataTemplate])
 encodeDecodeDataTemplate = do
-       forms <- generate.generateForm $ Dynamic
+       forms <- generate.generateForm $ Static
        let
          makeDataTemplates :: [Form] -> [DataTemplate]
          makeDataTemplates restrictedForms = fromFormToDataTemplate <$> 
@@ -115,6 +120,19 @@ encodeDecodeDataTemplate = do
          tst = eitherDecode . encode . makeDataTemplates $ forms
        return (tst,Right . makeDataTemplates $ forms)
 
+
+encodeDecodeDataTemplateEntry :: IO (Either String [DataTemplateEntry],Either String [DataTemplateEntry])
+encodeDecodeDataTemplateEntry = do
+       entries <- (fmap $ take 1) . generate $ generateDataTemplateEntry Static
+       let tst = eitherDecode . encode $ entries
+       return (tst,Right entries )
+
+
+encodeDecodeHashTests = do
+                          entries <- (fmap $ take 1) . generate $ generateDataTemplateEntry Static
+                          let (Object tst) = toJSON.head $ entries
+                                             
+                          return . sort . HM.toList $ tst
 
 testJSONIpadEncoding :: Either String DataTemplate
 testJSONIpadEncoding = fromJSONToDataTemplate testJSON
@@ -124,7 +142,7 @@ decodeToValue v = decode v :: Maybe Value
 
 testGenerateDataTemplate :: IO ByteString
 testGenerateDataTemplate = do
-  _forms <- generate.generateForm $ Dynamic
+  _forms <- generate.generateForm $ Static
   let
     forms = [defaultForm]
     dataTemplates = fromFormToDataTemplate <$> forms
