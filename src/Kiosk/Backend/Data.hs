@@ -26,7 +26,8 @@ import           Control.Lens                    (makeLenses, over, traverse,
 import           Data.Aeson.Serialize            (getFromJSON, putToJSON)
 import           Data.Aeson.Types                (Parser (), Value (..))
 import qualified Data.ByteString.Lazy            as LBS (append, concat,
-                                                         fromStrict)
+                                                         fromStrict, length,
+                                                         take)
 import           Data.ByteString.Lazy.Internal   (ByteString)
 import qualified Data.Csv                        as C (encode, toField)
 import           Data.Foldable                   (toList)
@@ -145,7 +146,9 @@ fromDataTemplateEntryToCsv templateEntries = LBS.append (getHeaders templatesWit
 
 getHeaders :: [DataTemplate] -> ByteString
 getHeaders [] = ""
-getHeaders lstOfTemplates = LBS.concat . fromLabelsToHeaders . templateItems . head $ lstOfTemplates
+getHeaders lstOfTemplates = LBS.append dropComma "\r\n"
+               where  bs = LBS.concat . fromLabelsToHeaders . templateItems . head $ lstOfTemplates
+                      dropComma = LBS.take (LBS.length bs -1) bs
 
 sortDataTemplates :: DataTemplate -> DataTemplate
 sortDataTemplates dts = dts {templateItems = newDts}

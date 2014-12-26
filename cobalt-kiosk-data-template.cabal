@@ -1,5 +1,5 @@
 Name:                   cobalt-kiosk-data-template
-Version:                1.0.5
+Version:                1.0.6
 Author:                 Lingpo Huang <lingpo.huang@plowtech.net>
 Maintainer:             Lingpo Huang <lingpo.huang@plowtech.net>
 License:                BSD3
@@ -32,7 +32,7 @@ Library
                       , attoparsec                 >= 0.11.0
                       , cereal                     >= 0.4.1.0
                       , cassava                    >= 0.4.2.1
-                      , vector
+                      , vector                     >= 0.10.12.2
 
 Test-Suite spec
   Type:                 exitcode-stdio-1.0
