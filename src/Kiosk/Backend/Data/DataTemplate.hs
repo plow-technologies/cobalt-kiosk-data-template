@@ -78,6 +78,7 @@ data DataTemplate = DataTemplate { company::Company,
                                    templateItems :: [TemplateItem]} 
                                    deriving (Ord,Eq,Show)
 
+
 -- instance Tabular DataTemplate where
 
 data TemplateItem = TemplateItem {

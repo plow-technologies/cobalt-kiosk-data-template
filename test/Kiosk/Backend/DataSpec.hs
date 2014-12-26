@@ -132,7 +132,9 @@ encodeDecodeHashTests = do
                           entries <- (fmap $ take 1) . generate $ generateDataTemplateEntry Static
                           let (Object tst) = toJSON.head $ entries
                                              
-                          return . sort . HM.toList $ tst
+                          return $ (HM.foldlWithKey' listSequenceCheck [] ) tst
+                          where
+                              listSequenceCheck lst k v  = (k,v):lst
 
 testJSONIpadEncoding :: Either String DataTemplate
 testJSONIpadEncoding = fromJSONToDataTemplate testJSON
