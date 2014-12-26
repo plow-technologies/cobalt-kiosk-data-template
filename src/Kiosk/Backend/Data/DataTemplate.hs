@@ -236,4 +236,3 @@ checkCompanyType a b = checkType a b
 
 -- validateDataTemplate (DataTemplate c1 a1 d1) (DataTemplate c2 a2 d2) =
 --                                    where companyValid = checkCompanyType c1 c2
-                                         

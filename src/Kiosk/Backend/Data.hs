@@ -150,5 +150,3 @@ getHeaders lstOfTemplates = LBS.concat . fromLabelsToHeaders . templateItems . h
 sortDataTemplates :: DataTemplate -> DataTemplate
 sortDataTemplates dts = dts {templateItems = newDts}
              where newDts = L.sort $ view _templateItems dts
-
-
