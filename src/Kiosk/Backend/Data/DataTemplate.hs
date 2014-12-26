@@ -5,6 +5,7 @@ module Kiosk.Backend.Data.DataTemplate ( fromFormToDataTemplate
                                         ,decodeObjectAsTemplateItems
                                         ,TemplateItem(..)
                                         ,DataTemplate(..)
+                                       , _templateItems
                                        , checkCompanyType
                                        , getCompany
                                        , row
@@ -65,11 +66,13 @@ import           Control.Monad             (mzero)
 import qualified Data.HashMap.Strict as HM 
 import Data.Foldable (foldl')
 import Control.Lens (makeLenses
+                    ,makeClassy_ 
                     ,makePrisms
                     ,traverse
                     ,folding
                     ,folded
-                    ,(^..) )
+                    ,(^..)
+                    , view)
 import Data.Typeable
 import qualified Data.Csv as C
 import qualified Data.Vector as V
@@ -106,7 +109,7 @@ makeLenses ''Item
 makeLenses ''Input                        
 makeLenses ''Label           
 makePrisms ''ItemType                                    
-makeLenses ''DataTemplate            
+makeClassy_ ''DataTemplate            
 
 
 -- JSON Instances

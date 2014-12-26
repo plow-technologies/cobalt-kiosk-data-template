@@ -11,7 +11,8 @@ module Kiosk.Backend.Data ( DataTemplateEntry (..)
                           , dataTemplateEntryValue
                           , getTemplateTable
                           , decodeUUID
-                          , TemplateTable) where
+                          , TemplateTable
+                          , fromDataTemplateEntryToCsv) where
 
 -- Types
 import           Data.Aeson                      (FromJSON, ToJSON,
@@ -20,17 +21,26 @@ import           Data.Aeson                      (FromJSON, ToJSON,
 import           Data.UUID                       (UUID, fromString, toString)
 -- Control
 import           Control.Applicative             ((<$>), (<*>))
-import           Control.Lens                    (makeLenses, views, (^.))
+import           Control.Lens                    (makeLenses, over, traverse,
+                                                  view, views, (^.))
 import           Data.Aeson.Serialize            (getFromJSON, putToJSON)
 import           Data.Aeson.Types                (Parser (), Value (..))
+import qualified Data.ByteString.Lazy            as LBS (append, concat,
+                                                         fromStrict)
+import           Data.ByteString.Lazy.Internal   (ByteString)
+import qualified Data.Csv                        as C (encode, toField)
 import           Data.Foldable                   (toList)
+import qualified Data.List                       as L (concat, sort)
 import           Data.Serialize                  (Serialize, get, put)
 import           Data.Table                      (Key, PKT, Primary,
                                                   Supplemental, Tab, Table,
                                                   Tabular, fetch, forTab,
                                                   fromList, ixTab, mkTab,
                                                   primarily, primary, table)
-import           Kiosk.Backend.Data.DataTemplate (DataTemplate)
+import           Kiosk.Backend.Data.DataTemplate (DataTemplate (..),
+                                                  TemplateItem (..),
+                                                  fromDataTemplateToCSV,
+                                                  _templateItems)
 
 
 -- |Key for Data Template
@@ -116,3 +126,29 @@ instance Tabular DataTemplateEntry where
       forTab (DTab i s) f = DTab <$> f Key i <*> f DValue s
       ixTab (DTab i _ ) Key = i
       ixTab (DTab _ vs) DValue = vs
+
+fromDataTemplatesEntryToDataTemplates :: [DataTemplateEntry] -> [DataTemplate]
+fromDataTemplatesEntryToDataTemplates dtes = view dataTemplateEntryValue <$> dtes
+
+getListOfSortedTemplateItems :: DataTemplate -> [TemplateItem]
+getListOfSortedTemplateItems dts = L.sort $ templateItems dts
+
+fromLabelsToHeaders :: [TemplateItem] -> [ByteString]
+fromLabelsToHeaders tis = flip LBS.append "," <$> (LBS.fromStrict . C.toField . label <$> tis)
+
+fromDataTemplateEntryToCsv :: [DataTemplateEntry] -> ByteString
+fromDataTemplateEntryToCsv templateEntries = LBS.append (getHeaders templatesWithSortedItems) (fromDataTemplateToCSV templatesWithSortedItems)
+                           where dataTemplates  = fromDataTemplatesEntryToDataTemplates templateEntries
+                                 templatesWithSortedItems = sortDataTemplates <$> dataTemplates
+                                 -- templatesWithSortedItems = over (traverse . _templateItems L.sort ) dataTemplates
+
+
+getHeaders :: [DataTemplate] -> ByteString
+getHeaders [] = ""
+getHeaders lstOfTemplates = LBS.concat . fromLabelsToHeaders . templateItems . head $ lstOfTemplates
+
+sortDataTemplates :: DataTemplate -> DataTemplate
+sortDataTemplates dts = dts {templateItems = newDts}
+             where newDts = L.sort $ view _templateItems dts
+
+

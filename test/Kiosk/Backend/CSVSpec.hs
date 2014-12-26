@@ -3,7 +3,8 @@
 module Kiosk.Backend.CSVSpec (main, spec) where
 
 import           Kiosk.Backend.Data              (DataTemplateEntry,
-                                                  dataTemplateEntryValue)
+                                                  dataTemplateEntryValue,
+                                                  fromDataTemplateEntryToCsv)
 import           Kiosk.Backend.Data.DataTemplate (fromDataTemplateToCSV,
                                                   fromFormToDataTemplate)
 import           Kiosk.Backend.Form              (defaultForm)
@@ -31,7 +32,7 @@ spec = do
        print rslt
        validateBS rslt `shouldBe` False
 
-  describe (nameBase 'fromDataTemplateToCSV ++ "CSV Actual Test") $
+  describe (nameBase 'fromDataTemplateToCSV ++ " CSV Actual Test") $
     it "Should tranform actual DataTeplate to a Empty CSV" $ do
        let
         forms = [defaultForm]
@@ -41,13 +42,22 @@ spec = do
        print rslt
        validateBS rslt `shouldBe` False
 
-  describe (nameBase 'fromDataTemplateToCSV ++ "CSV Actual Test") $
-    it "Should tranform actual DataTeplate to a Actual CSV" $ do
+  describe (nameBase 'fromDataTemplateToCSV ++ " CSV Actual Test") $
+    it "Should tranform actual DataTemplate to a Actual CSV" $ do
        let
         (Right dtEntry) = eitherDecode testDataTemplateEntryJSON :: Either String DataTemplateEntry
         dt = view dataTemplateEntryValue dtEntry
         rslt = fromDataTemplateToCSV [dt]
-       print dt
+       print rslt
+       validateBS rslt `shouldBe` False
+
+  describe (nameBase 'fromDataTemplateEntryToCsv ++ " DataTemplateEntry to Csv Test") $
+    it "Should tranform actual DataTeplateEntry to a CSV" $ do
+       let
+        (Right dtEntry) = eitherDecode testDataTemplateEntryJSON :: Either String DataTemplateEntry
+        -- dt = view dataTemplateEntryValue dtEntry
+        rslt = fromDataTemplateEntryToCsv [dtEntry]
+       print dtEntry
        print rslt
        validateBS rslt `shouldBe` False
 
