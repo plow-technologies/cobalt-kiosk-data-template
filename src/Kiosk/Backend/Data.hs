@@ -55,14 +55,14 @@ data DataTemplateEntryKey = DataTemplateEntryKey {
 
 instance ToJSON DataTemplateEntryKey where
   toJSON (DataTemplateEntryKey date uuid fId) = object [
-                                                "date" .= date
+                                                "date" .= show date
                                               , "uuid" .= toString uuid
-                                              , "formid" .= fId]
+                                              , "formid" .= (show fId)]
 
 instance FromJSON DataTemplateEntryKey where
-  parseJSON (Object o) = DataTemplateEntryKey <$> o .: "date"
+  parseJSON (Object o) = DataTemplateEntryKey <$> (o .: "date" >>= return.read )
                                               <*> ((o .: "uuid") >>= decodeUUID)
-                                              <*> o .: "formid"
+                                              <*> ((o .: "formid") >>= return.read)
   parseJSON _ = fail "Expecting DataTemplateEntryKey Object, Received Other"
 
 decodeUUID :: Value -> Parser UUID
@@ -79,7 +79,7 @@ data DataTemplateEntry = DataTemplateEntry {
                        _dataTemplateEntryKey   :: DataTemplateEntryKey,
                        _dataTemplateEntryValue :: DataTemplate
                                                  }
-           deriving (Show,Eq)
+           deriving (Show,Eq,Ord)
 
 makeLenses ''DataTemplateEntry
 -- | Aeson Instances

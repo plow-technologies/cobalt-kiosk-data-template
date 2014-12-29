@@ -38,14 +38,14 @@ spec = do
     it "should check that the generative tests hold equivalence for static cases" $ do
       property $ checkStaticGeneratorConsistency                                                        
 
-  describe (nameBase 'fromFormToDataTemplate) $
-    it "should transform a Form to a DataTemplate" $ do
-      forms <- generate.generateForm $ Static
-      let
-        restrictedForms = take 8 forms
-        dataTemplates = fromFormToDataTemplate <$> restrictedForms
-        isEmpty = null dataTemplates
-      isEmpty `shouldBe` False
+  -- describe (nameBase 'fromFormToDataTemplate) $
+  --   it "should transform a Form to a DataTemplate" $ do
+  --     forms <- generate.generateForm $ Static
+  --     let
+  --       restrictedForms = take 8 forms
+  --       dataTemplates = fromFormToDataTemplate <$> restrictedForms
+  --       isEmpty = null dataTemplates
+  --     isEmpty `shouldBe` False
 
   describe (nameBase 'fromFormToDataTemplate) $
     it "should transform a Actual Onping Form to a DataTemplate" $ do
@@ -55,21 +55,21 @@ spec = do
         isEmpty = null dataTemplates
       isEmpty `shouldBe` False
 
-  describe (nameBase ''DataTemplate ++ " Static Aeson Serialization Test") $
-   it "should serialize data and be consistent" $ do
-     forms <- generate.generateForm $ Static
-     let
-       restrictedForms = take 1 forms
-       dataTemplates = fromFormToDataTemplate <$> restrictedForms
-     (tst) <- runAesonSerializationTest dataTemplates "aeson-datatemplate.json"
-     putStrLn "\nencode :" >> print (toJSON dataTemplates)
-     let x = ((eitherDecode . encode $ dataTemplates)::Either String [DataTemplate])
-     case x of
-      Left e-> print e
-      Right r->print (toJSON r)
-     putStrLn "\nTest JSON :" >> print tst
-     putStrLn "\nDataTemplates:" >> print dataTemplates
-     tst `shouldBe` (Right dataTemplates)
+  -- describe (nameBase ''DataTemplate ++ " Static Aeson Serialization Test") $
+  --  it "should serialize data and be consistent" $ do
+  --    forms <- generate.generateForm $ Static
+  --    let
+  --      restrictedForms = take 1 forms
+  --      dataTemplates = fromFormToDataTemplate <$> restrictedForms
+  --    (tst) <- runAesonSerializationTest dataTemplates "aeson-datatemplate.json"
+  --    putStrLn "\nencode :" >> print (toJSON dataTemplates)
+  --    let x = ((eitherDecode . encode $ dataTemplates)::Either String [DataTemplate])
+  --    case x of
+  --     Left e-> print e
+  --     Right r->print (toJSON r)
+  --    putStrLn "\nTest JSON :" >> print tst
+  --    putStrLn "\nDataTemplates:" >> print dataTemplates
+  --    tst `shouldBe` (Right dataTemplates)
   
   describe (nameBase ''DataTemplate ++ " Dynamic Aeson Serialization Test") $ do
    it "should serialize data and be consistent for multiple inputs" $ do
@@ -86,20 +86,20 @@ spec = do
      (tst,expected) <- encodeDecodeDataTemplateEntry
      tst `shouldBe` expected
 
-  describe (nameBase ''DataTemplateEntry ++ " Aeson Serialization Test") $
-   it "should serialize the entry type and be consistent" $ do
-     entries <- generate.generateDataTemplateEntry $ Static
-     let
-       restrictedEntries = take 1 entries
-     (tst) <- runAesonSerializationTest restrictedEntries "aeson-datatemplateentry.json"
-     tst `shouldBe` (Right restrictedEntries)
+  -- describe (nameBase ''DataTemplateEntry ++ " Aeson Serialization Test") $
+  --  it "should serialize the entry type and be consistent" $ do
+  --    entries <- generate.generateDataTemplateEntry $ Static
+  --    let
+  --      restrictedEntries = take 1 entries
+  --    (tst) <- runAesonSerializationTest restrictedEntries "aeson-datatemplateentry.json"
+  --    tst `shouldBe` (Right restrictedEntries)
 
-  describe (nameBase 'makeUniqueLabels ++ " " ++ nameBase 'unmakeUniqueLabels) $ do
-   it "should return the same label it started with"$ do
-     txts <- generate $ generateTexts Dynamic
-     let coded = makeUniqueLabels AppendUnderScoredNumber txts
-         uncoded = unmakeUniqueLabels AppendUnderScoredNumber <$> coded
-     txts `shouldBe` uncoded
+  -- describe (nameBase 'makeUniqueLabels ++ " " ++ nameBase 'unmakeUniqueLabels) $ do
+  --  it "should return the same label it started with"$ do
+  --    txts <- generate $ generateTexts Dynamic
+  --    let coded = makeUniqueLabels AppendUnderScoredNumber txts
+  --        uncoded = unmakeUniqueLabels AppendUnderScoredNumber <$> coded
+  --    txts `shouldBe` uncoded
 
 
   describe (nameBase 'fromJSONToDataTemplate ++ " IPAD Serialization Test") $

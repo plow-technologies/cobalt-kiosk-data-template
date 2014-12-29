@@ -20,4 +20,4 @@ testJSON = "{\"data\":{\"Name_of_Lease_Operator_1\":\"Scott\",\"Field_Name_1\":\
 expectedDataTemplate = undefined
 
 testDataTemplateEntryJSON :: ByteString
-testDataTemplateEntryJSON = "{\"value\":{\"data\":{\"Name_of_Lease_Operator_1\": \"Scott\",\"Field_Name_1\": \"Ling's_Oilfield\", \"Flowback_Water_1\": 10},\"address\":\"testAddress\",\"company\":\"testCompany\"},\"key\":{\"uuid\":\"00000000-0000-0000-0000-000000000000\",\"date\":1418937506,\"formid\":1}}"
+testDataTemplateEntryJSON = "{\"value\":{\"data\":{\"Name_of_Lease_Operator_1\": \"Scott\",\"Field_Name_1\": \"Ling's_Oilfield\", \"Flowback_Water_1\": 10},\"address\":\"testAddress\",\"company\":\"testCompany\"},\"key\":{\"uuid\":\"00000000-0000-0000-0000-000000000000\",\"date\":\"1418937506\",\"formid\":\"1\"}}"
