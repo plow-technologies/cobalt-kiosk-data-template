@@ -54,7 +54,7 @@ data DataTemplateEntryKey = DataTemplateEntryKey {
    deriving (Eq,Ord,Show)
 
 instance ToJSON DataTemplateEntryKey where
-  toJSON (DataTemplateEntryKey fId uuid date) = object [
+  toJSON (DataTemplateEntryKey date uuid fId) = object [
                                                 "date" .= date
                                               , "uuid" .= toString uuid
                                               , "formid" .= fId]
