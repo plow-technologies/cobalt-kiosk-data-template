@@ -26,6 +26,7 @@ import           Kiosk.Backend.Data              (DataTemplateEntry (..),
                                                   DataTemplateEntryKey (..))
 import           Kiosk.Backend.Data.DataTemplate (DataTemplate (..),
                                                   TemplateItem (..))
+import Data.List (nub)
 import           Kiosk.Backend.Form
 import           Mocks.Primitive.Generators      (GeneratorType (..),
                                                   generateInts, generateTexts)
@@ -178,8 +179,8 @@ generateDataTemplateEntry :: GeneratorType -> Gen [DataTemplateEntry]
 generateDataTemplateEntry gtype = do
                            dEntryKey <- generateDataTemplateEntryKey gtype
                            dEntry <- generateDataTemplate gtype
-                           return $ DataTemplateEntry <$> dEntryKey
-                                                      <*> dEntry
+                           return . nub $ DataTemplateEntry <$> dEntryKey
+                                                                             <*> dEntry
 
 
 checkStaticGeneratorConsistency :: Int -> Gen Bool
