@@ -43,14 +43,14 @@ data DataTemplateEntryKey = DataTemplateEntryKey {
 
 instance ToJSON DataTemplateEntryKey where
   toJSON (DataTemplateEntryKey fId uuid date) = object [
-                                                "date" .= date
+                                                "date" .= (show date)
                                               , "uuid" .= toString uuid
-                                              , "formid" .= fId]
+                                              , "formid" .= (show fId)]
 
 instance FromJSON DataTemplateEntryKey where
   parseJSON (Object o) = DataTemplateEntryKey <$> o .: "date"
                                               <*> ((o .: "uuid") >>= decodeUUID)
-                                              <*> o .: "formid"
+                                              <*> ((o .: "formid") >>= return.read)
   parseJSON _ = fail "Expecting DataTemplateEntryKey Object, Received Other"
 
 decodeUUID :: Value -> Parser UUID
