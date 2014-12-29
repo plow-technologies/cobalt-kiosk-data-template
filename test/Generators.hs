@@ -17,18 +17,18 @@ Create Test forms for use in modules
 module Generators (GeneratorType (..)
                   ,generateForm
                   ,generateDataTemplateEntry
+                  ,generateDataTemplate
                   ,checkStaticGeneratorConsistency) where
-import Data.Aeson (toJSON)
 import           Control.Applicative             ((<$>), (<*>))
+import           Data.Aeson                      (toJSON)
 import           Data.UUID                       (nil)
 import           Kiosk.Backend.Data              (DataTemplateEntry (..),
                                                   DataTemplateEntryKey (..))
 import           Kiosk.Backend.Data.DataTemplate (DataTemplate (..),
                                                   TemplateItem (..))
-import           Kiosk.Backend.Form 
-import           Mocks.Primitive.Generators (GeneratorType(..)
-                                            ,generateTexts
-                                            ,generateInts)
+import           Kiosk.Backend.Form
+import           Mocks.Primitive.Generators      (GeneratorType (..),
+                                                  generateInts, generateTexts)
 import           Test.QuickCheck
 
 -- | Form Generator
@@ -96,7 +96,7 @@ generateItemTypes Static = do lbls <- take 5 <$> generateLabel Static
                                                ,ItemButton <$> buttons
                                                ,ItemEmptyBlock <$> empties
                                                ,ItemTableTopHeader <$> tabletops
-                                               ,ItemTableLeftHeader <$> tablelefts ]                                                     
+                                               ,ItemTableLeftHeader <$> tablelefts ]
 -- | Label Generator
 
 generateLabel :: GeneratorType -> Gen [Label]
@@ -152,7 +152,7 @@ generateTemplateItem gtype = ((<*>).fmap TemplateItem) <$>  generateTexts gtype
 
 generateTemplateItems :: GeneratorType -> Gen [TemplateItem]
 generateTemplateItems Dynamic = generateTemplateItem Dynamic
-generateTemplateItems Static = take 10 <$> generateTemplateItem Static                                                              
+generateTemplateItems Static = take 10 <$> generateTemplateItem Static
 
 -- | DataTemplateEntryKey
 generateDataTemplateEntryKey :: GeneratorType -> Gen [DataTemplateEntryKey]
@@ -187,4 +187,3 @@ checkStaticGeneratorConsistency i = let x = (take i) <$> (generateDataTemplateEn
                                         y =  (take i) <$> (generateDataTemplateEntry Static)
                                     in (==) <$> (toJSON <$> x )
                                             <*> (toJSON <$> y)
-
