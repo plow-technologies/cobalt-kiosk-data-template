@@ -1,4 +1,5 @@
-{-# LANGUAGE OverloadedStrings, TemplateHaskell #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module Kiosk.Backend.Data.DataTemplate ( fromFormToDataTemplate
                                         ,fromJSONToDataTemplate
                                         ,fromDataTemplateToCSV
@@ -26,71 +27,48 @@ module Kiosk.Backend.Data.DataTemplate ( fromFormToDataTemplate
                                         ,getAddress) where
 
 
-import Kiosk.Backend.Form (Item(..)
-                          ,ItemType(..)
-                          ,Label(..)
-                          ,Form(..)
-                          ,Row(..)
-                          ,Company (..)
-                          ,Address(..)
-                          ,Signature (..)
-                          ,Input(..)
-                          ,InputType(..)
-                          ,InputText(..)
-                          ,InputInt(..)
-                          ,InputDouble(..)
-                          )
-import Data.Aeson (ToJSON 
-                  ,FromJSON
-                  ,toJSON
-                  ,parseJSON
-                  ,Value(..)
-                  ,object
-                  ,(.=)                    
-                  ,(.:)
-                  ,eitherDecode)
-import  Data.Aeson.Types  (Parser)
-import qualified Data.Text as T
-import Data.Text (Text)
-import Data.Monoid ((<>))
-import Data.ByteString.Lazy.Internal (ByteString)
-import Data.Attoparsec.Text (parseOnly
-                             ,decimal
-                             ,char
-                             ,takeText
-                             ,anyChar
-                             ,atEnd)
+import           Data.Aeson                    (FromJSON, ToJSON, Value (..),
+                                                eitherDecode, object, parseJSON,
+                                                toJSON, (.:), (.=))
+import           Data.Aeson.Types              (Parser)
+import           Data.Attoparsec.Text          (anyChar, atEnd, char, decimal,
+                                                parseOnly, takeText)
+import           Data.ByteString.Lazy.Internal (ByteString)
+import           Data.Monoid                   ((<>))
+import           Data.Text                     (Text)
+import qualified Data.Text                     as T
+import           Kiosk.Backend.Form            (Address (..), Company (..),
+                                                Form (..), Input (..),
+                                                InputDouble (..), InputInt (..),
+                                                InputText (..), InputType (..),
+                                                Item (..), ItemType (..),
+                                                Label (..), Row (..),
+                                                Signature (..))
 
-import Control.Applicative ((<$>), (<*>), (<|>),(*>),(<*))
-import           Control.Monad             (mzero)
-import qualified Data.HashMap.Strict as HM 
-import Data.Foldable (foldl')
-import Control.Lens (makeLenses
-                    ,makeClassy_ 
-                    ,makePrisms
-                    ,traverse
-                    ,folding
-                    ,folded
-                    ,(^..)
-                    , view)
-import Data.Typeable
-import qualified Data.Csv as C
-import qualified Data.Vector as V
+import           Control.Applicative           ((*>), (<$>), (<*), (<*>), (<|>))
+import           Control.Lens                  (folded, folding, makeClassy_,
+                                                makeLenses, makePrisms,
+                                                traverse, view, (^..))
+import           Control.Monad                 (mzero)
+import qualified Data.Csv                      as C
+import           Data.Foldable                 (foldl')
+import qualified Data.HashMap.Strict           as HM
+import           Data.Typeable
+import qualified Data.Vector                   as V
 
 
 -- Data Template Type
-data DataTemplate = DataTemplate { company::Company,
-                                   address :: Address, 
-                                   templateItems :: [TemplateItem]} 
+data DataTemplate = DataTemplate {
+                                   templateItems :: [TemplateItem]}
                                    deriving (Ord,Eq,Show)
 
 instance C.ToRecord DataTemplate where
-  toRecord (DataTemplate _c _a ts) = V.fromList $ C.toField <$> ts
+  toRecord (DataTemplate ts) = V.fromList $ C.toField <$> ts
 
 -- instance Tabular DataTemplate where
 
 data TemplateItem = TemplateItem {
-            label :: Text
+            label           :: Text
             , templateValue :: InputType } deriving (Show,Ord,Eq)
 
 instance C.ToField TemplateItem where
@@ -99,17 +77,17 @@ instance C.ToField TemplateItem where
   toField (TemplateItem _ (InputTypeDouble (InputDouble d))) = C.toField d
   toField (TemplateItem _ (InputTypeSignature (Signature s))) = C.toField s
 
-  
+
 instance C.FromField TemplateItem where
 
--- Make Lenses   
+-- Make Lenses
 makeLenses ''Form
-makeLenses ''Row             
+makeLenses ''Row
 makeLenses ''Item
-makeLenses ''Input                        
-makeLenses ''Label           
-makePrisms ''ItemType                                    
-makeClassy_ ''DataTemplate            
+makeLenses ''Input
+makeLenses ''Label
+makePrisms ''ItemType
+makeClassy_ ''DataTemplate
 
 
 -- JSON Instances
@@ -118,27 +96,27 @@ encodeTemplateItemsAsObject :: [TemplateItem] -> Value
 encodeTemplateItemsAsObject items = object $ fmap objectMaker $ labelIncrementor  items
                       where
                        objectMaker (TemplateItem { label=l,
-                                            templateValue=v}) = l .= codeAsInputType v                                                                                     
+                                            templateValue=v}) = l .= codeAsInputType v
                        codeAsInputType (InputTypeText (InputText t) ) = toJSON t
                        codeAsInputType (InputTypeSignature (Signature s)) = toJSON s
-                       codeAsInputType (InputTypeInt (InputInt s)) = toJSON s                                                             
-                       codeAsInputType (InputTypeDouble (InputDouble s)) = toJSON s                                                                    
-                       labelIncrementor templateItems = replaceOldLabels templateItems . 
-                                                          makeUniqueLabels AppendUnderScoredNumber . 
+                       codeAsInputType (InputTypeInt (InputInt s)) = toJSON s
+                       codeAsInputType (InputTypeDouble (InputDouble s)) = toJSON s
+                       labelIncrementor templateItems = replaceOldLabels templateItems .
+                                                          makeUniqueLabels AppendUnderScoredNumber .
                                                           makeTexts $ templateItems
                        makeTexts = fmap label
                        replaceOldLabels templateItems labels = zipWith (\ti l -> ti {label = l}) templateItems labels
 
 
 data Appender = AppendUnderScoredNumber
-  deriving (Eq,Ord,Show)     
+  deriving (Eq,Ord,Show)
 
 
-{- | labels need to be indexed so they can be decoded correctly: 
+{- | labels need to be indexed so they can be decoded correctly:
    label, label -> label_1 label_2 -}
 makeUniqueLabels :: Appender -> [Text] -> [Text]
 makeUniqueLabels AppendUnderScoredNumber incoming = reverse.snd $ foldl' appender (HM.empty,[]) incoming
-        where 
+        where
           appender (labelMap,transformedLabels) incomingLabel = case HM.lookup incomingLabel labelMap of
                                                                   Nothing -> ( HM.insert incomingLabel 1 labelMap , T.append incomingLabel "_1":transformedLabels)
                                                                   (Just i) ->let i' = succ i
@@ -150,25 +128,25 @@ unmakeUniqueLabels AppendUnderScoredNumber incoming = pullOffAppender incoming
     underScorePlusNumberLength = 2
     pullOffAppender = parseReversedUnderscoreIncrementor
 
-parseReversedUnderscoreIncrementor :: Text -> Text  
-parseReversedUnderscoreIncrementor txt  = replaceTextWithReversedOriginalOnLeft . reverseTextThenParse $ txt 
+parseReversedUnderscoreIncrementor :: Text -> Text
+parseReversedUnderscoreIncrementor txt  = replaceTextWithReversedOriginalOnLeft . reverseTextThenParse $ txt
 
-       where reverseParser = decimal *> 
+       where reverseParser = decimal *>
                              char '_' *> takeText
              reverseTextThenParse txt' = parseOnly reverseParser (T.reverse txt')
              replaceTextWithReversedOriginalOnLeft (Left _) = txt
              replaceTextWithReversedOriginalOnLeft (Right t) = T.reverse t
 
 -- --------------------------------------------------
--- Decode Input Function 
+-- Decode Input Function
 decodeInput :: Value -> Parser InputType
 decodeInput v = InputTypeText . InputText  <$> parseJSON v  <|>
                 InputTypeSignature . Signature <$> parseJSON v <|>
-                InputTypeInt . InputInt <$> parseJSON v        <|>     
-                InputTypeDouble . InputDouble <$> parseJSON v                
+                InputTypeInt . InputInt <$> parseJSON v        <|>
+                InputTypeDouble . InputDouble <$> parseJSON v
 
 -- Decode Object Function
-decodeObjectAsTemplateItems :: Value -> Parser [TemplateItem]                         
+decodeObjectAsTemplateItems :: Value -> Parser [TemplateItem]
 decodeObjectAsTemplateItems (Object o) = fmap reverse . sequence $ itemMakingFcn <$> HM.toList o
                             where itemMakingFcn (k,v) = (TemplateItem . unmakeUniqueLabels AppendUnderScoredNumber $ k) <$> decodeInput v
 decodeObjectAsTemplateItems _ = fail "Expected Object, Received Other."
@@ -186,18 +164,12 @@ decodeStringAsAddress (String s) = return $ itemMakingFcn s
 decodeStringAsAddress _ = fail "Expected String, Received Other."
 
 
-instance ToJSON DataTemplate where 
-         toJSON (DataTemplate (Company c _ ) (Address a _) ts) =
-                object [ "company".=  c
-                       ,  "address" .= a
-                       , "data" .= encodeTemplateItemsAsObject ts]
- 
-instance FromJSON DataTemplate where 
-         parseJSON (Object o) =  DataTemplate <$> (flip Company [] 
-                                                   <$>  o .: "company"  )            
-                                              <*> (flip Address []
-                                                    <$> o .: "address")              
-                                              <*> ((o .: "data") >>= decodeObjectAsTemplateItems) 
+instance ToJSON DataTemplate where
+         toJSON (DataTemplate ts) =
+                object [ "data" .= encodeTemplateItemsAsObject ts]
+
+instance FromJSON DataTemplate where
+         parseJSON (Object o) =  DataTemplate <$> ((o .: "data") >>= decodeObjectAsTemplateItems)
          parseJSON _ = mzero
 
 -- Type for tranform function
@@ -209,7 +181,7 @@ makePrisms ''ArgConstructor
 
 -- Function to convert Form to DataTemplate
 fromFormToDataTemplate :: Form -> DataTemplate
-fromFormToDataTemplate (Form c a rs)  = DataTemplate c a (extractData rs)
+fromFormToDataTemplate (Form _c _a rs)  = DataTemplate (extractData rs)
                        where extractData :: [Row] -> [TemplateItem]
                              extractData rows = rows ^.. traverse.rowItem.traverse.item.folding itemMakerFcn
                              itemMakerFcn :: [ItemType] -> [TemplateItem]
