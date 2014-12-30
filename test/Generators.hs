@@ -21,12 +21,12 @@ module Generators (GeneratorType (..)
                   ,checkStaticGeneratorConsistency) where
 import           Control.Applicative             ((<$>), (<*>))
 import           Data.Aeson                      (toJSON)
+import           Data.List                       (nub)
 import           Data.UUID                       (nil)
 import           Kiosk.Backend.Data              (DataTemplateEntry (..),
                                                   DataTemplateEntryKey (..))
 import           Kiosk.Backend.Data.DataTemplate (DataTemplate (..),
                                                   TemplateItem (..))
-import Data.List (nub)
 import           Kiosk.Backend.Form
 import           Mocks.Primitive.Generators      (GeneratorType (..),
                                                   generateInts, generateTexts)
@@ -167,12 +167,8 @@ generateDataTemplateEntryKey gtype = do
 -- | DataTemplate Generator
 generateDataTemplate :: GeneratorType -> Gen [DataTemplate]
 generateDataTemplate gtype = do
-                     company' <- generateCompany gtype
-                     address' <- generateAddress gtype
                      tData <- generateTemplateItems gtype
-                     return $ DataTemplate <$> company'
-                                           <*> address'
-                                           <*> [tData]
+                     return $ DataTemplate <$> [tData]
 
 -- | DataTemplateEntry Generator
 generateDataTemplateEntry :: GeneratorType -> Gen [DataTemplateEntry]

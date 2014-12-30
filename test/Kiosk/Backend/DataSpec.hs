@@ -7,9 +7,10 @@ import           Data.Aeson                      (Value (..), decode,
 import           Data.ByteString.Lazy.Internal   (ByteString)
 
 import           Control.Arrow                   ((***))
-import           Generators                      (GeneratorType (..),
+import qualified Data.HashMap.Strict             as HM
+import           Data.List                       (sort)
+import           Generators                      (GeneratorType (..), checkStaticGeneratorConsistency,
                                                   generateDataTemplateEntry,
-                                                  checkStaticGeneratorConsistency,
                                                   generateForm)
 import           Kiosk.Backend.Data              (DataTemplateEntry (..))
 import           Kiosk.Backend.Data.DataTemplate (Appender (..),
@@ -19,9 +20,7 @@ import           Kiosk.Backend.Data.DataTemplate (Appender (..),
                                                   makeUniqueLabels,
                                                   unmakeUniqueLabels)
 import           Kiosk.Backend.Form
-import Data.List (sort)
 import           Language.Haskell.TH
-import qualified Data.HashMap.Strict as HM 
 import           Mocks.Primitive.Generators      (generateTexts)
 import           Test.Hspec
 import           Test.QuickCheck
@@ -34,9 +33,9 @@ main = hspec spec
 
 spec :: Spec
 spec = do
-  describe (nameBase 'checkStaticGeneratorConsistency) $ do 
+  describe (nameBase 'checkStaticGeneratorConsistency) $ do
     it "should check that the generative tests hold equivalence for static cases" $ do
-      property $ checkStaticGeneratorConsistency                                                        
+      property $ checkStaticGeneratorConsistency
 
   -- describe (nameBase 'fromFormToDataTemplate) $
   --   it "should transform a Form to a DataTemplate" $ do
@@ -70,19 +69,15 @@ spec = do
   --    putStrLn "\nTest JSON :" >> print tst
   --    putStrLn "\nDataTemplates:" >> print dataTemplates
   --    tst `shouldBe` (Right dataTemplates)
-  
+
   describe (nameBase ''DataTemplate ++ " Dynamic Aeson Serialization Test") $ do
    it "should serialize data and be consistent for multiple inputs" $ do
      (tst,expected) <- encodeDecodeDataTemplate
-     let (tst_companies,expected_companies) = ((fmap.fmap $ company) *** (fmap.fmap $ company)) (tst,expected)
-         (tst_address,expected_address) = ((fmap.fmap $ address) *** (fmap.fmap $ address)) (tst,expected)
-         (tst_items,expected_items) = ((fmap.fmap $ templateItems) *** (fmap.fmap $ templateItems )) (tst,expected)
-     tst_companies `shouldBe` expected_companies
-     tst_address `shouldBe` expected_address
+     let (tst_items,expected_items) = ((fmap.fmap $ templateItems) *** (fmap.fmap $ templateItems )) (tst,expected)
      (sort.concat <$> tst_items) `shouldBe` (sort.concat <$> expected_items)
      tst `shouldBe` expected
   describe (nameBase ''DataTemplateEntry ++ " Dynamic Aeson Test") $ do
-   it "should show that serialization works for lots of tests" $ do 
+   it "should show that serialization works for lots of tests" $ do
      (tst,expected) <- encodeDecodeDataTemplateEntry
      tst `shouldBe` expected
 
@@ -115,7 +110,7 @@ encodeDecodeDataTemplate = do
        forms <- generate.generateForm $ Static
        let
          makeDataTemplates :: [Form] -> [DataTemplate]
-         makeDataTemplates restrictedForms = fromFormToDataTemplate <$> 
+         makeDataTemplates restrictedForms = fromFormToDataTemplate <$>
                                              take 1 restrictedForms
          tst = eitherDecode . encode . makeDataTemplates $ forms
        return (tst,Right . makeDataTemplates $ forms)
@@ -131,7 +126,7 @@ encodeDecodeDataTemplateEntry = do
 encodeDecodeHashTests = do
                           entries <- (fmap $ take 1) . generate $ generateDataTemplateEntry Static
                           let (Object tst) = toJSON.head $ entries
-                                             
+
                           return $ (HM.foldlWithKey' listSequenceCheck [] ) tst
                           where
                               listSequenceCheck lst k v  = (k,v):lst
