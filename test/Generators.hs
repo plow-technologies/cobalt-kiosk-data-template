@@ -24,7 +24,8 @@ import           Data.Aeson                      (toJSON)
 import           Data.List                       (nub)
 import           Data.UUID                       (nil)
 import           Kiosk.Backend.Data              (DataTemplateEntry (..),
-                                                  DataTemplateEntryKey (..))
+                                                  DataTemplateEntryKey (..),
+                                                  TicketId (..))
 import           Kiosk.Backend.Data.DataTemplate (DataTemplate (..),
                                                   TemplateItem (..))
 import           Kiosk.Backend.Form
@@ -155,13 +156,21 @@ generateTemplateItems :: GeneratorType -> Gen [TemplateItem]
 generateTemplateItems Dynamic = generateTemplateItem Dynamic
 generateTemplateItems Static = take 10 <$> generateTemplateItem Static
 
+generateTicketId :: GeneratorType -> Gen TicketId
+generateTicketId gtype = do
+   n1 <- generateInts gtype
+   n2 <- generateInts gtype
+   return $ TicketId (head n1, head n2)
+
 -- | DataTemplateEntryKey
 generateDataTemplateEntryKey :: GeneratorType -> Gen [DataTemplateEntryKey]
 generateDataTemplateEntryKey gtype = do
                              dfromId <- generateInts gtype
                              dfDate <- generateInts gtype
+                             ticketIds <- listOf $ generateTicketId gtype
                              return $ DataTemplateEntryKey <$> dfromId
                                                            <*> [nil]
+                                                           <*> ticketIds
                                                            <*> dfDate
 
 -- | DataTemplate Generator

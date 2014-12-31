@@ -7,6 +7,7 @@
 module Kiosk.Backend.Data ( DataTemplateEntry (..)
                            ,DataTemplateEntryKey (..)
                           , TemplateTable (..)
+                          , TicketId (..)
                           , dataTemplateEntryKey
                           , dataTemplateEntryValue
                           , getTemplateTable
@@ -38,6 +39,8 @@ import           Data.Table                      (Key, PKT, Primary,
                                                   Tabular, fetch, forTab,
                                                   fromList, ixTab, mkTab,
                                                   primarily, primary, table)
+import qualified Data.Text                       as T (Text, breakOn, drop,
+                                                       pack, unpack)
 import           Kiosk.Backend.Data.DataTemplate (DataTemplate (..),
                                                   TemplateItem (..),
                                                   fromDataTemplateToCSV,
@@ -46,24 +49,43 @@ import           Kiosk.Backend.Data.DataTemplate (DataTemplate (..),
 
 -- |Key for Data Template
 
+newtype TicketId = TicketId {_getTicketIdPair :: (Int,Int) } deriving (Eq, Ord, Show)
+
+instance ToJSON TicketId where
+  toJSON (TicketId (a,b)) = toJSON (show a ++ show b)
+
 data DataTemplateEntryKey = DataTemplateEntryKey {
-                          _getDate   :: Int ,
-                          _getUUID   :: UUID,
-                          _getFormId :: Int
+                          _getDate     :: Int ,
+                          _getUUID     :: UUID,
+                          _getTicketId :: TicketId,
+                          _getFormId   :: Int
                           }
    deriving (Eq,Ord,Show)
 
 instance ToJSON DataTemplateEntryKey where
-  toJSON (DataTemplateEntryKey date uuid fId) = object [
+  toJSON (DataTemplateEntryKey date uuid ticketid fId) = object [
                                                 "date" .= show date
                                               , "uuid" .= toString uuid
-                                              , "formid" .= (show fId)]
+                                              , "ticketid" .= ticketid
+                                              , "formid" .= show fId ]
 
 instance FromJSON DataTemplateEntryKey where
   parseJSON (Object o) = DataTemplateEntryKey <$> (o .: "date" >>= return.read )
                                               <*> ((o .: "uuid") >>= decodeUUID)
+                                              <*> ((o .: "ticketid") >>= decodeTicketID)
                                               <*> ((o .: "formid") >>= return.read)
   parseJSON _ = fail "Expecting DataTemplateEntryKey Object, Received Other"
+
+decodeTicketID :: Value -> Parser TicketId
+decodeTicketID (String s) = do
+         let (s1, s2) = splitString s
+         return $ TicketId $ (read s1, read s2)
+decodeTicketID _ = fail "Expected String, Received Other"
+
+splitString :: T.Text -> (String, String)
+splitString s = (T.unpack t1, T.unpack $ T.drop 1 t2)
+      where (t1, t2) = T.breakOn ("-"::T.Text) s
+
 
 decodeUUID :: Value -> Parser UUID
 decodeUUID v = do
