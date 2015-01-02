@@ -12,7 +12,7 @@ module Kiosk.Backend.Data ( DataTemplateEntry (..)
                           , dataTemplateEntryValue
                           , getTemplateTable
                           , decodeUUID
-                          , TemplateTable
+                          , getListOfSortedTemplateItems
                           , fromDataTemplateEntryToCsv) where
 
 -- Types
@@ -22,17 +22,17 @@ import           Data.Aeson                      (FromJSON, ToJSON,
 import           Data.UUID                       (UUID, fromString, toString)
 -- Control
 import           Control.Applicative             ((<$>), (<*>))
-import           Control.Lens                    (makeLenses, over, traverse,
-                                                  view, views, (^.))
+import           Control.Lens                    (makeLenses, view)
+import           Control.Monad                   (liftM)
 import           Data.Aeson.Serialize            (getFromJSON, putToJSON)
 import           Data.Aeson.Types                (Parser (), Value (..))
 import qualified Data.ByteString.Lazy            as LBS (append, concat,
                                                          fromStrict, length,
                                                          take)
 import           Data.ByteString.Lazy.Internal   (ByteString)
-import qualified Data.Csv                        as C (encode, toField)
+import qualified Data.Csv                        as C (toField)
 import           Data.Foldable                   (toList)
-import qualified Data.List                       as L (concat, sort)
+import qualified Data.List                       as L (sort)
 import           Data.Serialize                  (Serialize, get, put)
 import           Data.Table                      (Key, PKT, Primary,
                                                   Supplemental, Tab, Table,
@@ -40,7 +40,7 @@ import           Data.Table                      (Key, PKT, Primary,
                                                   fromList, ixTab, mkTab,
                                                   primarily, primary, table)
 import qualified Data.Text                       as T (Text, breakOn, drop,
-                                                       pack, unpack)
+                                                       unpack)
 import           Kiosk.Backend.Data.DataTemplate (DataTemplate (..),
                                                   TemplateItem (..),
                                                   fromDataTemplateToCSV,
@@ -52,7 +52,7 @@ import           Kiosk.Backend.Data.DataTemplate (DataTemplate (..),
 newtype TicketId = TicketId {_getTicketIdPair :: (Int,Int) } deriving (Eq, Ord, Show)
 
 instance ToJSON TicketId where
-  toJSON (TicketId (a,b)) = toJSON (show a ++ show b)
+  toJSON (TicketId (a,b)) = toJSON (show a ++ "-" ++ show b)
 
 data DataTemplateEntryKey = DataTemplateEntryKey {
                           _getDate     :: Int ,
@@ -70,16 +70,16 @@ instance ToJSON DataTemplateEntryKey where
                                               , "formid" .= show fId ]
 
 instance FromJSON DataTemplateEntryKey where
-  parseJSON (Object o) = DataTemplateEntryKey <$> (o .: "date" >>= return.read )
+  parseJSON (Object o) = DataTemplateEntryKey <$> liftM read (o .: "date")
                                               <*> ((o .: "uuid") >>= decodeUUID)
                                               <*> ((o .: "ticketid") >>= decodeTicketID)
-                                              <*> ((o .: "formid") >>= return.read)
+                                              <*> liftM read (o .: "formid")
   parseJSON _ = fail "Expecting DataTemplateEntryKey Object, Received Other"
 
 decodeTicketID :: Value -> Parser TicketId
 decodeTicketID (String s) = do
          let (s1, s2) = splitString s
-         return $ TicketId $ (read s1, read s2)
+         return $ TicketId (read s1, read s2)
 decodeTicketID _ = fail "Expected String, Received Other"
 
 splitString :: T.Text -> (String, String)
@@ -93,7 +93,6 @@ decodeUUID v = do
            case uuid of
                 Just decodeId -> return decodeId
                 Nothing -> fail "Unable to parse UUID, please check String format."
-
 
 
 -- |Data Template Entry defines a return value of a form
@@ -163,8 +162,6 @@ fromDataTemplateEntryToCsv :: [DataTemplateEntry] -> ByteString
 fromDataTemplateEntryToCsv templateEntries = LBS.append (getHeaders templatesWithSortedItems) (fromDataTemplateToCSV templatesWithSortedItems)
                            where dataTemplates  = fromDataTemplatesEntryToDataTemplates templateEntries
                                  templatesWithSortedItems = sortDataTemplates <$> dataTemplates
-                                 -- templatesWithSortedItems = over (traverse . _templateItems L.sort ) dataTemplates
-
 
 getHeaders :: [DataTemplate] -> ByteString
 getHeaders [] = ""

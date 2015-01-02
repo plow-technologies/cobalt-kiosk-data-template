@@ -31,8 +31,8 @@ import           Data.Aeson                    (FromJSON, ToJSON, Value (..),
                                                 eitherDecode, object, parseJSON,
                                                 toJSON, (.:), (.=))
 import           Data.Aeson.Types              (Parser)
-import           Data.Attoparsec.Text          (anyChar, atEnd, char, decimal,
-                                                parseOnly, takeText)
+import           Data.Attoparsec.Text          (char, decimal, parseOnly,
+                                                takeText)
 import           Data.ByteString.Lazy.Internal (ByteString)
 import           Data.Monoid                   ((<>))
 import           Data.Text                     (Text)
@@ -45,10 +45,10 @@ import           Kiosk.Backend.Form            (Address (..), Company (..),
                                                 Label (..), Row (..),
                                                 Signature (..))
 
-import           Control.Applicative           ((*>), (<$>), (<*), (<*>), (<|>))
+import           Control.Applicative           ((*>), (<$>), (<|>))
 import           Control.Lens                  (folded, folding, makeClassy_,
                                                 makeLenses, makePrisms,
-                                                traverse, view, (^..))
+                                                traverse, (^..))
 import           Control.Monad                 (mzero)
 import qualified Data.Csv                      as C
 import           Data.Foldable                 (foldl')
@@ -123,9 +123,9 @@ makeUniqueLabels AppendUnderScoredNumber incoming = reverse.snd $ foldl' appende
                                                                              in ( HM.insert incomingLabel i' labelMap , (incomingLabel <> "_" <> (T.pack.show $ i')):transformedLabels)
 
 unmakeUniqueLabels :: Appender -> Text -> Text
-unmakeUniqueLabels AppendUnderScoredNumber incoming = pullOffAppender incoming
+unmakeUniqueLabels AppendUnderScoredNumber = pullOffAppender
   where
-    underScorePlusNumberLength = 2
+    _underScorePlusNumberLength = 2::Int
     pullOffAppender = parseReversedUnderscoreIncrementor
 
 parseReversedUnderscoreIncrementor :: Text -> Text
@@ -196,15 +196,15 @@ fromFormToDataTemplate (Form _c _a rs)  = DataTemplate (extractData rs)
 fromJSONToDataTemplate :: ByteString -> Either String DataTemplate
 fromJSONToDataTemplate bs = eitherDecode bs :: Either String DataTemplate
 
--- fromDataTemplateToCSV :: V.Vector DataTemplate -> ByteString
+
 fromDataTemplateToCSV :: C.ToRecord a => [a] -> ByteString
-fromDataTemplateToCSV dts =  C.encode dts
+fromDataTemplateToCSV =  C.encode
 
 checkType :: (Typeable a1, Typeable a) => a -> a1 -> Bool
 checkType a b = typeOf a == typeOf b
 
 checkCompanyType :: (Typeable a1, Typeable a) => a -> a1 -> Bool
-checkCompanyType a b = checkType a b
+checkCompanyType = checkType
 
 -- validateDataTemplate (DataTemplate c1 a1 d1) (DataTemplate c2 a2 d2) =
 --                                    where companyValid = checkCompanyType c1 c2
