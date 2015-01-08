@@ -2,6 +2,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 module Kiosk.Backend.Data ( DataTemplateEntry (..)
@@ -45,8 +46,8 @@ import qualified Data.Text                       as T (Text, breakOn, drop,
                                                        unpack)
 import qualified Data.Vector                     as V (fromList, (++))
 import           Kiosk.Backend.Data.DataTemplate (DataTemplate (..),
+                                                  InputText (..),
                                                   InputType (..),
-                                                  Signature (..),
                                                   TemplateItem (..),
                                                   fromDataTemplateToCSV,
                                                   _templateItems)
@@ -212,7 +213,7 @@ filterTemplateItems :: [TemplateItem] -> [TemplateItem]
 filterTemplateItems = filter notSignature
 
 notSignature :: TemplateItem -> Bool
-notSignature (TemplateItem _ (InputTypeSignature (Signature _))) = False
+notSignature (TemplateItem ("signature"::T.Text) (InputTypeText (InputText _))) = False
 notSignature _ = True
 
 fromDataTemplateEntryToCsv :: [DataTemplateEntry] -> ByteString

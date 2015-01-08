@@ -6,7 +6,7 @@ module Kiosk.Backend.Data.DataTemplate ( fromFormToDataTemplate
                                         ,decodeObjectAsTemplateItems
                                         ,TemplateItem(..)
                                         ,InputType (..)
-                                        ,Signature (..)
+                                        ,InputText (..)
                                         ,DataTemplate(..)
                                        , _templateItems
                                        , checkCompanyType
