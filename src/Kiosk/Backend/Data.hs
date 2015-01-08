@@ -87,7 +87,7 @@ instance FromJSON DataTemplateEntryKey where
   parseJSON _ = fail "Expecting DataTemplateEntryKey Object, Received Other"
 
 
-ticketIdToString :: TicketId -> [Char]
+ticketIdToString :: TicketId -> String
 ticketIdToString (TicketId (a,b)) = show a ++ "_" ++ show b
 
 decodeTicketID :: Value -> Parser TicketId
@@ -195,7 +195,7 @@ defaultKeyHeaders = "Date,FormId,TicketId,UUID,"
 
 sortDataTemplates :: DataTemplate -> DataTemplate
 sortDataTemplates dts = dts {templateItems = newDts}
-             where newDts = L.sort $ view _templateItems dts
+             where newDts = L.sort . filterTemplateItems $ view _templateItems dts
 
 sortDataTemplatesWRemoveField :: DataTemplate -> DataTemplate
 sortDataTemplatesWRemoveField dts = dts {templateItems = newDts}

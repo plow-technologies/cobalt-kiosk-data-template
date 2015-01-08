@@ -70,7 +70,7 @@ instance C.ToRecord DataTemplate where
 -- instance Tabular DataTemplate where
 
 data TemplateItem = TemplateItem {
-            label           :: Text
+              label         :: Text
             , templateValue :: InputType } deriving (Show,Ord,Eq)
 
 instance C.ToField TemplateItem where
@@ -103,11 +103,11 @@ encodeTemplateItemsAsObject items = object (objectMaker <$> labelIncrementor ite
                        codeAsInputType (InputTypeSignature (Signature s)) = toJSON s
                        codeAsInputType (InputTypeInt (InputInt s)) = toJSON s
                        codeAsInputType (InputTypeDouble (InputDouble s)) = toJSON s
-                       labelIncrementor templateItems = replaceOldLabels templateItems .
+                       labelIncrementor templateItems' = replaceOldLabels templateItems' .
                                                           makeUniqueLabels AppendUnderScoredNumber .
-                                                          makeTexts $ templateItems
+                                                          makeTexts $ templateItems'
                        makeTexts = fmap label
-                       replaceOldLabels templateItems labels = zipWith (\ti l -> ti {label = l}) templateItems labels
+                       replaceOldLabels templateItems' labels = zipWith (\ti l -> ti {label = l}) templateItems' labels
 
 
 data Appender = AppendUnderScoredNumber
