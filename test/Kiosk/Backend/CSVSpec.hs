@@ -4,7 +4,8 @@ module Kiosk.Backend.CSVSpec (main, spec) where
 
 import           Kiosk.Backend.Data              (DataTemplateEntry,
                                                   dataTemplateEntryValue,
-                                                  fromDataTemplateEntryToCsv)
+                                                  fromDataTemplateEntryToCsv,
+                                                  fromDataTemplateEntryToS3Csv)
 import           Kiosk.Backend.Data.DataTemplate (fromDataTemplateToCSV,
                                                   fromFormToDataTemplate)
 import           Kiosk.Backend.Form              (defaultForm)
@@ -55,8 +56,16 @@ spec = do
     it "Should tranform actual DataTeplateEntry to a CSV" $ do
        let
         (Right dtEntry) = eitherDecode testDataTemplateEntryJSON :: Either String DataTemplateEntry
-        -- dt = view dataTemplateEntryValue dtEntry
         rslt = fromDataTemplateEntryToCsv [dtEntry]
+       print dtEntry
+       print rslt
+       validateBS rslt `shouldBe` False
+
+  describe (nameBase 'fromDataTemplateEntryToS3Csv ++ " DataTemplateEntry to Csv Test") $
+    it "Should tranform actual DataTeplateEntry to a S3 Usage CSV" $ do
+       let
+        (Right dtEntry) = eitherDecode testDataTemplateEntryJSON :: Either String DataTemplateEntry
+        rslt = fromDataTemplateEntryToS3Csv [dtEntry]
        print dtEntry
        print rslt
        validateBS rslt `shouldBe` False

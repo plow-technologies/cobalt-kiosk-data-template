@@ -5,6 +5,8 @@ module Kiosk.Backend.Data.DataTemplate ( fromFormToDataTemplate
                                         ,fromDataTemplateToCSV
                                         ,decodeObjectAsTemplateItems
                                         ,TemplateItem(..)
+                                        ,InputType (..)
+                                        ,Signature (..)
                                         ,DataTemplate(..)
                                        , _templateItems
                                        , checkCompanyType
@@ -93,7 +95,7 @@ makeClassy_ ''DataTemplate
 -- JSON Instances
 -- | encode a list of items as a flat single object instead of as an array of objects
 encodeTemplateItemsAsObject :: [TemplateItem] -> Value
-encodeTemplateItemsAsObject items = object $ fmap objectMaker $ labelIncrementor  items
+encodeTemplateItemsAsObject items = object (objectMaker <$> labelIncrementor items)
                       where
                        objectMaker (TemplateItem { label=l,
                                             templateValue=v}) = l .= codeAsInputType v

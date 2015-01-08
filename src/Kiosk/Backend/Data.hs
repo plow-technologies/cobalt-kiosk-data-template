@@ -13,7 +13,8 @@ module Kiosk.Backend.Data ( DataTemplateEntry (..)
                           , getTemplateTable
                           , decodeUUID
                           , getListOfSortedTemplateItems
-                          , fromDataTemplateEntryToCsv) where
+                          , fromDataTemplateEntryToCsv
+                          , fromDataTemplateEntryToS3Csv) where
 
 -- Types
 import           Data.Aeson                      (FromJSON, ToJSON,
@@ -30,7 +31,8 @@ import qualified Data.ByteString.Lazy            as LBS (append, concat,
                                                          fromStrict, length,
                                                          take)
 import           Data.ByteString.Lazy.Internal   (ByteString)
-import qualified Data.Csv                        as C (toField)
+import qualified Data.Csv                        as C (ToRecord, encode,
+                                                       toField, toRecord)
 import           Data.Foldable                   (toList)
 import qualified Data.List                       as L (sort)
 import           Data.Serialize                  (Serialize, get, put)
@@ -38,10 +40,13 @@ import           Data.Table                      (Key, PKT, Primary,
                                                   Supplemental, Tab, Table,
                                                   Tabular, fetch, forTab,
                                                   fromList, ixTab, mkTab,
-                                                  primarily, primary, table)
+                                                  primarily, primary)
 import qualified Data.Text                       as T (Text, breakOn, drop,
                                                        unpack)
+import qualified Data.Vector                     as V (fromList, (++))
 import           Kiosk.Backend.Data.DataTemplate (DataTemplate (..),
+                                                  InputType (..),
+                                                  Signature (..),
                                                   TemplateItem (..),
                                                   fromDataTemplateToCSV,
                                                   _templateItems)
@@ -54,6 +59,7 @@ newtype TicketId = TicketId {_getTicketIdPair :: (Int,Int) } deriving (Eq, Ord, 
 instance ToJSON TicketId where
   toJSON (TicketId (a,b)) = toJSON (show a ++ "-" ++ show b)
 
+
 data DataTemplateEntryKey = DataTemplateEntryKey {
                           _getDate     :: Int ,
                           _getUUID     :: UUID,
@@ -61,6 +67,10 @@ data DataTemplateEntryKey = DataTemplateEntryKey {
                           _getFormId   :: Int
                           }
    deriving (Eq,Ord,Show)
+
+instance C.ToRecord DataTemplateEntryKey  where
+  toRecord (DataTemplateEntryKey d uid tid fid ) = V.fromList $ C.toField <$> lst
+                                    where lst = [C.toField d, C.toField fid, C.toField . ticketIdToString $ tid, C.toField . toString $ uid ]
 
 instance ToJSON DataTemplateEntryKey where
   toJSON (DataTemplateEntryKey date uuid ticketid fId) = object [
@@ -75,6 +85,10 @@ instance FromJSON DataTemplateEntryKey where
                                               <*> ((o .: "ticketid") >>= decodeTicketID)
                                               <*> liftM read (o .: "formid")
   parseJSON _ = fail "Expecting DataTemplateEntryKey Object, Received Other"
+
+
+ticketIdToString :: TicketId -> [Char]
+ticketIdToString (TicketId (a,b)) = show a ++ "_" ++ show b
 
 decodeTicketID :: Value -> Parser TicketId
 decodeTicketID (String s) = do
@@ -101,6 +115,10 @@ data DataTemplateEntry = DataTemplateEntry {
                        _dataTemplateEntryValue :: DataTemplate
                                                  }
            deriving (Show,Eq,Ord)
+
+
+instance C.ToRecord DataTemplateEntry where
+  toRecord (DataTemplateEntry dtk dtv) = C.toRecord dtk V.++ C.toRecord dtv
 
 makeLenses ''DataTemplateEntry
 -- | Aeson Instances
@@ -158,8 +176,8 @@ getListOfSortedTemplateItems dts = L.sort $ templateItems dts
 fromLabelsToHeaders :: [TemplateItem] -> [ByteString]
 fromLabelsToHeaders tis = flip LBS.append "," <$> (LBS.fromStrict . C.toField . label <$> tis)
 
-fromDataTemplateEntryToCsv :: [DataTemplateEntry] -> ByteString
-fromDataTemplateEntryToCsv templateEntries = LBS.append (getHeaders templatesWithSortedItems) (fromDataTemplateToCSV templatesWithSortedItems)
+fromDataTemplateEntryToS3Csv :: [DataTemplateEntry] -> ByteString
+fromDataTemplateEntryToS3Csv templateEntries = LBS.append (getHeaders templatesWithSortedItems) (fromDataTemplateToCSV templatesWithSortedItems)
                            where dataTemplates  = fromDataTemplatesEntryToDataTemplates templateEntries
                                  templatesWithSortedItems = sortDataTemplates <$> dataTemplates
 
@@ -169,6 +187,35 @@ getHeaders lstOfTemplates = LBS.append dropComma "\r\n"
                where  bs = LBS.concat . fromLabelsToHeaders . templateItems . head $ lstOfTemplates
                       dropComma = LBS.take (LBS.length bs -1) bs
 
+appendKeyHeaders :: ByteString -> ByteString
+appendKeyHeaders = LBS.append defaultKeyHeaders
+
+defaultKeyHeaders :: ByteString
+defaultKeyHeaders = "Date,FormId,TicketId,UUID,"
+
 sortDataTemplates :: DataTemplate -> DataTemplate
 sortDataTemplates dts = dts {templateItems = newDts}
              where newDts = L.sort $ view _templateItems dts
+
+sortDataTemplatesWRemoveField :: DataTemplate -> DataTemplate
+sortDataTemplatesWRemoveField dts = dts {templateItems = newDts}
+             where newDts = L.sort . filterTemplateItems $ view _templateItems dts
+
+sortDataTemplatesEntries :: [DataTemplateEntry] -> [DataTemplateEntry]
+sortDataTemplatesEntries dtes = sortDataTemplatesEntry <$> dtes
+
+sortDataTemplatesEntry :: DataTemplateEntry -> DataTemplateEntry
+sortDataTemplatesEntry dte = dte {_dataTemplateEntryValue =s}
+       where s = sortDataTemplatesWRemoveField $ view dataTemplateEntryValue dte
+
+filterTemplateItems :: [TemplateItem] -> [TemplateItem]
+filterTemplateItems = filter notSignature
+
+notSignature :: TemplateItem -> Bool
+notSignature (TemplateItem _ (InputTypeSignature (Signature _))) = False
+notSignature _ = True
+
+fromDataTemplateEntryToCsv :: [DataTemplateEntry] -> ByteString
+fromDataTemplateEntryToCsv templateEntries = LBS.append (appendKeyHeaders . getHeaders $ templatesWithSortedItems) (C.encode . sortDataTemplatesEntries $ templateEntries)
+                           where dataTemplates  = fromDataTemplatesEntryToDataTemplates templateEntries
+                                 templatesWithSortedItems = sortDataTemplatesWRemoveField <$> dataTemplates
