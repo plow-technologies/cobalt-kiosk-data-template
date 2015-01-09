@@ -7,6 +7,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 module Kiosk.Backend.Data ( DataTemplateEntry (..)
                            ,DataTemplateEntryKey (..)
+                          , DataTemplate (..)
                           , TemplateTable (..)
                           , TicketId (..)
                           , dataTemplateEntryKey
