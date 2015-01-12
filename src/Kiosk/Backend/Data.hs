@@ -97,7 +97,7 @@ oklahomaTimeZone :: TimeZone
 oklahomaTimeZone = TimeZone (-360) False "CST"
 
 intTimeToHumanTime :: Int -> String
-intTimeToHumanTime intTime = formatTime defaultTimeLocale "%Y/%m/%d/%H:%M:%S" time
+intTimeToHumanTime intTime = formatTime defaultTimeLocale "%Y/%m/%dT%H:%M:%S" time
                      where utcTime = intToUTCTime intTime
                            time = utcToZonedTime oklahomaTimeZone utcTime
 
