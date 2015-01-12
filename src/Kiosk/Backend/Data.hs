@@ -45,6 +45,10 @@ import           Data.Table                      (Key, PKT, Primary,
                                                   primarily, primary)
 import qualified Data.Text                       as T (Text, breakOn, drop,
                                                        unpack)
+import           Data.Time                       (formatTime, getCurrentTime,
+                                                  getCurrentTimeZone,
+                                                  utcToZonedTime)
+import           Data.Time.LocalTime             (TimeZone (..))
 import qualified Data.Vector                     as V (fromList, (++))
 import           Kiosk.Backend.Data.DataTemplate (DataTemplate (..),
                                                   InputText (..),
@@ -52,7 +56,8 @@ import           Kiosk.Backend.Data.DataTemplate (DataTemplate (..),
                                                   TemplateItem (..),
                                                   fromDataTemplateToCSV,
                                                   _templateItems)
-
+import           Plow.Extras.Time                (intToUTCTime)
+import           System.Locale                   (defaultTimeLocale)
 
 -- |Key for Data Template
 
@@ -72,7 +77,7 @@ data DataTemplateEntryKey = DataTemplateEntryKey {
 
 instance C.ToRecord DataTemplateEntryKey  where
   toRecord (DataTemplateEntryKey d uid tid fid ) = V.fromList $ C.toField <$> lst
-                                    where lst = [C.toField d, C.toField fid, C.toField . ticketIdToString $ tid, C.toField . toString $ uid ]
+                                    where lst = [C.toField (intTimeToHumanTime d), C.toField fid, C.toField . ticketIdToString $ tid, C.toField . toString $ uid ]
 
 instance ToJSON DataTemplateEntryKey where
   toJSON (DataTemplateEntryKey date uuid ticketid fId) = object [
@@ -88,6 +93,13 @@ instance FromJSON DataTemplateEntryKey where
                                               <*> liftM read (o .: "formid")
   parseJSON _ = fail "Expecting DataTemplateEntryKey Object, Received Other"
 
+oklahomaTimeZone :: TimeZone
+oklahomaTimeZone = TimeZone (-360) False "CST"
+
+intTimeToHumanTime :: Int -> String
+intTimeToHumanTime intTime = formatTime defaultTimeLocale "%Y/%m/%d/%H:%M:%S" time
+                     where utcTime = intToUTCTime intTime
+                           time = utcToZonedTime oklahomaTimeZone utcTime
 
 ticketIdToString :: TicketId -> String
 ticketIdToString (TicketId (a,b)) = show a ++ "_" ++ show b

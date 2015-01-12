@@ -21,19 +21,21 @@ Library
                          
   Build-Depends:        base                       >= 4 && < 5
                       , cobalt-kiosk-form-template >= 1.0.4
+                      , plow-extras-time           >= 0.1.1
                       , aeson                      
                       , text                     
                       , bytestring                 
                       , unordered-containers      
                       , lens                      >= 4 && < 4.5
-               
                       , tables                    
                       , uuid                     
                       , aeson-serialize          
                       , attoparsec               
                       , cereal                    
                       , cassava                  
-                      , vector                  
+                      , vector    
+                      , time 
+                      , old-locale            
 
 Test-Suite spec
   Type:                 exitcode-stdio-1.0
@@ -46,7 +48,8 @@ Test-Suite spec
                       , QuickCheck
                       , primitive-generator-mocks
                       , hspec
-                      , cobalt-kiosk-form-template 
+                      , cobalt-kiosk-form-template
+                      , plow-extras-time
                       , aeson
                       , cereal
                       , aeson-serialize
@@ -62,6 +65,8 @@ Test-Suite spec
                       , uuid
                       , cassava
                       , vector
+                      , time
+                      , old-locale
 
 Source-Repository head
   Type:                 git
