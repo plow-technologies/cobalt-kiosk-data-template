@@ -98,7 +98,7 @@ oklahomaTimeZone = TimeZone (-360) False "CST"
 
 intTimeToHumanTime :: Int -> String
 intTimeToHumanTime intTime = formatTime defaultTimeLocale "%Y/%m/%dT%H:%M:%S" time
-                     where utcTime = intToUTCTime intTime
+                     where utcTime = intToUTCTime (floor . fromIntegral $  (intTime `div` 1000))
                            time = utcToZonedTime oklahomaTimeZone utcTime
 
 ticketIdToString :: TicketId -> String
