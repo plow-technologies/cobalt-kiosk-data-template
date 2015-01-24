@@ -18,7 +18,12 @@ description
 -}
 
 
-module Kiosk.Backend.Data.DataTemplateEntry (DataTemplateEntry(..)) where
+module Kiosk.Backend.Data.DataTemplateEntry ( DataTemplateEntry(..)
+                                            , dataTemplateEntryKey
+                                            , dataTemplateEntryValue
+                                            , getListOfSortedTemplateItems
+                                            , fromDataTemplateEntryToCsv
+                                            , fromDataTemplateEntryToS3Csv) where
 
 import           Control.Applicative                     ((<$>), (<*>))
 import           Control.Lens                            (makeLenses, view)

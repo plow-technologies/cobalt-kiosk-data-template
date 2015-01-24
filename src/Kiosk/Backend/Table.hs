@@ -3,7 +3,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 
-module Kiosk.Backend.Table () where
+module Kiosk.Backend.Table (TemplateTable(..)
+                           ,getTemplateTable) where
 
 import           Data.Table                      (Key, PKT, Primary,
                                                   Supplemental, Tab, Table,

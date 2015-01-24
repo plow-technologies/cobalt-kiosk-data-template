@@ -16,7 +16,9 @@ Portability :  portable
 -}
 
 
-module Kiosk.Backend.Data.DataTemplateEntryKey (DataTemplateEntryKey (..)) where
+module Kiosk.Backend.Data.DataTemplateEntryKey (DataTemplateEntryKey (..)
+                                               ,TicketId(..)
+                                               ,decodeUUID) where
 
 import           Data.Time                       (formatTime, getCurrentTime,
                                                   getCurrentTimeZone,
