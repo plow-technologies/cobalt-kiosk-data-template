@@ -23,7 +23,7 @@ Each migration is tied to a form-id and another form-id.  Then there is a parser
 -}
         
         
-module Kiosk.Backend.Data.Migrations () where
+module Kiosk.Backend.Data.Migrations (FormVersionZeroEntry(..)) where
 
 import Kiosk.Backend.Data.MigrationClass 
 import Data.Text
