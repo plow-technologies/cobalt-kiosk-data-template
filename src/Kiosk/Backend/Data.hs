@@ -26,7 +26,7 @@ import           Data.Aeson                      (FromJSON, ToJSON,
 import           Data.UUID                       (UUID, fromString, toString)
 -- Control
 import           Control.Applicative             ((<$>), (<*>))
-import           Control.Lens                    (makeLenses, view)
+
 import           Control.Monad                   (liftM)
 import           Data.Aeson.Serialize            (getFromJSON, putToJSON)
 import           Data.Aeson.Types                (Parser (), Value (..))
@@ -34,8 +34,7 @@ import qualified Data.ByteString.Lazy            as LBS (append, concat,
                                                          fromStrict, length,
                                                          take)
 import           Data.ByteString.Lazy.Internal   (ByteString)
-import qualified Data.Csv                        as C (ToRecord, encode,
-                                                       toField, toRecord)
+
 import           Data.Foldable                   (toList)
 import qualified Data.List                       as L (sort)
 import           Data.Serialize                  (Serialize, get, put)
@@ -51,100 +50,17 @@ import           Data.Time                       (formatTime, getCurrentTime,
                                                   utcToZonedTime)
 import           Data.Time.LocalTime             (TimeZone (..))
 import qualified Data.Vector                     as V (fromList, (++))
-import           Kiosk.Backend.Data.DataTemplate (DataTemplate (..),
-                                                  InputText (..),
-                                                  InputType (..),
-                                                  TemplateItem (..),
-                                                  fromDataTemplateToCSV,
-                                                  _templateItems)
+
 import           Plow.Extras.Time                (intToUTCTime)
 import           System.Locale                   (defaultTimeLocale)
 
--- |Key for Data Template
-
-newtype TicketId = TicketId {_getTicketIdPair :: (Int,Int) } deriving (Eq, Ord, Show)
-
-instance ToJSON TicketId where
-  toJSON (TicketId (a,b)) = toJSON (show a ++ "-" ++ show b)
 
 
-data DataTemplateEntryKey = DataTemplateEntryKey {
-                          _getDate     :: Int ,
-                          _getUUID     :: UUID,
-                          _getTicketId :: TicketId,
-                          _getFormId   :: Int
-                          }
-   deriving (Eq,Ord,Show)
-
-instance C.ToRecord DataTemplateEntryKey  where
-  toRecord (DataTemplateEntryKey d uid tid fid ) = V.fromList $ C.toField <$> lst
-                                    where lst = [C.toField (intTimeToHumanTime d), C.toField fid, C.toField . ticketIdToString $ tid, C.toField . toString $ uid ]
-
-instance ToJSON DataTemplateEntryKey where
-  toJSON (DataTemplateEntryKey date uuid ticketid fId) = object [
-                                                "date" .= show date
-                                              , "uuid" .= toString uuid
-                                              , "ticketid" .= ticketid
-                                              , "formid" .= show fId ]
-
-instance FromJSON DataTemplateEntryKey where
-  parseJSON (Object o) = DataTemplateEntryKey <$> liftM read (o .: "date")
-                                              <*> ((o .: "uuid") >>= decodeUUID)
-                                              <*> ((o .: "ticketid") >>= decodeTicketID)
-                                              <*> liftM read (o .: "formid")
-  parseJSON _ = fail "Expecting DataTemplateEntryKey Object, Received Other"
-
-oklahomaTimeZone :: TimeZone
-oklahomaTimeZone = TimeZone (-360) False "CST"
-
-intTimeToHumanTime :: Int -> String
-intTimeToHumanTime intTime = formatTime defaultTimeLocale "%Y/%m/%dT%H:%M:%S" time
-                     where utcTime = intToUTCTime (floor . fromIntegral $  (intTime `div` 1000))
-                           time = utcToZonedTime oklahomaTimeZone utcTime
-
-ticketIdToString :: TicketId -> String
-ticketIdToString (TicketId (a,b)) = show a ++ "_" ++ show b
-
-decodeTicketID :: Value -> Parser TicketId
-decodeTicketID (String s) = do
-         let (s1, s2) = splitString s
-         return $ TicketId (read s1, read s2)
-decodeTicketID _ = fail "Expected String, Received Other"
-
-splitString :: T.Text -> (String, String)
-splitString s = (T.unpack t1, T.unpack $ T.drop 1 t2)
-      where (t1, t2) = T.breakOn ("-"::T.Text) s
 
 
-decodeUUID :: Value -> Parser UUID
-decodeUUID v = do
-           uuid <- fromString <$> parseJSON v
-           case uuid of
-                Just decodeId -> return decodeId
-                Nothing -> fail "Unable to parse UUID, please check String format."
 
 
--- |Data Template Entry defines a return value of a form
-data DataTemplateEntry = DataTemplateEntry {
-                       _dataTemplateEntryKey   :: DataTemplateEntryKey,
-                       _dataTemplateEntryValue :: DataTemplate
-                                                 }
-           deriving (Show,Eq,Ord)
 
-
-instance C.ToRecord DataTemplateEntry where
-  toRecord (DataTemplateEntry dtk dtv) = C.toRecord dtk V.++ C.toRecord dtv
-
-makeLenses ''DataTemplateEntry
--- | Aeson Instances
-instance ToJSON DataTemplateEntry where
-  toJSON (DataTemplateEntry k v) = object ["key" .= k
-                                          ,"value" .= v]
-
-instance FromJSON DataTemplateEntry where
-  parseJSON (Object o) = DataTemplateEntry <$> o .: "key"
-                                           <*> o .: "value"
-  parseJSON _          = fail "Expecting DateTemplateEntry object, Received Other"
 
 
 

@@ -19,13 +19,14 @@ Library
                         Kiosk.Backend.Data.MigrationClass
                         Kiosk.Backend.Data.Migrations
   Other-Modules:        Kiosk.Backend.Data.DataTemplate
+                        Kiosk.Backend.Data.DataTemplateEntryKey
                         Kiosk.Backend.Table
                          
   Build-Depends:        base                       >= 4 && < 5
                       , cobalt-kiosk-form-template >= 1.0.4
                       , plow-extras-time           >= 0.1.1
--- Need the markup restriction because of a conflict with trifecta
                       , blaze-markup <= 0.6.2.0
+                      , either >= 4.3.1
                       , aeson                      
                       , text                     
                       , bytestring                 
@@ -72,6 +73,36 @@ Test-Suite spec
                       , vector
                       , time
                       , old-locale
+                      , either
+
+Test-Suite docspec
+  Type:                 exitcode-stdio-1.0
+  Default-Language:     Haskell2010
+  Hs-Source-Dirs:       src
+  Ghc-Options:          -Wall
+  Main-Is:              Spec.hs
+  Build-Depends:        base
+                      , doctest
+                      , cobalt-kiosk-form-template
+                      , plow-extras-time
+                      , aeson
+                      , cereal
+                      , aeson-serialize
+                      , text     
+                      , bytestring                  
+                      , unordered-containers
+                      , containers >= 0.5.5.1
+                      , lens
+                      , template-haskell
+                      , attoparsec
+                      , tables
+                      , uuid
+                      , cassava
+                      , vector
+                      , time
+                      , old-locale
+                      , either
+
 
 Source-Repository head
   Type:                 git
