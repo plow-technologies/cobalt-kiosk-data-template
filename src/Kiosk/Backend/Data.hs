@@ -28,7 +28,7 @@ import           Data.UUID                       (UUID, fromString, toString)
 import           Control.Applicative             ((<$>), (<*>))
 
 import           Control.Monad                   (liftM)
-import           Data.Aeson.Serialize            (getFromJSON, putToJSON)
+
 import           Data.Aeson.Types                (Parser (), Value (..))
 import qualified Data.ByteString.Lazy            as LBS (append, concat,
                                                          fromStrict, length,
@@ -37,12 +37,8 @@ import           Data.ByteString.Lazy.Internal   (ByteString)
 
 import           Data.Foldable                   (toList)
 import qualified Data.List                       as L (sort)
-import           Data.Serialize                  (Serialize, get, put)
-import           Data.Table                      (Key, PKT, Primary,
-                                                  Supplemental, Tab, Table,
-                                                  Tabular, fetch, forTab,
-                                                  fromList, ixTab, mkTab,
-                                                  primarily, primary)
+
+
 import qualified Data.Text                       as T (Text, breakOn, drop,
                                                        unpack)
 import           Data.Time                       (formatTime, getCurrentTime,
@@ -62,41 +58,6 @@ import           System.Locale                   (defaultTimeLocale)
 
 
 
-
-
--- | Tabular Instances
-newtype TemplateTable = TemplateTable {_getTemplateTable ::  Table DataTemplateEntry}
-                    deriving (Show,Eq)
-makeLenses ''TemplateTable
-
-
-
-instance ToJSON TemplateTable where
-      toJSON = toJSON.toList._getTemplateTable
-
-instance FromJSON TemplateTable where
-      parseJSON v = TemplateTable . fromList <$>
-                        parseJSON v
-
-
-instance Serialize TemplateTable where
-         put = putToJSON
-         get = getFromJSON
-
-instance Tabular DataTemplateEntry where
-      type PKT DataTemplateEntry  = DataTemplateEntryKey
-      data Key k DataTemplateEntry b where
-        Key :: Key Primary DataTemplateEntry DataTemplateEntryKey
-        DValue :: Key Supplemental DataTemplateEntry DataTemplate
-      data Tab DataTemplateEntry i = DTab (i Primary DataTemplateEntryKey) (i Supplemental DataTemplate)
-      fetch Key = _dataTemplateEntryKey
-      fetch DValue = _dataTemplateEntryValue
-      primary = Key
-      primarily Key r = r
-      mkTab f = DTab <$> f Key <*> f DValue
-      forTab (DTab i s) f = DTab <$> f Key i <*> f DValue s
-      ixTab (DTab i _ ) Key = i
-      ixTab (DTab _ vs) DValue = vs
 
 fromDataTemplatesEntryToDataTemplates :: [DataTemplateEntry] -> [DataTemplate]
 fromDataTemplatesEntryToDataTemplates dtes = view dataTemplateEntryValue <$> dtes

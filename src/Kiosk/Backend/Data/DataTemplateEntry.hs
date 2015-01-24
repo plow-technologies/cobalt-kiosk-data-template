@@ -17,15 +17,21 @@ description
 -}
 
 
-module Kiosk.Backend.Data.DataTemplateEntry () where
+module Kiosk.Backend.Data.DataTemplateEntry (DataTemplateEntry(..)) where
 
 import           Control.Applicative                     ((<$>), (<*>))
 import           Control.Lens                            (makeLenses, view)
 
-import           Data.Aeson                              (FromJSON, ToJSON,
-                                                          Value (..), fromJSON,
-                                                          object, parseJSON,
-                                                          toJSON, (.:), (.=))
+import           Data.Aeson                              (FromJSON
+                                                         , ToJSON
+                                                         , Value (..)
+                                                         , fromJSON
+                                                         , object
+                                                         , parseJSON
+                                                         , toJSON
+                                                         , (.:)
+                                                         , (.=))
+                                                         
 import qualified Data.Csv                                as C (ToRecord, encode,
                                                                toField,
                                                                toRecord)
