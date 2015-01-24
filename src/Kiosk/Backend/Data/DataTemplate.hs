@@ -29,14 +29,10 @@ import           Data.Aeson                    (FromJSON, ToJSON, Value (..),
                                                 eitherDecode, object, parseJSON,
                                                 toJSON, (.:), (.=))
 import           Data.Aeson.Types              (Parser)
-import           Data.Attoparsec.Text          (char
-                                               , decimal
-                                               ,  parseOnly
-                                               ,takeText)
+
 import           Data.ByteString.Lazy.Internal (ByteString)
-import           Data.Monoid                   ((<>))
 import           Data.Text                     (Text)
-import qualified Data.Text                     as T
+
 import           Kiosk.Backend.Form            (Address (..), Company (..),
                                                 Form (..), Input (..),
                                                 InputDouble (..), InputInt (..),
@@ -45,10 +41,12 @@ import           Kiosk.Backend.Form            (Address (..), Company (..),
                                                 Label (..), Row (..),
                                                 Signature (..))
 
-import           Control.Applicative           ((*>), (<$>), (<|>))
+import           Control.Applicative           ((<$>), (<|>))
+
 import           Control.Lens                  (folded, folding, makeClassy_,
                                                 makeLenses, makePrisms,
                                                 traverse, (^..))
+
 import           Control.Monad                 (mzero)
 import qualified Data.Csv                      as C
 import           Data.Foldable                 (foldl')
@@ -69,7 +67,7 @@ instance C.ToRecord DataTemplate where
 
 data TemplateItem = TemplateItem {
               label         :: Text
-            , templateValue :: InputType } 
+            , templateValue :: InputType }
             deriving (Show,Ord,Eq)
 
 instance C.ToField TemplateItem where
@@ -79,7 +77,6 @@ instance C.ToField TemplateItem where
   toField (TemplateItem _ (InputTypeSignature (Signature s))) = C.toField s
 
 
--- instance C.FromField TemplateItem where
 
 -- Make Lenses
 makeLenses ''Form
@@ -105,7 +102,7 @@ encodeTemplateItemsAsObject items = object (objectMaker <$> labelIncrementor ite
                        labelIncrementor templateItems' = replaceOldLabels templateItems' .
                                                           makeTexts $ templateItems'
                        makeTexts = fmap label
-                       replaceOldLabels = zipWith (\ti l -> ti {label = l}) 
+                       replaceOldLabels = zipWith (\ti l -> ti {label = l})
 
 
 -- Decode Input Function
@@ -149,7 +146,9 @@ type TemplateItemConstructor = ArgConstructor Text InputType TemplateItem
 -- Lens
 makePrisms ''ArgConstructor
 
--- Function to convert Form to DataTemplate
+-- | Function to convert Form to DataTemplate
+-- This is mostly about stripping away the stuff that isn't an input field 
+  
 fromFormToDataTemplate :: Form -> DataTemplate
 fromFormToDataTemplate (Form _c _a rs)  = DataTemplate (extractData rs)
                        where extractData :: [Row] -> [TemplateItem]

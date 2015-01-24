@@ -1,8 +1,8 @@
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE GADTs               #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE GADTs #-}
 {-# LANGUAGE TemplateHaskell     #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 
 {- |
@@ -28,38 +28,27 @@ module Kiosk.Backend.Data.DataTemplateEntry ( DataTemplateEntry(..)
                                             , fromDataTemplateEntryToS3Csv) where
 
 
-import Data.Table ( Tabular
-                  , Key
-                  , Tab
-                  , Supplemental
-                  , Primary
-                  , PKT
-                  , fetch
-                  , primary
-                  , primarily
-                  , mkTab
-                  , forTab
-                  , ixTab)
 import           Control.Applicative                     ((<$>), (<*>))
 import           Control.Lens                            (makeLenses, view)
-import           Data.Aeson                              (ToJSON
-                                                         ,FromJSON
-                                                         ,Value(..)
-                                                         ,parseJSON
-                                                         ,toJSON
-                                                         ,object
-                                                         ,(.=)
-                                                         ,(.:))
+import           Data.Aeson                              (FromJSON, ToJSON,
+                                                          Value (..), object,
+                                                          parseJSON, toJSON,
+                                                          (.:), (.=))
 import           Data.ByteString.Lazy                    (ByteString)
 import qualified Data.ByteString.Lazy                    as LBS
 import qualified Data.List                               as L
+import           Data.Table                              (Key, PKT, Primary,
+                                                          Supplemental, Tab,
+                                                          Tabular, fetch,
+                                                          forTab, ixTab, mkTab,
+                                                          primarily, primary)
 import           Data.Text                               (Text)
 
 import qualified Data.Csv                                as C (ToRecord, encode,
                                                                toField,
                                                                toRecord)
 
-import qualified Data.Vector                             as V 
+import qualified Data.Vector                             as V
 import           Kiosk.Backend.Data.DataTemplate         (DataTemplate (..),
                                                           InputText (..),
                                                           InputType (..),
@@ -158,7 +147,7 @@ sortDataTemplatesEntry dte = dte {_dataTemplateEntryValue =s}
 
 
 
--- | Tabular 
+-- | Tabular
 
 instance Tabular DataTemplateEntry where
       type PKT DataTemplateEntry  = DataTemplateEntryKey
@@ -173,4 +162,4 @@ instance Tabular DataTemplateEntry where
       mkTab f = DTab <$> f Key <*> f DValue
       forTab (DTab i s) f = DTab <$> f Key i <*> f DValue s
       ixTab (DTab i _ ) Key = i
-      ixTab (DTab _ vs) DValue = vs   
+      ixTab (DTab _ vs) DValue = vs
