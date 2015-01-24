@@ -5,6 +5,7 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
+
 module Kiosk.Backend.Data ( DataTemplateEntry (..)
                            ,DataTemplateEntryKey (..)
                           , DataTemplate (..)

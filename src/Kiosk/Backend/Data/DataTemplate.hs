@@ -71,7 +71,8 @@ instance C.ToRecord DataTemplate where
 
 data TemplateItem = TemplateItem {
               label         :: Text
-            , templateValue :: InputType } deriving (Show,Ord,Eq)
+            , templateValue :: InputType } 
+            deriving (Show,Ord,Eq)
 
 instance C.ToField TemplateItem where
   toField (TemplateItem _ (InputTypeText (InputText t))) = C.toField t
@@ -80,7 +81,7 @@ instance C.ToField TemplateItem where
   toField (TemplateItem _ (InputTypeSignature (Signature s))) = C.toField s
 
 
-instance C.FromField TemplateItem where
+-- instance C.FromField TemplateItem where
 
 -- Make Lenses
 makeLenses ''Form
@@ -107,7 +108,7 @@ encodeTemplateItemsAsObject items = object (objectMaker <$> labelIncrementor ite
                                                           makeUniqueLabels AppendUnderScoredNumber .
                                                           makeTexts $ templateItems'
                        makeTexts = fmap label
-                       replaceOldLabels templateItems' labels = zipWith (\ti l -> ti {label = l}) templateItems' labels
+                       replaceOldLabels = zipWith (\ti l -> ti {label = l}) 
 
 
 data Appender = AppendUnderScoredNumber

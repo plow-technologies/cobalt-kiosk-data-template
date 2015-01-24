@@ -1,0 +1,102 @@
+<form>
+  <logo path='CobaltLogo.png'></logo>
+  <company>Cobalt Environmental Solutions LLC</company>
+  <phone>580-229-0067</phone>
+  <address>PO BOX 177\nWilson, OK 73463\nPermit # OCC023434</address>
+  
+  <constant-array type='companies'>
+    <constant type='company'>Backhoe</constant>
+    <constant type='company'>Big Mac</constant>
+    <constant type='company'>Big Star</constant>
+    <constant type='company'>Brady Welding</constant>
+    <constant type='company'>Bullet</constant>
+    <constant type='company'>C and J Oil Field Service</constant>
+    <constant type='company'>CJ Trucking</constant>
+    <constant type='company'>Continental Res</constant>
+    <constant type='company'>Forsythe</constant>
+    <constant type='company'>Hulls</constant>
+    <constant type='company'>Kleen</constant>
+    <constant type='company'>Mitchell Tank Truck</constant>
+    <constant type='company'>South Central Oil</constant>
+    <constant type='company'>Top O Texas</constant>
+  </constant-array>
+  
+  <row>
+    <item>
+      <label>Name of Water Hauling Company</label>
+      <input type='text'></input>
+    </item>
+  </row>
+  
+  <row>
+    <item>
+      <label>Truck #</label>
+      <input type='text'></input>
+    </item>
+  </row>
+  
+  <row>
+    <item>
+      <label>Water Hauling Permit #</label>
+      <input type='text'></input>
+    </item>
+  </row>
+  
+  <row>
+    <item>
+      <label>Lease Information</label>
+    </item>
+  </row>
+  
+  <row>
+    <item>
+      <label>Name of Lease Operator</label>
+      <input type='text'></input>
+    </item>
+  </row>
+  
+  <row>
+    <item>
+      <label>Lease Name</label>
+      <input type='text'></input>
+    </item>
+  </row>
+  
+  <row>
+    <item>
+      <radio>
+        <label>Type of Water Hauled</label>
+        <option>Pit Water</option>
+        <option>Flowback Water</option>
+        <option>Fresh Water</option>
+        <option>Produced Water</option>
+        <option-qualifier>
+          <label>Amount</label>
+          <input type='text'></input>
+        </option-qualifier>
+      </radio>
+    </item>
+  </row>
+  
+  <row>
+    <item>
+      <label>Date</label>
+      <input type='date'></input>
+    </item>
+  </row>
+  
+  <row>
+    <item>
+      <label>Time in</label>
+      <input type='time'></input>
+    </item>
+  </row>
+  
+  
+  <row>
+    <item>
+      <signature label='Driver Signature'></signature>
+    </item>
+  </row>
+  
+</form>

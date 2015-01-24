@@ -1,5 +1,5 @@
 Name:                   cobalt-kiosk-data-template
-Version:                1.0.19
+Version:                1.0.20
 Author:                 Lingpo Huang <lingpo.huang@plowtech.net>
 Maintainer:             Lingpo Huang <lingpo.huang@plowtech.net>
 License:                BSD3
@@ -16,12 +16,16 @@ Library
   HS-Source-Dirs:       src
   GHC-Options:          -Wall
   Exposed-Modules:      Kiosk.Backend.Data
+                        Kiosk.Backend.Data.MigrationClass
+                        Kiosk.Backend.Data.Migrations
   Other-Modules:        Kiosk.Backend.Data.DataTemplate
                         Kiosk.Backend.Table
                          
   Build-Depends:        base                       >= 4 && < 5
                       , cobalt-kiosk-form-template >= 1.0.4
                       , plow-extras-time           >= 0.1.1
+-- Need the markup restriction because of a conflict with trifecta
+                      , blaze-markup <= 0.6.2.0
                       , aeson                      
                       , text                     
                       , bytestring                 
@@ -35,7 +39,8 @@ Library
                       , cassava                  
                       , vector    
                       , time 
-                      , old-locale            
+                      , old-locale 
+           
 
 Test-Suite spec
   Type:                 exitcode-stdio-1.0
