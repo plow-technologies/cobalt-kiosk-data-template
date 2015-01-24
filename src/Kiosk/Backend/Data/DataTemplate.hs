@@ -19,10 +19,6 @@ module Kiosk.Backend.Data.DataTemplate ( fromFormToDataTemplate
                                        , getInput
                                        , inputAttrib
                                        , checkType
-                                       -- Label Uniqueness Functions
-                                       , Appender(..)
-                                       , makeUniqueLabels
-                                       , unmakeUniqueLabels
                                        , decodeStringAsCompany
                                        , decodeStringAsAddress
 
@@ -33,8 +29,10 @@ import           Data.Aeson                    (FromJSON, ToJSON, Value (..),
                                                 eitherDecode, object, parseJSON,
                                                 toJSON, (.:), (.=))
 import           Data.Aeson.Types              (Parser)
-import           Data.Attoparsec.Text          (char, decimal, parseOnly,
-                                                takeText)
+import           Data.Attoparsec.Text          (char
+                                               , decimal
+                                               ,  parseOnly
+                                               ,takeText)
 import           Data.ByteString.Lazy.Internal (ByteString)
 import           Data.Monoid                   ((<>))
 import           Data.Text                     (Text)
@@ -105,42 +103,11 @@ encodeTemplateItemsAsObject items = object (objectMaker <$> labelIncrementor ite
                        codeAsInputType (InputTypeInt (InputInt s)) = toJSON s
                        codeAsInputType (InputTypeDouble (InputDouble s)) = toJSON s
                        labelIncrementor templateItems' = replaceOldLabels templateItems' .
-                                                          makeUniqueLabels AppendUnderScoredNumber .
                                                           makeTexts $ templateItems'
                        makeTexts = fmap label
                        replaceOldLabels = zipWith (\ti l -> ti {label = l}) 
 
 
-data Appender = AppendUnderScoredNumber
-  deriving (Eq,Ord,Show)
-
-
-{- | labels need to be indexed so they can be decoded correctly:
-   label, label -> label_1 label_2 -}
-makeUniqueLabels :: Appender -> [Text] -> [Text]
-makeUniqueLabels AppendUnderScoredNumber incoming = reverse.snd $ foldl' appender (HM.empty,[]) incoming
-        where
-          appender (labelMap,transformedLabels) incomingLabel = case HM.lookup incomingLabel labelMap of
-                                                                  Nothing -> ( HM.insert incomingLabel 1 labelMap , T.append incomingLabel "_1":transformedLabels)
-                                                                  (Just i) ->let i' = succ i
-                                                                             in ( HM.insert incomingLabel i' labelMap , (incomingLabel <> "_" <> (T.pack.show $ i')):transformedLabels)
-
-unmakeUniqueLabels :: Appender -> Text -> Text
-unmakeUniqueLabels AppendUnderScoredNumber = pullOffAppender
-  where
-    _underScorePlusNumberLength = 2::Int
-    pullOffAppender = parseReversedUnderscoreIncrementor
-
-parseReversedUnderscoreIncrementor :: Text -> Text
-parseReversedUnderscoreIncrementor txt  = replaceTextWithReversedOriginalOnLeft . reverseTextThenParse $ txt
-
-       where reverseParser = decimal *>
-                             char '_' *> takeText
-             reverseTextThenParse txt' = parseOnly reverseParser (T.reverse txt')
-             replaceTextWithReversedOriginalOnLeft (Left _) = txt
-             replaceTextWithReversedOriginalOnLeft (Right t) = T.reverse t
-
--- --------------------------------------------------
 -- Decode Input Function
 decodeInput :: Value -> Parser InputType
 decodeInput v = InputTypeText . InputText  <$> parseJSON v  <|>
@@ -151,7 +118,7 @@ decodeInput v = InputTypeText . InputText  <$> parseJSON v  <|>
 -- Decode Object Function
 decodeObjectAsTemplateItems :: Value -> Parser [TemplateItem]
 decodeObjectAsTemplateItems (Object o) = fmap reverse . sequence $ itemMakingFcn <$> HM.toList o
-                            where itemMakingFcn (k,v) = (TemplateItem . unmakeUniqueLabels AppendUnderScoredNumber $ k) <$> decodeInput v
+                            where itemMakingFcn (k,v) = (TemplateItem  k) <$> decodeInput v
 decodeObjectAsTemplateItems _ = fail "Expected Object, Received Other."
 
 -- Decode Company
