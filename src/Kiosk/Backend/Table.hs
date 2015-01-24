@@ -1,4 +1,3 @@
-{-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
@@ -24,7 +23,7 @@ import Data.Aeson (ToJSON
 import           Data.Foldable                   (toList) 
 import Control.Applicative ((<$>)
                            ,(<*>))
-import           Kiosk.Backend.Data.DataTemplate         (DataTemplate (..))
+
 -- | Tabular Instances
 newtype TemplateTable = TemplateTable {_getTemplateTable ::  Table DataTemplateEntry}
                     deriving (Show,Eq)
@@ -44,17 +43,3 @@ instance Serialize TemplateTable where
          put = putToJSON
          get = getFromJSON
 
-instance Tabular DataTemplateEntry where
-      type PKT DataTemplateEntry  = DataTemplateEntryKey
-      data Key k DataTemplateEntry b where
-        Key :: Key Primary DataTemplateEntry DataTemplateEntryKey
-        DValue :: Key Supplemental DataTemplateEntry DataTemplate
-      data Tab DataTemplateEntry i = DTab (i Primary DataTemplateEntryKey) (i Supplemental DataTemplate)
-      fetch Key = _dataTemplateEntryKey
-      fetch DValue = _dataTemplateEntryValue
-      primary = Key
-      primarily Key r = r
-      mkTab f = DTab <$> f Key <*> f DValue
-      forTab (DTab i s) f = DTab <$> f Key i <*> f DValue s
-      ixTab (DTab i _ ) Key = i
-      ixTab (DTab _ vs) DValue = vs

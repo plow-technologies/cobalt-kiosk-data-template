@@ -20,9 +20,8 @@ module Kiosk.Backend.Data.DataTemplateEntryKey (DataTemplateEntryKey (..)
                                                ,TicketId(..)
                                                ,decodeUUID) where
 
-import           Data.Time                       (formatTime, getCurrentTime,
-                                                  getCurrentTimeZone,
-                                                  utcToZonedTime)
+import           Data.Time                       ( formatTime
+                                                 , utcToZonedTime)
 import           Plow.Extras.Time                (intToUTCTime)                                    
 
 import           System.Locale                   (defaultTimeLocale)                 
@@ -32,7 +31,6 @@ import           Data.Time.LocalTime             (TimeZone (..))
 import Data.Aeson (ToJSON
                   ,toJSON
                   ,FromJSON
-                  ,fromJSON
                   ,parseJSON
                   ,Value(..)
                   ,object
@@ -40,13 +38,12 @@ import Data.Aeson (ToJSON
                   ,(.=))
 import qualified Data.Text as T                  
 import           Data.Aeson.Types                (Parser ())                  
-import qualified Data.Vector                     as V (fromList, (++))                  
+import qualified Data.Vector                     as V                   
 import Control.Applicative ((<*>)
                            ,(<$>))                  
 import           Control.Monad                   (liftM)                  
 import           Data.UUID                       (UUID, fromString, toString)                  
-import qualified Data.Csv                        as C (ToRecord, encode,
-                                                       toField, toRecord)
+import qualified Data.Csv                        as C 
 
 -- |Key for Data Template
 
@@ -63,7 +60,7 @@ ticketIdToString (TicketId (a,b)) = show a ++ "_" ++ show b
 
 intTimeToHumanTime :: Int -> String
 intTimeToHumanTime intTime = formatTime defaultTimeLocale "%Y/%m/%dT%H:%M:%S" time
-                     where utcTime = intToUTCTime (floor . fromIntegral $  (intTime `div` 1000))
+                     where utcTime = intToUTCTime . div intTime $ 1000 
                            time = utcToZonedTime oklahomaTimeZone utcTime
 
 oklahomaTimeZone :: TimeZone
