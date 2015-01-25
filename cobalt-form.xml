@@ -19,8 +19,7 @@
     <constant type='company'>Mitchell Tank Truck</constant>
     <constant type='company'>South Central Oil</constant>
     <constant type='company'>Top O Texas</constant>
-  </constant-array>
-  
+  </constant-array>  
   <row>
     <item>
       <label>Name of Water Hauling Company</label>
