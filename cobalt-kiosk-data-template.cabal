@@ -23,7 +23,7 @@ Library
                         Kiosk.Backend.Table
                          
   Build-Depends:        base                       >= 4 && < 5
-                      , cobalt-kiosk-form-template >= 1.2.1
+                      , cobalt-kiosk-form-template >= 1.2.2
                       , plow-extras-time           >= 0.1.1
                       , blaze-markup <= 0.6.2.0
                       , either >= 4.3.1
