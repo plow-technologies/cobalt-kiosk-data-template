@@ -27,7 +27,14 @@ main :: IO ()
 main = hspec spec
 
 spec :: Spec
-spec = do
+spec = do 
+     describe "Fakey Fae" $ 
+      it "fka fka" $ do
+       True `shouldBe` True
+
+
+spec' :: Spec
+spec' = do
   describe (nameBase 'checkStaticGeneratorConsistency) $
     it "should check that the generative tests hold equivalence for static cases" $
       property $ checkStaticGeneratorConsistency

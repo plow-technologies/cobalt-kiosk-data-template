@@ -75,34 +75,6 @@ Test-Suite spec
                       , old-locale
                       , either
 
-Test-Suite docspec
-  Type:                 exitcode-stdio-1.0
-  Default-Language:     Haskell2010
-  Hs-Source-Dirs:       src
-  Ghc-Options:          -Wall
-  Main-Is:              Spec.hs
-  Build-Depends:        base
-                      , doctest
-                      , cobalt-kiosk-form-template
-                      , plow-extras-time
-                      , aeson
-                      , cereal
-                      , aeson-serialize
-                      , text     
-                      , bytestring                  
-                      , unordered-containers
-                      , containers >= 0.5.5.1
-                      , lens
-                      , template-haskell
-                      , attoparsec
-                      , tables
-                      , uuid
-                      , cassava
-                      , vector
-                      , time
-                      , old-locale
-                      , either
-
 
 Source-Repository head
   Type:                 git

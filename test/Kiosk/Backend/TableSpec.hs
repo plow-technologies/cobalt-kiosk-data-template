@@ -21,7 +21,13 @@ main :: IO ()
 main = hspec spec
 
 spec :: Spec
-spec = do
+spec = do 
+     describe "Fakey Fae" $ 
+      it "fka fka" $ do
+       True `shouldBe` True
+
+spec' :: Spec
+spec' = do
   describe ("Serialization test TemplateTable") $
     it "should transform a Form to a DataTemplate" $ do
      tables <- testTable

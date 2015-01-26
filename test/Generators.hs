@@ -39,8 +39,10 @@ generateForm :: GeneratorType -> Gen [Form]
 generateForm gtype = do companies <- generateCompany gtype
                         addresses <- generateAddress gtype
                         rows <- generateRows gtype
+                        constants <- generateConstants gtype
                         return $ Form <$> companies
                                       <*> addresses
+                                      <*> [constants]
                                       <*> [rows] -- second paren because it actually needs to be a list
 
 
@@ -60,6 +62,17 @@ generateRow gtype = do items <- generateItems gtype
 generateRows :: GeneratorType -> Gen [Row]
 generateRows Dynamic = listOf $ generateRow Dynamic
 generateRows Static = staticListOf 5 <$> generateRow Static
+
+-- | Constants Generator
+generateConstants :: GeneratorType -> Gen [Constant]
+generateConstants Dynamic =  listOf $ generateConstant Dynamic
+generateConstants Static = staticListOf 5 <$> generateConstant Static                  
+
+generateConstant :: GeneratorType -> Gen Constant
+generateConstant Dynamic = (flip Constant []) <$> (return "Test")
+
+
+generateConstant Static = return $ Constant "Company" []
 -- | Item Generator
 
 generateItem :: GeneratorType -> Gen Item
