@@ -25,9 +25,13 @@ Each migration is tied to a form-id and another form-id.  Then there is a parser
 
 module Kiosk.Backend.Data.Migrations (FormVersionZeroEntry(..)) where
 
+import           Control.Lens                      (view)
 import           Data.Text
 import           Kiosk.Backend.Data                (DataTemplateEntry (..),
-                                                    DataTemplateEntryKey (..))
+                                                    DataTemplateEntryKey (..),
+                                                    dataTemplateEntryKey,
+                                                    dataTemplateEntryValue)
+import           Kiosk.Backend.Data.DataTemplate   (DataTemplate (..))
 import           Kiosk.Backend.Data.MigrationClass
 
 
@@ -52,9 +56,19 @@ data FormVersionZero = FormVersionZero { signature_1                 :: Text
                                        , timeIn_1                    :: Text
                                        , freshWater_1                :: Text
                                        , nameOfLeaseOperator_1       :: Text  }
+
 toFormVersionZeroEntry :: DataTemplateEntry -> FormVersionZeroEntry
 toFormVersionZeroEntry = undefined
 
+
+extractDataTemplateEntryKey :: DataTemplateEntry -> DataTemplateEntryKey
+extractDataTemplateEntryKey = view dataTemplateEntryKey
+
+extractTemplateItems :: DataTemplateEntry -> [TemplateItem]
+extractTemplateItems dt  = templateItems $ view dataTemplateValue dt
+
+extractValueFromTemplateItem :: String -> [TemplateItem] -> Text
+extractValueFromTemplateItem key items = undefined
 
 -- | Second half of the migration
 
