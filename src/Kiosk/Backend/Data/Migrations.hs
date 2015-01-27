@@ -22,7 +22,7 @@ Each migration is tied to a form-id and another form-id.  Then there is a parser
 -}
 
 
-module Kiosk.Backend.Data.Migrations (FormVersionZeroEntry(..), FormVersionOneEntry (..)) where
+module Kiosk.Backend.Data.Migrations (FormVersionZeroEntry(..), FormVersionOneEntry (..), toFormVersionZeroEntry) where
 
 import           Control.Lens                      (view)
 import           Data.Text
@@ -43,7 +43,7 @@ import           Kiosk.Backend.Form.Element
 
 -- |First half of the migration
 data FormVersionZeroEntry = FormVersionZeroEntry { versionZeroKey    :: DataTemplateEntryKey
-                                                  , versionZeroValue :: FormVersionZero  }
+                                                  , versionZeroValue :: FormVersionZero  } deriving (Show)
 
 data FormVersionZero = FormVersionZero { signature_1                 :: Text
                                        , nameOfWaterHaulingCompany_1 ::Text
@@ -58,7 +58,7 @@ data FormVersionZero = FormVersionZero { signature_1                 :: Text
                                        , timeIn_1                    :: Text
                                        , freshWater_1                :: Text
                                        , nameOfLeaseOperator_1       :: Text
-                                       }
+                                       } deriving (Show)
 -- | Form Sample
 -- BBLS:_Produced_Water_1: "45"
 -- Date_1: "1-26-15"
@@ -103,7 +103,7 @@ extractTemplateItems dt  = templateItems $ view dataTemplateEntryValue dt
 extractValueFromTemplateItem :: String -> [TemplateItem] -> Text
 extractValueFromTemplateItem key items = case L.find (\a -> label a == pack key) items of
                                                   Just item -> convertInputTypeToValue item
-                                                  Nothing -> ("Error"::Text)
+                                                  Nothing -> (""::Text)
 
 convertInputTypeToValue = extractInputType
 
@@ -224,22 +224,23 @@ formVersionZeroEntryToFormOneEntry fv0 = FormVersionOneEntry fv1Key fv1Value
 
 formVersionZeroToFormVersionOne (FormVersionZero s1 n1 fbw1 pw1 tn1 d1 ln1 wp1 bpw1 ds1 ti1 fw1 nl1) = FormVersionOne n1 (read (unpack bpw1)::Int) d1 ti1 FreshWater tn1 wp1 nl1 ln1 s1
 
+-- FormVersionZero Data Type
+-- data FormVersionZero = FormVersionZero { signature_1                 :: Text
+--                                        , nameOfWaterHaulingCompany_1 ::Text
+--                                        , flowbackWater_1             :: Text
+--                                        , pitWater_1                  :: Text
+--                                        , truckNumber_1               :: Text
+--                                        , date_1                      ::Text
+--                                        , leaseName_1                 :: Text
+--                                        , waterHaulingPermit_1        :: Text
+--                                        , bblsProducedWater_1         :: Text
+--                                        , driverSignature_1           :: Text
+--                                        , timeIn_1                    :: Text
+--                                        , freshWater_1                :: Text
+--                                        , nameOfLeaseOperator_1       :: Text
+--                                        }
 
- -- { signature_1                 :: Text
- --                                       , nameOfWaterHaulingCompany_1 ::Text
- --                                       , flowbackWater_1             :: Text
- --                                       , pitWater_1                  :: Text
- --                                       , truckNumber_1               :: Text
- --                                       , date_1                      ::Text
- --                                       , leaseName_1                 :: Text
- --                                       , waterHaulingPermit_1        :: Text
- --                                       , bblsProducedWater_1         :: Text
- --                                       , driverSignature_1           :: Text
- --                                       , timeIn_1                    :: Text
- --                                       , freshWater_1                :: Text
- --                                       , nameOfLeaseOperator_1       :: Text
- --                                       }
-
+-- FormVersionOne Data Type
 -- data FormVersionOne = FormVersionOne { nameOfWaterHaulingCompany ::Text
 --                                      , amount                    :: Int
 --                                      , date                      :: Text
