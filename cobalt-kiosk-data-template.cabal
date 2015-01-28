@@ -55,6 +55,7 @@ Test-Suite spec
                       , QuickCheck
                       , primitive-generator-mocks
                       , hspec
+                      , HUnit
                       , cobalt-kiosk-form-template
                       , plow-extras-time
                       , aeson
