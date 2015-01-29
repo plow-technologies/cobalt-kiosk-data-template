@@ -28,17 +28,6 @@ main = hspec spec
 
 spec :: Spec
 spec = do 
-     describe "Fakey Fae" $ 
-      it "fka fka" $ do
-       True `shouldBe` True
-
-
-spec' :: Spec
-spec' = do
-  describe (nameBase 'checkStaticGeneratorConsistency) $
-    it "should check that the generative tests hold equivalence for static cases" $
-      property $ checkStaticGeneratorConsistency
-
   describe (nameBase 'fromFormToDataTemplate) $
     it "should transform a Actual Onping Form to a DataTemplate" $ do
       let
@@ -46,18 +35,12 @@ spec' = do
         dataTemplates = fromFormToDataTemplate <$> forms
         isEmpty = null dataTemplates
       isEmpty `shouldBe` False
-
   describe (nameBase ''DataTemplate ++ " Dynamic Aeson Serialization Test") $
    it "should serialize data and be consistent for multiple inputs" $ do
      (tst,expected) <- encodeDecodeDataTemplate
      let (tst_items,expected_items) = ((fmap.fmap $ templateItems) *** (fmap.fmap $ templateItems )) (tst,expected)
      (sort.concat <$> tst_items) `shouldBe` (sort.concat <$> expected_items)
      tst `shouldBe` expected
-  describe (nameBase ''DataTemplateEntry ++ " Dynamic Aeson Test") $
-   it "should show that serialization works for lots of tests" $ do
-     (tst,expected) <- encodeDecodeDataTemplateEntry
-     tst `shouldBe` expected
-
   describe (nameBase 'fromJSONToDataTemplate ++ " IPAD Serialization Test") $
    it "check to make sure IPAD serialization matches ours" $ do
      let
@@ -105,3 +88,18 @@ testGenerateDataTemplate = do
     dataTemplates = fromFormToDataTemplate <$> forms
   return . encode $ dataTemplates
 
+
+
+-- | Tests to fix later concerning problems with hashing
+
+
+spec' :: Spec
+spec' = do
+  describe (nameBase 'checkStaticGeneratorConsistency) $
+    it "should check that the generative tests hold equivalence for static cases" $
+      property $ checkStaticGeneratorConsistency  
+
+  describe (nameBase ''DataTemplateEntry ++ " Dynamic Aeson Test") $
+   it "should show that serialization works for lots of tests" $ do
+     (tst,expected) <- encodeDecodeDataTemplateEntry
+     tst `shouldBe` expected   

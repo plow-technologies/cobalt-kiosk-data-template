@@ -1,5 +1,5 @@
 Name:                   cobalt-kiosk-data-template
-Version:                1.1.0
+Version:                1.2.2
 Author:                 Lingpo Huang <lingpo.huang@plowtech.net>
 Maintainer:             Lingpo Huang <lingpo.huang@plowtech.net>
 License:                BSD3
@@ -16,6 +16,7 @@ Library
   HS-Source-Dirs:       src
   GHC-Options:          -Wall
   Exposed-Modules:      Kiosk.Backend.Data
+                        Kiosk.Backend.Data.DataTemplateEntry
                         Kiosk.Backend.Data.MigrationClass
                         Kiosk.Backend.Data.Migrations
   Other-Modules:        Kiosk.Backend.Data.DataTemplate
@@ -23,7 +24,7 @@ Library
                         Kiosk.Backend.Table
                          
   Build-Depends:        base                       >= 4 && < 5
-                      , cobalt-kiosk-form-template >= 1.2.2
+                      , cobalt-kiosk-form-template >= 1.2.4
                       , plow-extras-time           >= 0.1.1
                       , blaze-markup <= 0.6.2.0
                       , either >= 4.3.1
