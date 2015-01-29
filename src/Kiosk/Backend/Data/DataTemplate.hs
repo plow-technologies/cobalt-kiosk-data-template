@@ -151,7 +151,7 @@ makePrisms ''ArgConstructor
 -- This is mostly about stripping away the stuff that isn't an input field
 
 fromFormToDataTemplate :: Form -> DataTemplate
-fromFormToDataTemplate (Form _c _a constants rs)  = DataTemplate (extractData rs)
+fromFormToDataTemplate (Form _c _a _l _p constants rs)  = DataTemplate (extractData rs)
                        where extractData :: [Row] -> [TemplateItem]
                              extractData rows = rows ^.. traverse.rowItem.traverse.item.folding itemMakerFcn
                              itemMakerFcn :: [ItemType] -> [TemplateItem]
