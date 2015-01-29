@@ -1,5 +1,5 @@
 Name:                   cobalt-kiosk-data-template
-Version:                1.2.4
+Version:                1.2.5
 Author:                 Lingpo Huang <lingpo.huang@plowtech.net>
 Maintainer:             Lingpo Huang <lingpo.huang@plowtech.net>
 License:                BSD3
@@ -24,7 +24,7 @@ Library
                         Kiosk.Backend.Table
                          
   Build-Depends:        base                       >= 4 && < 5
-                      , cobalt-kiosk-form-template >= 1.2.4
+                      , cobalt-kiosk-form-template >= 1.2.5
                       , plow-extras-time           >= 0.1.1
                       , blaze-markup <= 0.6.2.0
                       , either >= 4.3.1
