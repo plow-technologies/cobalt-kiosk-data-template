@@ -9,7 +9,9 @@ import           Test.Hspec
 -- import           Test.HUnit
 
 import           Kiosk.Backend.Data            (DataTemplateEntry (..))
-import           Kiosk.Backend.Data.Migrations (FormVersionZeroEntry (..),
+import           Kiosk.Backend.Data.Migrations (FormVersionOneEntry (..),
+                                                FormVersionZeroEntry (..), formVersionZeroEntryToFormOneEntry,
+                                                fromFormVersionOne,
                                                 toFormVersionZeroEntry)
 import           TestImport
 
@@ -29,8 +31,19 @@ spec = do
    it "Should convert DataTemplateEntry to FormVersionZeroEntry" $ do
      let (Right dt) = eitherDecode testFormVersionZeroDataTemplateEntry :: Either String DataTemplateEntry
          fv0 = toFormVersionZeroEntry dt
-     putStrLn "\nJSONForm :" >> print fv0
-     putStrLn "\nFormVersionZeroEntry :" >> print dt
+     putStrLn "\nFormVersionZeroEntry :" >> print fv0
+     True `shouldBe` True
+
+  describe (nameBase 'FormVersionOneEntry) $
+   it "Should convert FormVersionZeroEntry to FormVersionOneEntry" $ do
+     let (Right dt) = eitherDecode testFormVersionZeroDataTemplateEntry :: Either String DataTemplateEntry
+         fv0 = toFormVersionZeroEntry dt
+         (Right fv1) = formVersionZeroEntryToFormOneEntry fv0
+         dtNew = fromFormVersionOne fv1
+     putStrLn "\nFormVersionOneEntry :" >> print fv0
+     putStrLn "\nNewDataTemplateEntry :" >> print dtNew
+     putStrLn "\nNewDataTemplateEntry JSONForm :" >> print (encode dtNew)
      True `shouldBe` True
 
 
+-- testFreshWater
