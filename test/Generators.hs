@@ -38,10 +38,14 @@ import           Test.QuickCheck
 generateForm :: GeneratorType -> Gen [Form]
 generateForm gtype = do companies <- generateCompany gtype
                         addresses <- generateAddress gtype
+                        logos <- generateLogo gtype
+                        phones <- generatePhone gtype
                         rows <- generateRows gtype
                         constants <- generateConstants gtype
                         return $ Form <$> companies
                                       <*> addresses
+                                      <*> logos
+                                      <*> phones
                                       <*> [constants]
                                       <*> [rows] -- second paren because it actually needs to be a list
 
@@ -54,6 +58,18 @@ generateCompany gtype = do ctxt <- generateTexts gtype
 generateAddress :: GeneratorType -> Gen [Address]
 generateAddress gtype = do atxt <- generateTexts gtype
                            return $ Address <$> atxt <*> [[]]
+
+-- | Logo Generator
+generateLogo :: GeneratorType -> Gen [Logo]
+generateLogo gtype = do atxt <- generateTexts gtype
+                        return $ Logo <$> atxt <*> [[]]
+
+-- | Phone Generator
+generatePhone :: GeneratorType -> Gen [Phone]
+generatePhone gtype = do atxt <- generateTexts gtype
+                         return $ Phone <$> atxt <*> [[]]
+
+
 -- | Row Generator
 generateRow :: GeneratorType -> Gen Row
 generateRow gtype = do items <- generateItems gtype
@@ -66,7 +82,7 @@ generateRows Static = staticListOf 5 <$> generateRow Static
 -- | Constants Generator
 generateConstants :: GeneratorType -> Gen [Constant]
 generateConstants Dynamic =  listOf $ generateConstant Dynamic
-generateConstants Static = staticListOf 5 <$> generateConstant Static                  
+generateConstants Static = staticListOf 5 <$> generateConstant Static
 
 generateConstant :: GeneratorType -> Gen Constant
 generateConstant Dynamic = (flip Constant []) <$> (return "Test")
