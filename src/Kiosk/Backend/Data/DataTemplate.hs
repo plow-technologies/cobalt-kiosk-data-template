@@ -133,11 +133,11 @@ decodeStringAsAddress _ = fail "Expected String, Received Other."
 
 
 instance ToJSON DataTemplate where
-         toJSON (DataTemplate ts) =
-                object [ "data" .= encodeTemplateItemsAsObject ts]
+         toJSON (DataTemplate ts) = encodeTemplateItemsAsObject ts
+                -- object [ "data" .= encodeTemplateItemsAsObject ts]
 
 instance FromJSON DataTemplate where
-         parseJSON (Object o) =  DataTemplate <$> ((o .: "data") >>= decodeObjectAsTemplateItems)
+         parseJSON (o) =  DataTemplate <$> (decodeObjectAsTemplateItems o)
          parseJSON _ = mzero
 
 -- Type for tranform function
