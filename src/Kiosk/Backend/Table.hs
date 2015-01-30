@@ -5,24 +5,22 @@
 module Kiosk.Backend.Table (TemplateTable(..)
                            ,getTemplateTable) where
 
-import           Data.Table                      (Key, PKT, Primary,
-                                                  Supplemental, Tab, Table,
-                                                  Tabular, fetch, forTab,
-                                                  fromList, ixTab, mkTab,
-                                                  primarily, primary)
-import           Control.Lens                    (makeLenses, view)                                                  
+import           Data.Table                      (
+                                                  Table,
+                                                    
+                                                  fromList,  
+                                                  )
+import           Control.Lens                    (makeLenses)                  
 import           Data.Serialize                  (Serialize, get, put)
 import Kiosk.Backend.Data.DataTemplateEntry 
-import Kiosk.Backend.Data.DataTemplateEntryKey
+
 import           Data.Aeson.Serialize            (getFromJSON, putToJSON)
 import Data.Aeson (ToJSON
                   ,FromJSON
                   ,parseJSON
-                  ,toJSON
-                  ,fromJSON)
+                  ,toJSON)
 import           Data.Foldable                   (toList) 
-import Control.Applicative ((<$>)
-                           ,(<*>))
+import Control.Applicative ((<$>))
 
 -- | Tabular Instances
 newtype TemplateTable = TemplateTable {_getTemplateTable ::  Table DataTemplateEntry}

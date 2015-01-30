@@ -26,13 +26,14 @@ module Kiosk.Backend.Data.Migrations (FormVersionZeroEntry(..), FormVersionOneEn
 
 import           Control.Lens                      (view)
 import qualified Data.Text                         as T
+
 import           Kiosk.Backend.Data                (DataTemplateEntry (..),
                                                     DataTemplateEntryKey (..),
                                                     dataTemplateEntryKey,
                                                     dataTemplateEntryValue)
 import           Kiosk.Backend.Data.DataTemplate   (DataTemplate (..),
                                                     TemplateItem (..))
-import           Kiosk.Backend.Data.MigrationClass
+-- import           Kiosk.Backend.Data.MigrationClass
 
 import qualified Data.List                         as L (find)
 import           Kiosk.Backend.Form.Element
@@ -42,23 +43,27 @@ import           Kiosk.Backend.Form.Element
 
 
 -- |First half of the migration
+
 data FormVersionZeroEntry = FormVersionZeroEntry { versionZeroKey    :: DataTemplateEntryKey
                                                   , versionZeroValue :: FormVersionZero  } deriving (Show)
 
-data FormVersionZero = FormVersionZero { signature_1                 :: T.Text
-                                       , nameOfWaterHaulingCompany_1 :: T.Text
-                                       , flowbackWater_1             :: T.Text
-                                       , pitWater_1                  :: T.Text
-                                       , truckNumber_1               :: T.Text
-                                       , date_1                      :: T.Text
-                                       , leaseName_1                 :: T.Text
-                                       , waterHaulingPermit_1        :: T.Text
-                                       , bblsProducedWater_1         :: T.Text
-                                       , driverSignature_1           :: T.Text
-                                       , timeIn_1                    :: T.Text
-                                       , freshWater_1                :: T.Text
-                                       , nameOfLeaseOperator_1       :: T.Text
+
+data FormVersionZero = FormVersionZero { _signature_1                 :: T.Text
+                                       , _nameOfWaterHaulingCompany_1 :: T.Text
+                                       , _flowbackWater_1             :: T.Text
+                                       , _pitWater_1                  :: T.Text
+                                       , _truckNumber_1               :: T.Text
+                                       , _date_1                      :: T.Text
+                                       , _leaseName_1                 :: T.Text
+                                       , _waterHaulingPermit_1        :: T.Text
+                                       , _bblsProducedWater_1         :: T.Text
+                                       , _driverSignature_1           :: T.Text
+                                       , _timeIn_1                    :: T.Text
+                                       , _freshWater_1                :: T.Text
+                                       , _nameOfLeaseOperator_1       :: T.Text
                                        } deriving (Show)
+
+                                       
 -- | Form Sample
 -- BBLS:_Produced_Water_1: "45"
 -- Date_1: "1-26-15"
@@ -104,7 +109,7 @@ extractValueFromTemplateItem :: String -> [TemplateItem] -> T.Text
 extractValueFromTemplateItem key items = case L.find (\a -> label a == T.pack key) items of
                                                   Just item -> convertInputTypeToValue item
                                                   Nothing -> (""::T.Text)
-
+convertInputTypeToValue :: TemplateItem -> T.Text
 convertInputTypeToValue = extractInputType
 
 extractInputType :: TemplateItem -> T.Text
@@ -112,7 +117,8 @@ extractInputType (TemplateItem _ (InputTypeText (InputText t))) = t
 extractInputType (TemplateItem _ (InputTypeInt (InputInt i))) = T.pack . show $ i
 extractInputType (TemplateItem _ (InputTypeDouble (InputDouble d))) = T.pack . show $ d
 extractInputType (TemplateItem _ (InputTypeSignature (Signature s))) = s
-
+extractInputType (TemplateItem _ (InputTypeDate (InputDate t))) = t
+extractInputType (TemplateItem _ (InputTypeTime (InputTime t))) = t
 -- | Second half of the migration
 
 {-
@@ -152,7 +158,7 @@ data FormVersionOne = FormVersionOne { nameOfWaterHaulingCompany :: T.Text
                                      , date                      :: T.Text
                                      , timeIn                    :: T.Text
                                      , typeOfWaterHauled         :: WaterType
-                                     , truckNumber               :: T.Text
+                                     , _truckNumber               :: T.Text
                                      , waterHaulingPermit        :: T.Text
                                      , nameOfLeaseOperator       :: T.Text
                                      , leaseName                 :: T.Text
@@ -197,7 +203,7 @@ printWaterType wt = case wt of
            FreshWater    -> "Fresh Water"
            ProducedWater -> "Produced Water"
 
-
+convertFormToTemplateItems :: FormVersionOne -> [TemplateItem]
 convertFormToTemplateItems fv1 = [nItem, a , d ,tin , twh, tn, nlo, ln, s ]
                         where nItem = makeTemplateItemText "Name_of_Water_Hauling_Company" (nameOfWaterHaulingCompany fv1)
                               a     = makeTemplateItemInt "Amount" (amount fv1)
@@ -211,59 +217,33 @@ convertFormToTemplateItems fv1 = [nItem, a , d ,tin , twh, tn, nlo, ln, s ]
 
 
 makeTemplateItemInt :: String -> Int -> TemplateItem
-makeTemplateItemInt label value = TemplateItem (T.pack label) (InputTypeInt (InputInt value))
+makeTemplateItemInt lbl value = TemplateItem (T.pack lbl) (InputTypeInt (InputInt value))
 
 makeTemplateItemText :: String -> T.Text -> TemplateItem
-makeTemplateItemText label value = TemplateItem (T.pack label) (InputTypeText (InputText value))
+makeTemplateItemText lbl value = TemplateItem (T.pack lbl) (InputTypeText (InputText value))
 
 
 formVersionZeroEntryToFormOneEntry :: FormVersionZeroEntry -> Either String FormVersionOneEntry
 formVersionZeroEntryToFormOneEntry fv0 = case formVersionZeroToFormVersionOne (versionZeroValue fv0) of
-                                          Left e -> Left $ e
-                                          Right fv1Value -> Right $ FormVersionOneEntry fv1Key fv1Value
-                                                                      where fv1Key = versionZeroKey fv0
+                                           Left e -> Left e
+                                           Right fv1Value -> Right $ FormVersionOneEntry fv1Key fv1Value
+                                                                       where fv1Key = versionZeroKey fv0
 
 formVersionZeroToFormVersionOne :: FormVersionZero -> Either String FormVersionOne
-formVersionZeroToFormVersionOne (FormVersionZero s1 n1 fbw1 pw1 tn1 d1 ln1 wp1 bpw1 ds1 ti1 fw1 nl1) = case checkForEmptyWaterType bpw1 fbw1 pw1 fw1 of
-                                                                                                           True -> Left $ "Water Type information is missing"
-                                                                                                           False -> Right $ FormVersionOne n1 (read (T.unpack bpw1)::Int) d1 ti1 (determineWaterType bpw1 fbw1 pw1 fw1) tn1 wp1 nl1 ln1 s1
+formVersionZeroToFormVersionOne (FormVersionZero s1 n1 fbw1 pw1 tn1 d1 ln1 wp1 bpw1 _ds1 ti1 fw1 nl1) = case checkForEmptyWaterType bpw1 fbw1 pw1 fw1 of
+                                                                                                            True -> Left $ "Water Type information is missing"
+                                                                                                            False -> Right $ FormVersionOne n1 (read (T.unpack bpw1)::Int) d1 ti1 (determineWaterType bpw1 fbw1 pw1 fw1) tn1 wp1 nl1 ln1 s1
+
 
 checkForEmptyWaterType :: T.Text -> T.Text -> T.Text -> T.Text -> Bool
 checkForEmptyWaterType pdw fbw pw fw = T.null pdw && T.null fbw && T.null pw && T.null fw
 
 determineWaterType :: T.Text -> T.Text -> T.Text -> T.Text -> WaterType
-determineWaterType pdw fbw pw fw
+determineWaterType pdw fbw pw _fw
                    | not (T.null pdw) = ProducedWater
                    | not (T.null fbw && T.unpack fbw == "0") = FlowBackWater
                    | not (T.null pw && T.unpack pw == "0") = PitWater
                    | otherwise = FreshWater
 
 
--- FormVersionZero Data Type
--- data FormVersionZero = FormVersionZero { signature_1                 :: Text
---                                        , nameOfWaterHaulingCompany_1 ::Text
---                                        , flowbackWater_1             :: Text
---                                        , pitWater_1                  :: Text
---                                        , truckNumber_1               :: Text
---                                        , date_1                      ::Text
---                                        , leaseName_1                 :: Text
---                                        , waterHaulingPermit_1        :: Text
---                                        , bblsProducedWater_1         :: Text
---                                        , driverSignature_1           :: Text
---                                        , timeIn_1                    :: Text
---                                        , freshWater_1                :: Text
---                                        , nameOfLeaseOperator_1       :: Text
---                                        }
-
--- FormVersionOne Data Type
--- data FormVersionOne = FormVersionOne { nameOfWaterHaulingCompany ::Text
---                                      , amount                    :: Int
---                                      , date                      :: Text
---                                      , timeIn                    :: Text
---                                      , typeOfWaterHauled         :: WaterType
---                                      , truckNumber               :: Text
---                                      , waterHaulingPermit        :: Text
---                                      , nameOfLeaseOperator       :: Text
---                                      , leaseName                 :: Text
---                                      , signature                 :: Text  }
 

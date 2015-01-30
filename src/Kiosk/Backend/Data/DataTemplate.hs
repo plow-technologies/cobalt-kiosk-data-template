@@ -16,6 +16,9 @@ module Kiosk.Backend.Data.DataTemplate ( fromFormToDataTemplate
                                        , rowAttrib
                                        , itemAttrib
                                        , getLabelText
+                                       , getConstants
+                                       , getLogo
+                                       , getPhone
                                        , labelAttrib
                                        , getInput
                                        , inputAttrib
@@ -28,7 +31,7 @@ module Kiosk.Backend.Data.DataTemplate ( fromFormToDataTemplate
 
 import           Data.Aeson                    (FromJSON, ToJSON, Value (..),
                                                 eitherDecode, object, parseJSON,
-                                                toJSON, (.:), (.=))
+                                                toJSON, (.=))
 import           Data.Aeson.Types              (Parser)
 
 import           Data.ByteString.Lazy.Internal (ByteString)
@@ -40,7 +43,10 @@ import           Kiosk.Backend.Form            (Address (..), Company (..),
                                                 InputText (..), InputType (..),
                                                 Item (..), ItemType (..),
                                                 Label (..), Row (..),
-                                                Signature (..))
+                                                Signature (..)
+                                               ,InputType(..)
+                                               ,InputDate(..)
+                                               ,InputTime(..))
 
 import           Control.Applicative           ((<$>), (<|>))
 
@@ -48,7 +54,7 @@ import           Control.Lens                  (folded, folding, makeClassy_,
                                                 makeLenses, makePrisms,
                                                 traverse, (^..))
 
-import           Control.Monad                 (mzero)
+-- import           Control.Monad                 (mzero)
 import qualified Data.Csv                      as C
 import           Data.Foldable                 (foldl')
 import qualified Data.HashMap.Strict           as HM
@@ -76,8 +82,8 @@ instance C.ToField TemplateItem where
   toField (TemplateItem _ (InputTypeInt (InputInt i))) = C.toField i
   toField (TemplateItem _ (InputTypeDouble (InputDouble d))) = C.toField d
   toField (TemplateItem _ (InputTypeSignature (Signature s))) = C.toField s
-
-
+  toField (TemplateItem _ (InputTypeDate (InputDate d))) = C.toField d
+  toField (TemplateItem _ (InputTypeTime (InputTime t))) = C.toField t
 
 -- Make Lenses
 makeLenses ''Form
@@ -100,6 +106,8 @@ encodeTemplateItemsAsObject items = object (objectMaker <$> labelIncrementor ite
                        codeAsInputType (InputTypeSignature (Signature s)) = toJSON s
                        codeAsInputType (InputTypeInt (InputInt s)) = toJSON s
                        codeAsInputType (InputTypeDouble (InputDouble s)) = toJSON s
+                       codeAsInputType (InputTypeDate (InputDate s)) = toJSON s
+                       codeAsInputType (InputTypeTime (InputTime t)) = toJSON t
                        labelIncrementor templateItems' = replaceOldLabels templateItems' .
                                                           makeTexts $ templateItems'
                        makeTexts = fmap label
@@ -137,7 +145,7 @@ instance ToJSON DataTemplate where
 
 instance FromJSON DataTemplate where
          parseJSON o =  DataTemplate <$> decodeObjectAsTemplateItems o
-         parseJSON _ = mzero
+
 
 -- Type for tranform function
 data ArgConstructor a b c = EmptyItem (a -> b -> c) | OneArgument (b -> c) | FullItem c
@@ -150,7 +158,7 @@ makePrisms ''ArgConstructor
 -- This is mostly about stripping away the stuff that isn't an input field
 
 fromFormToDataTemplate :: Form -> DataTemplate
-fromFormToDataTemplate (Form _c _a _l _p  constants rs)  = DataTemplate (extractData rs)
+fromFormToDataTemplate (Form _c _a _l _p  _constants rs)  = DataTemplate (extractData rs)
                        where extractData :: [Row] -> [TemplateItem]
                              extractData rows = rows ^.. traverse.rowItem.traverse.item.folding itemMakerFcn
                              itemMakerFcn :: [ItemType] -> [TemplateItem]
