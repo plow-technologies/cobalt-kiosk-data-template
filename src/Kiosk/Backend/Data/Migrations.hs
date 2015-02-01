@@ -28,6 +28,7 @@ module Kiosk.Backend.Data.Migrations ( FormVersionZeroEntry(..)
 import           Control.Lens                      (view,over)
 import Data.Text (Text)
 import qualified Data.Text                         as T
+import qualified Data.Text.Read as T
 import Kiosk.Backend.Data.MigrationClass
 import Data.List (foldl')
 import Control.Applicative
@@ -229,15 +230,54 @@ makeTemplateItemInt lbl value = TemplateItem (T.pack lbl) (InputTypeInt (InputIn
 makeTemplateItemText :: String -> T.Text -> TemplateItem
 makeTemplateItemText lbl value = TemplateItem (T.pack lbl) (InputTypeText (InputText value))
 
-formVersionZeroEntryToFormOneEntry = undefined
+formVersionZeroEntryToFormOneEntry
+  :: FormVersionZeroEntry
+     -> Validation
+          (MigrationError Text FormVersionZero) FormVersionOneEntry
+formVersionZeroEntryToFormOneEntry (FormVersionZeroEntry v0EntryKey v0Form) = makeVOne <$> formVersionZeroToFormVersionOne v0Form
+  where 
+   makeVOne v1 = FormVersionOneEntry v0EntryKey v1
 -- formVersionZeroEntryToFormOneEntry :: FormVersionZeroEntry -> Either String FormVersionOneEntry
 -- formVersionZeroEntryToFormOneEntry fv0 = case formVersionZeroToFormVersionOne (versionZeroValue fv0) of
 --                                            Left e -> Left e
 --                                            Right fv1Value -> Right $ FormVersionOneEntry fv1Key fv1Value
 --                                                                        where fv1Key = versionZeroKey fv0
 
-formVersionZeroToFormVersionOne :: FormVersionZero -> Validation FormVersionZero FormVersionOne
-formVersionZeroToFormVersionOne  v0 = undefined -- validateWaterType v0
+formVersionZeroToFormVersionOne :: FormVersionZero -> Validation (MigrationError Text FormVersionZero) FormVersionOne
+formVersionZeroToFormVersionOne  v0@(FormVersionZero { _signature_1                 
+                                                     , _nameOfWaterHaulingCompany_1 
+                                                     , _flowbackWater_1             
+                                                     , _pitWater_1                  
+                                                     , _truckNumber_1               
+                                                     , _date_1                      
+                                                     , _leaseName_1                 
+                                                     , _waterHaulingPermit_1        
+                                                     , _bblsProducedWater_1         
+                                                     , _driverSignature_1           
+                                                     , _timeIn_1                    
+                                                     , _freshWater_1                
+                                                     , _nameOfLeaseOperator_1        
+                                                      }) =  eitherToValidation $ validationToEither (validateWaterTypeOnlyOneFull  v0) >>=
+                                                                                 (\wt -> validationToEither (over _Failure makeMigrationError (fromWaterTypeFoundTextToDouble wt))) >>= 
+                                                                                 decodeWithCorrectWaterType 
+                       where
+                         makeMigrationError :: String -> MigrationError Text FormVersionZero
+                         makeMigrationError str = MigrationError (T.pack str) v0
+                         decodeWithCorrectWaterType (WaterTypeFound wt amt)  = return $ (FormVersionOne { nameOfWaterHaulingCompany = _nameOfWaterHaulingCompany_1
+                                                                                                        , amount = amt
+                                                                                                        , date = _date_1
+                                                                                                        , timeIn = _timeIn_1
+                                                                                                        , typeOfWaterHauled = wt
+                                                                                                        , _truckNumber = _truckNumber_1
+                                                                                                        , waterHaulingPermit = _waterHaulingPermit_1
+                                                                                                        , nameOfLeaseOperator = _nameOfLeaseOperator_1
+                                                                                                        , leaseName = _leaseName_1
+                                                                                                        , signature = _signature_1})                                                            
+
+
+
+
+
 
 
 {- 
@@ -254,23 +294,25 @@ FormVersionOne { nameOfWaterHaulingCompany :: T.Text
    
    -}
 
+fromWaterTypeFoundTextToDouble
+  :: WaterTypeFound Text -> Validation String (WaterTypeFound Double)
+fromWaterTypeFoundTextToDouble wtf@(WaterTypeFound _ txt) = eitherToValidation eitherDouble 
+  where 
+   eitherDouble :: Either String (WaterTypeFound Double)
+   eitherDouble = putBackInWaterTypeFound.fst <$> T.double txt
+   putBackInWaterTypeFound :: Double -> WaterTypeFound Double
+   putBackInWaterTypeFound d =  wtf {getAmount = d}
 
 
-
-validateWaterTypeOnlyOneFull :: FormVersionZero -> Validation (MigrationError Text FormVersionZero) (FormVersionZero, WaterTypeFound)
+validateWaterTypeOnlyOneFull :: FormVersionZero -> Validation (MigrationError Text FormVersionZero) (WaterTypeFound Text)
 validateWaterTypeOnlyOneFull v0@(FormVersionZero { _flowbackWater_1             
                                                               , _pitWater_1                  
                                                               , _bblsProducedWater_1         
                                                               , _freshWater_1                
                                                               }) = over _Failure  (\t -> MigrationError t v0) waterTypeAndForm
   where 
-    waterTypeAndForm ::Validation Text  (FormVersionZero , WaterTypeFound)
-    waterTypeAndForm = makeWaterTypeTuple <$>
-                       waterTypeSearchToValidation selectOneWaterType
-
-    makeWaterTypeTuple :: WaterTypeFound -> (FormVersionZero, WaterTypeFound)                   
-    makeWaterTypeTuple waterType = (v0,waterType)                   
-
+    waterTypeAndForm ::Validation Text   (WaterTypeFound Text)
+    waterTypeAndForm = waterTypeSearchToValidation selectOneWaterType
 
     allWaterText = [_flowbackWater_1
                    , _pitWater_1
@@ -281,22 +323,23 @@ validateWaterTypeOnlyOneFull v0@(FormVersionZero { _flowbackWater_1
 
 
 
+
 findOneValidWaterType :: WaterTypeSearch -> Text -> WaterTypeSearch                         
 findOneValidWaterType (TestThisWaterType currentWaterType) possibleWaterText
    |T.null possibleWaterText = TestThisWaterType . succ $ currentWaterType
    | otherwise = FoundThisWaterType currentWaterType possibleWaterText
-findOneValidWaterType f@(FoundThisWaterType wt _) possibleWaterText
+findOneValidWaterType f@(FoundThisWaterType _ _) possibleWaterText
    | T.null possibleWaterText = f
    | otherwise = WaterTypeError "More Than One kind of watertype found"       
 findOneValidWaterType wtErr@(WaterTypeError _) _ = wtErr
 
-waterTypeSearchToValidation :: WaterTypeSearch  -> Validation Text WaterTypeFound
-waterTypeSearchToValidation (TestThisWaterType a) = Failure "No Amount found, all water type are null"                                
+waterTypeSearchToValidation :: WaterTypeSearch  -> Validation Text (WaterTypeFound Text)
+waterTypeSearchToValidation (TestThisWaterType _) = Failure "No Amount found, all water type are null"                                
 waterTypeSearchToValidation (WaterTypeError t) = Failure t
-waterTypeSearchToValidation waterSearch@(FoundThisWaterType waterType txt) = Success . WaterTypeFound waterType $ txt
+waterTypeSearchToValidation (FoundThisWaterType waterType txt) = Success . WaterTypeFound waterType $ txt
 
-data WaterTypeFound = WaterTypeFound {getWaterType :: WaterType
-                                     ,getAmount :: Text }
+data WaterTypeFound amt = WaterTypeFound {_getWaterType :: WaterType
+                                         ,getAmount :: amt }
 
 data WaterTypeSearch = TestThisWaterType WaterType | WaterTypeError  Text | FoundThisWaterType WaterType Text
 
