@@ -22,19 +22,26 @@ this results in a final type
 module Kiosk.Backend.Data.MigrationClass ( FormMigration
                                          , IncomingRecord
                                          , OutgoingRecord
+                                         , MigrationError (..)
                                          , toIncomingRecord
                                          , transformRecord 
                                          , fromOutgoingRecord) where
 
 import Kiosk.Backend.Data ( DataTemplateEntry(..)
-                          , DataTemplateEntryKey(..))
-                          
+                           )
+
+import Data.Either.Validation (Validation (..))
+
+
+data MigrationError e i = MigrationError { getError :: e
+                                         , getIncomingData :: i }
+
 
 class FormMigration i o where 
   type IncomingRecord i :: * 
   type OutgoingRecord o :: *
   toIncomingRecord :: DataTemplateEntry -> IncomingRecord i
-  transformRecord :: IncomingRecord i -> OutgoingRecord o
+  transformRecord :: IncomingRecord i -> Validation (MigrationError e (IncomingRecord i)) (OutgoingRecord o)
   fromOutgoingRecord :: OutgoingRecord o -> DataTemplateEntry
 
 

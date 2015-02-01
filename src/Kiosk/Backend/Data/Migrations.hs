@@ -1,7 +1,5 @@
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
-
-
-
 {- |
 Module      :  Kiosk.Backend.Data.Migrations
 Description :  Every known migration between templates
@@ -17,15 +15,22 @@ Each migration is tied to a form-id and another form-id.  Then there is a parser
      takes one to another.
 
      There is nothing else that is required
-
-
 -}
 
 
-module Kiosk.Backend.Data.Migrations (FormVersionZeroEntry(..), FormVersionOneEntry (..), toFormVersionZeroEntry, fromFormVersionOne , formVersionZeroEntryToFormOneEntry) where
+module Kiosk.Backend.Data.Migrations ( FormVersionZeroEntry(..)
+                                     , FormVersionOneEntry (..)
+                                     , makeTemplateItemInt
+                                     , toFormVersionZeroEntry
+                                     , fromFormVersionOne 
+                                     , formVersionZeroEntryToFormOneEntry) where
 
-import           Control.Lens                      (view)
+import           Control.Lens                      (view,over)
+import Data.Text (Text)
 import qualified Data.Text                         as T
+import Kiosk.Backend.Data.MigrationClass
+import Data.List (foldl')
+import Control.Applicative
 
 import           Kiosk.Backend.Data                (DataTemplateEntry (..),
                                                     DataTemplateEntryKey (..),
@@ -34,7 +39,7 @@ import           Kiosk.Backend.Data                (DataTemplateEntry (..),
 import           Kiosk.Backend.Data.DataTemplate   (DataTemplate (..),
                                                     TemplateItem (..))
 -- import           Kiosk.Backend.Data.MigrationClass
-
+import Data.Either.Validation
 import qualified Data.List                         as L (find)
 import           Kiosk.Backend.Form.Element
 
@@ -47,20 +52,19 @@ import           Kiosk.Backend.Form.Element
 data FormVersionZeroEntry = FormVersionZeroEntry { versionZeroKey    :: DataTemplateEntryKey
                                                   , versionZeroValue :: FormVersionZero  } deriving (Show)
 
-
-data FormVersionZero = FormVersionZero { _signature_1                 :: T.Text
-                                       , _nameOfWaterHaulingCompany_1 :: T.Text
-                                       , _flowbackWater_1             :: T.Text
-                                       , _pitWater_1                  :: T.Text
-                                       , _truckNumber_1               :: T.Text
-                                       , _date_1                      :: T.Text
-                                       , _leaseName_1                 :: T.Text
-                                       , _waterHaulingPermit_1        :: T.Text
-                                       , _bblsProducedWater_1         :: T.Text
-                                       , _driverSignature_1           :: T.Text
-                                       , _timeIn_1                    :: T.Text
-                                       , _freshWater_1                :: T.Text
-                                       , _nameOfLeaseOperator_1       :: T.Text
+data FormVersionZero = FormVersionZero { _signature_1                 :: Text
+                                       , _nameOfWaterHaulingCompany_1 :: Text
+                                       , _flowbackWater_1             :: Text
+                                       , _pitWater_1                  :: Text
+                                       , _truckNumber_1               :: Text
+                                       , _date_1                      :: Text
+                                       , _leaseName_1                 :: Text
+                                       , _waterHaulingPermit_1        :: Text
+                                       , _bblsProducedWater_1         :: Text
+                                       , _driverSignature_1           :: Text
+                                       , _timeIn_1                    :: Text
+                                       , _freshWater_1                :: Text
+                                       , _nameOfLeaseOperator_1       :: Text
                                        } deriving (Show)
 
                                        
@@ -78,6 +82,7 @@ data FormVersionZero = FormVersionZero { _signature_1                 :: T.Text
 -- Truck_#_1: "31"
 -- Water_Hauling_Permit_#_1: ""
 -- signature_1: "/9j/4AAQSkZJRgABAQAASABIAAD/4QBYRXhpZgAATU0AKgAAAAgAAgESAAMAAAABAAEAAIdpAAQAAAABAAAAJgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAACZ6ADAAQAAAABAAAAfQAAAAD/7QA4UGhvdG9zaG9wIDMuMAA4QklNBAQAAAAAAAA4QklNBCU
+
 
 toFormVersionZeroEntry :: DataTemplateEntry -> FormVersionZeroEntry
 toFormVersionZeroEntry dt = FormVersionZeroEntry dtKey formZero
@@ -147,14 +152,14 @@ extractInputType (TemplateItem _ (InputTypeTime (InputTime t))) = t
 
  -}
 
-data WaterType = PitWater | FlowBackWater | FreshWater | ProducedWater deriving (Show)
+data WaterType = PitWater | FlowBackWater | FreshWater | ProducedWater deriving (Show,Enum)
 
 data FormVersionOneEntry = FormVersionOneEntry { versionOneKey   :: DataTemplateEntryKey
                                                , versionOneValue :: FormVersionOne  }
 
 
 data FormVersionOne = FormVersionOne { nameOfWaterHaulingCompany :: T.Text
-                                     , amount                    :: Int
+                                     , amount                    :: Double
                                      , date                      :: T.Text
                                      , timeIn                    :: T.Text
                                      , typeOfWaterHauled         :: WaterType
@@ -206,7 +211,7 @@ printWaterType wt = case wt of
 convertFormToTemplateItems :: FormVersionOne -> [TemplateItem]
 convertFormToTemplateItems fv1 = [nItem, a , d ,tin , twh, tn, nlo, ln, s ]
                         where nItem = makeTemplateItemText "Name_of_Water_Hauling_Company" (nameOfWaterHaulingCompany fv1)
-                              a     = makeTemplateItemInt "Amount" (amount fv1)
+                              a     = makeTemplateItemDouble "Amount" (amount fv1)
                               d     = makeTemplateItemText "Date" (date fv1)
                               tin   = makeTemplateItemText "Time_in" (timeIn fv1)
                               twh   = makeTemplateItemText "Type_of_Water_Hauled" (T.pack . printWaterType . typeOfWaterHauled $ fv1)
@@ -215,6 +220,8 @@ convertFormToTemplateItems fv1 = [nItem, a , d ,tin , twh, tn, nlo, ln, s ]
                               ln    = makeTemplateItemText "Lease_Name" (leaseName fv1)
                               s     = makeTemplateItemText "Driver_Signature" (signature fv1)
 
+makeTemplateItemDouble :: String -> Double -> TemplateItem
+makeTemplateItemDouble lbl value = TemplateItem (T.pack lbl) (InputTypeDouble (InputDouble value))
 
 makeTemplateItemInt :: String -> Int -> TemplateItem
 makeTemplateItemInt lbl value = TemplateItem (T.pack lbl) (InputTypeInt (InputInt value))
@@ -222,28 +229,75 @@ makeTemplateItemInt lbl value = TemplateItem (T.pack lbl) (InputTypeInt (InputIn
 makeTemplateItemText :: String -> T.Text -> TemplateItem
 makeTemplateItemText lbl value = TemplateItem (T.pack lbl) (InputTypeText (InputText value))
 
+formVersionZeroEntryToFormOneEntry = undefined
+-- formVersionZeroEntryToFormOneEntry :: FormVersionZeroEntry -> Either String FormVersionOneEntry
+-- formVersionZeroEntryToFormOneEntry fv0 = case formVersionZeroToFormVersionOne (versionZeroValue fv0) of
+--                                            Left e -> Left e
+--                                            Right fv1Value -> Right $ FormVersionOneEntry fv1Key fv1Value
+--                                                                        where fv1Key = versionZeroKey fv0
 
-formVersionZeroEntryToFormOneEntry :: FormVersionZeroEntry -> Either String FormVersionOneEntry
-formVersionZeroEntryToFormOneEntry fv0 = case formVersionZeroToFormVersionOne (versionZeroValue fv0) of
-                                           Left e -> Left e
-                                           Right fv1Value -> Right $ FormVersionOneEntry fv1Key fv1Value
-                                                                       where fv1Key = versionZeroKey fv0
-
-formVersionZeroToFormVersionOne :: FormVersionZero -> Either String FormVersionOne
-formVersionZeroToFormVersionOne (FormVersionZero s1 n1 fbw1 pw1 tn1 d1 ln1 wp1 bpw1 _ds1 ti1 fw1 nl1) = case checkForEmptyWaterType bpw1 fbw1 pw1 fw1 of
-                                                                                                            True -> Left $ "Water Type information is missing"
-                                                                                                            False -> Right $ FormVersionOne n1 (read (T.unpack bpw1)::Int) d1 ti1 (determineWaterType bpw1 fbw1 pw1 fw1) tn1 wp1 nl1 ln1 s1
+formVersionZeroToFormVersionOne :: FormVersionZero -> Validation FormVersionZero FormVersionOne
+formVersionZeroToFormVersionOne  v0 = undefined -- validateWaterType v0
 
 
-checkForEmptyWaterType :: T.Text -> T.Text -> T.Text -> T.Text -> Bool
-checkForEmptyWaterType pdw fbw pw fw = T.null pdw && T.null fbw && T.null pw && T.null fw
+{- 
+FormVersionOne { nameOfWaterHaulingCompany :: T.Text
+               , amount                    :: Int
+               , date                      :: T.Text
+               , timeIn                    :: T.Text
+               , typeOfWaterHauled         :: WaterType
+               , _truckNumber              :: T.Text
+               , waterHaulingPermit        :: T.Text
+               , nameOfLeaseOperator       :: T.Text
+               , leaseName                 :: T.Text
+               , signature                 :: T.Text  }   
+   
+   -}
 
-determineWaterType :: T.Text -> T.Text -> T.Text -> T.Text -> WaterType
-determineWaterType pdw fbw pw _fw
-                   | not (T.null pdw) = ProducedWater
-                   | not (T.null fbw && T.unpack fbw == "0") = FlowBackWater
-                   | not (T.null pw && T.unpack pw == "0") = PitWater
-                   | otherwise = FreshWater
 
+
+
+validateWaterTypeOnlyOneFull :: FormVersionZero -> Validation (MigrationError Text FormVersionZero) (FormVersionZero, WaterTypeFound)
+validateWaterTypeOnlyOneFull v0@(FormVersionZero { _flowbackWater_1             
+                                                              , _pitWater_1                  
+                                                              , _bblsProducedWater_1         
+                                                              , _freshWater_1                
+                                                              }) = over _Failure  (\t -> MigrationError t v0) waterTypeAndForm
+  where 
+    waterTypeAndForm ::Validation Text  (FormVersionZero , WaterTypeFound)
+    waterTypeAndForm = makeWaterTypeTuple <$>
+                       waterTypeSearchToValidation selectOneWaterType
+
+    makeWaterTypeTuple :: WaterTypeFound -> (FormVersionZero, WaterTypeFound)                   
+    makeWaterTypeTuple waterType = (v0,waterType)                   
+
+
+    allWaterText = [_flowbackWater_1
+                   , _pitWater_1
+                   , _bblsProducedWater_1
+                   , _freshWater_1]                   
+    selectOneWaterType = foldl' findOneValidWaterType (TestThisWaterType FlowBackWater) allWaterText
+
+
+
+
+findOneValidWaterType :: WaterTypeSearch -> Text -> WaterTypeSearch                         
+findOneValidWaterType (TestThisWaterType currentWaterType) possibleWaterText
+   |T.null possibleWaterText = TestThisWaterType . succ $ currentWaterType
+   | otherwise = FoundThisWaterType currentWaterType possibleWaterText
+findOneValidWaterType f@(FoundThisWaterType wt _) possibleWaterText
+   | T.null possibleWaterText = f
+   | otherwise = WaterTypeError "More Than One kind of watertype found"       
+findOneValidWaterType wtErr@(WaterTypeError _) _ = wtErr
+
+waterTypeSearchToValidation :: WaterTypeSearch  -> Validation Text WaterTypeFound
+waterTypeSearchToValidation (TestThisWaterType a) = Failure "No Amount found, all water type are null"                                
+waterTypeSearchToValidation (WaterTypeError t) = Failure t
+waterTypeSearchToValidation waterSearch@(FoundThisWaterType waterType txt) = Success . WaterTypeFound waterType $ txt
+
+data WaterTypeFound = WaterTypeFound {getWaterType :: WaterType
+                                     ,getAmount :: Text }
+
+data WaterTypeSearch = TestThisWaterType WaterType | WaterTypeError  Text | FoundThisWaterType WaterType Text
 
 
