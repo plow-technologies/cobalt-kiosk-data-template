@@ -1,5 +1,7 @@
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {- |
 Module      :  Kiosk.Backend.Data.Migrations
 Description :  Every known migration between templates
@@ -39,13 +41,19 @@ import           Kiosk.Backend.Data                (DataTemplateEntry (..),
                                                     dataTemplateEntryValue)
 import           Kiosk.Backend.Data.DataTemplate   (DataTemplate (..),
                                                     TemplateItem (..))
--- import           Kiosk.Backend.Data.MigrationClass
+
 import Data.Either.Validation
 import qualified Data.List                         as L (find)
 import           Kiosk.Backend.Form.Element
 
 
 -- | MigrationClasses are about migrating data not data templates so worry about only the output
+
+
+instance FormMigration FormVersionZeroEntry FormVersionOneEntry where
+  toIncomingRecord = toFormVersionZeroEntry
+  transformRecord = formVersionZeroEntryToFormOneEntry
+  fromOutgoingRecord = fromFormVersionOne
 
 
 -- |First half of the migration
@@ -233,10 +241,11 @@ makeTemplateItemText lbl value = TemplateItem (T.pack lbl) (InputTypeText (Input
 formVersionZeroEntryToFormOneEntry
   :: FormVersionZeroEntry
      -> Validation
-          (MigrationError Text FormVersionZero) FormVersionOneEntry
-formVersionZeroEntryToFormOneEntry (FormVersionZeroEntry v0EntryKey v0Form) = makeVOne <$> formVersionZeroToFormVersionOne v0Form
+          (MigrationError Text FormVersionZeroEntry) FormVersionOneEntry
+formVersionZeroEntryToFormOneEntry v0e@(FormVersionZeroEntry v0EntryKey v0Form) = over _Failure makeErrorEntry (makeVOne <$> formVersionZeroToFormVersionOne v0Form)
   where 
-   makeVOne v1 = FormVersionOneEntry v0EntryKey v1
+   makeErrorEntry (MigrationError e _) = MigrationError e v0e
+   makeVOne  = FormVersionOneEntry v0EntryKey 
 -- formVersionZeroEntryToFormOneEntry :: FormVersionZeroEntry -> Either String FormVersionOneEntry
 -- formVersionZeroEntryToFormOneEntry fv0 = case formVersionZeroToFormVersionOne (versionZeroValue fv0) of
 --                                            Left e -> Left e
