@@ -1,6 +1,7 @@
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FunctionalDependencies #-}
 
 {- |
 Module      :  Kiosk.Backend.Data.MigrationClass
@@ -19,11 +20,8 @@ an intermediate type with a MigrationClass created on it,
 this results in a final type   
 
 -}
-module Kiosk.Backend.Data.MigrationClass ( FormMigration
-                                         , MigrationError (..)
-                                         , toIncomingRecord
-                                         , transformRecord 
-                                         , fromOutgoingRecord) where
+module Kiosk.Backend.Data.MigrationClass ( FormMigration(..)
+                                         , MigrationError (..)) where
 
 import Kiosk.Backend.Data ( DataTemplateEntry(..)
                            )
@@ -35,9 +33,10 @@ data MigrationError e i = MigrationError { getError :: e
                                          , getIncomingData :: i }
 
 
-class FormMigration i o where 
+class FormMigration i o | i -> o  where 
+  type OutgoingRecord :: *
   toIncomingRecord :: DataTemplateEntry -> i
-  transformRecord :: i -> Validation (MigrationError Text i) o
+  transformRecord :: i -> Validation (MigrationError Text i) OutgoingRecord
   fromOutgoingRecord :: o -> DataTemplateEntry
 
 

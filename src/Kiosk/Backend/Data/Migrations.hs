@@ -22,10 +22,7 @@ Each migration is tied to a form-id and another form-id.  Then there is a parser
 
 module Kiosk.Backend.Data.Migrations ( FormVersionZeroEntry(..)
                                      , FormVersionOneEntry (..)
-                                     , makeTemplateItemInt
-                                     , toFormVersionZeroEntry
-                                     , fromFormVersionOne 
-                                     , formVersionZeroEntryToFormOneEntry) where
+                                     , FormMigration(..)) where
 
 import           Control.Lens                      (view,over)
 import Data.Text (Text)
@@ -51,6 +48,7 @@ import           Kiosk.Backend.Form.Element
 
 
 instance FormMigration FormVersionZeroEntry FormVersionOneEntry where
+  type OutgoingRecord = FormVersionOneEntry
   toIncomingRecord = toFormVersionZeroEntry
   transformRecord = formVersionZeroEntryToFormOneEntry
   fromOutgoingRecord = fromFormVersionOne
