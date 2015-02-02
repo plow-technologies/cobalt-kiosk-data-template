@@ -119,8 +119,10 @@ toFormVersionZeroEntry dt = FormVersionZeroEntry dtKey formZero
 extractDataTemplateEntryKey :: DataTemplateEntry -> DataTemplateEntryKey
 extractDataTemplateEntryKey = view dataTemplateEntryKey
 
+
 extractTemplateItems :: DataTemplateEntry -> [TemplateItem]
 extractTemplateItems dt  = templateItems $ view dataTemplateEntryValue dt
+
 
 extractValueFromTemplateItem :: String -> [TemplateItem] -> T.Text
 extractValueFromTemplateItem key items = case L.find (\a -> label a == T.pack key) items of
@@ -136,6 +138,8 @@ extractInputType (TemplateItem _ (InputTypeDouble (InputDouble d))) = T.pack . s
 extractInputType (TemplateItem _ (InputTypeSignature (Signature s))) = s
 extractInputType (TemplateItem _ (InputTypeDate (InputDate t))) = t
 extractInputType (TemplateItem _ (InputTypeTime (InputTime t))) = t
+
+
 -- | Second half of the migration
 
 {-
@@ -248,12 +252,7 @@ formVersionZeroEntryToFormOneEntry
 formVersionZeroEntryToFormOneEntry v0e@(FormVersionZeroEntry v0EntryKey v0Form) = over _Failure makeErrorEntry (makeVOne <$> formVersionZeroToFormVersionOne v0Form)
   where 
    makeErrorEntry (MigrationError e _) = MigrationError e v0e
-   makeVOne  = FormVersionOneEntry v0EntryKey 
--- formVersionZeroEntryToFormOneEntry :: FormVersionZeroEntry -> Either String FormVersionOneEntry
--- formVersionZeroEntryToFormOneEntry fv0 = case formVersionZeroToFormVersionOne (versionZeroValue fv0) of
---                                            Left e -> Left e
---                                            Right fv1Value -> Right $ FormVersionOneEntry fv1Key fv1Value
---                                                                        where fv1Key = versionZeroKey fv0
+   makeVOne  = FormVersionOneEntry v0EntryKey{ _getFormId = 1 } 
 
 formVersionZeroToFormVersionOne :: FormVersionZero -> Validation (MigrationError Text FormVersionZero) FormVersionOne
 formVersionZeroToFormVersionOne  v0@(FormVersionZero { _signature_1                 
@@ -287,11 +286,6 @@ formVersionZeroToFormVersionOne  v0@(FormVersionZero { _signature_1
                                                     , nameOfLeaseOperator = _nameOfLeaseOperator_1
                                                     , leaseName = _leaseName_1
                                                     , signature = _signature_1})                                                            
-
-
-
-
-
 
 
 {- 
