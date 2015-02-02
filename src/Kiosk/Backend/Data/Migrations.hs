@@ -266,22 +266,24 @@ formVersionZeroToFormVersionOne  v0@(FormVersionZero { _signature_1
                                                      , _timeIn_1                    
                                                      , _freshWater_1                
                                                      , _nameOfLeaseOperator_1        
-                                                      }) =  eitherToValidation $ validationToEither (validateWaterTypeOnlyOneFull  v0) >>=
-                                                                                 (\wt -> validationToEither (over _Failure makeMigrationError (fromWaterTypeFoundTextToDouble wt))) >>= 
-                                                                                 decodeWithCorrectWaterType 
+                                                      }) =  
+    eitherToValidation $ validationToEither (validateWaterTypeOnlyOneFull  v0) >>=
+                (\wt -> validationToEither (over _Failure makeMigrationError (fromWaterTypeFoundTextToDouble wt))) >>= 
+                decodeWithCorrectWaterType 
                        where
                          makeMigrationError :: String -> MigrationError Text FormVersionZero
                          makeMigrationError str = MigrationError (T.pack str) v0
-                         decodeWithCorrectWaterType (WaterTypeFound wt amt)  = return $ (FormVersionOne { nameOfWaterHaulingCompany = _nameOfWaterHaulingCompany_1
-                                                                                                        , amount = amt
-                                                                                                        , date = _date_1
-                                                                                                        , timeIn = _timeIn_1
-                                                                                                        , typeOfWaterHauled = wt
-                                                                                                        , _truckNumber = _truckNumber_1
-                                                                                                        , waterHaulingPermit = _waterHaulingPermit_1
-                                                                                                        , nameOfLeaseOperator = _nameOfLeaseOperator_1
-                                                                                                        , leaseName = _leaseName_1
-                                                                                                        , signature = _signature_1})                                                            
+                         decodeWithCorrectWaterType (WaterTypeFound wt amt)  = 
+                           return $ (FormVersionOne { nameOfWaterHaulingCompany = _nameOfWaterHaulingCompany_1
+                                                    , amount = amt
+                                                    , date = _date_1
+                                                    , timeIn = _timeIn_1
+                                                    , typeOfWaterHauled = wt
+                                                    , _truckNumber = _truckNumber_1
+                                                    , waterHaulingPermit = _waterHaulingPermit_1
+                                                    , nameOfLeaseOperator = _nameOfLeaseOperator_1
+                                                    , leaseName = _leaseName_1
+                                                    , signature = _signature_1})                                                            
 
 
 
