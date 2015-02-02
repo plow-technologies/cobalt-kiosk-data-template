@@ -48,10 +48,15 @@ import           Kiosk.Backend.Form.Element
 
 
 instance FormMigration FormVersionZeroEntry FormVersionOneEntry where
-  type OutgoingRecord = FormVersionOneEntry
-  toIncomingRecord = toFormVersionZeroEntry
   transformRecord = formVersionZeroEntryToFormOneEntry
-  fromOutgoingRecord = fromFormVersionOne
+
+instance FromDataTemplate FormVersionZeroEntry where
+  fromDataTemplate = toFormVersionZeroEntry
+
+
+
+instance ToDataTemplate FormVersionOneEntry where 
+  toDataTemplate = fromFormVersionOne
 
 
 -- |First half of the migration

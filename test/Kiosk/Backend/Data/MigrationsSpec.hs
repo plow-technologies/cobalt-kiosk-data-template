@@ -26,6 +26,7 @@ spec = do
   describe (nameBase 'FormVersionOneEntry) $
    it "Should convert FormVersionZeroEntry to FormVersionOneEntry" $ do
      let (Right dt) = eitherDecode testFormVersionZeroDataTemplateEntry :: Either String DataTemplateEntry
-         (Success fv1) = (transformRecord . toIncomingRecord $ dt) :: Validation (MigrationError Text FormVersionZeroEntry) FormVersionOneEntry
-   
+         (Success fv1) = (transformRecord . fromDataTemplate $ dt) :: Validation (MigrationError Text FormVersionZeroEntry) FormVersionOneEntry
+         backToDataTemplateEntry :: DataTemplateEntry
+         backToDataTemplateEntry = toDataTemplate fv1
      True `shouldBe` True
