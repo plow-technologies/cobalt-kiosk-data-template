@@ -1,0 +1,83 @@
+Name:                   cobalt-kiosk-data-template
+Version:                1.2.5
+Author:                 Lingpo Huang <lingpo.huang@plowtech.net>
+Maintainer:             Lingpo Huang <lingpo.huang@plowtech.net>
+License:                BSD3
+License-File:           LICENSE
+Category:               Apple
+Synopsis:               Combined Form Data and Form Template for Cobalt Kiosk Application Backend
+Description:            Combined Form Data and Form Template for Cobalt Kiosk Application Backend
+Cabal-Version:          >= 1.10
+Build-Type:             Simple
+Extra-source-files:     README.md
+
+Library
+  Default-Language:     Haskell2010
+  HS-Source-Dirs:       src
+  GHC-Options:          -Wall
+  Exposed-Modules:      Kiosk.Backend.Data
+                        Kiosk.Backend.Data.DataTemplateEntry
+                        Kiosk.Backend.Data.MigrationClass
+                        Kiosk.Backend.Data.Migrations
+  Other-Modules:        Kiosk.Backend.Data.DataTemplate
+                        Kiosk.Backend.Data.DataTemplateEntryKey
+                        Kiosk.Backend.Table
+                         
+  Build-Depends:        base                       >= 4 && < 5
+                      , cobalt-kiosk-form-template >= 1.2.5
+                      , plow-extras-time           >= 0.1.1
+                      , blaze-markup <= 0.6.2.0
+                      , either >= 4.3.1
+                      , aeson                      
+                      , text                     
+                      , bytestring                 
+                      , unordered-containers      
+                      , lens                      >= 4 && < 4.5
+                      , tables                    
+                      , uuid                     
+                      , aeson-serialize          
+                      , attoparsec               
+                      , cereal                    
+                      , cassava                  
+                      , vector    
+                      , time 
+                      , old-locale 
+           
+
+Test-Suite spec
+  Type:                 exitcode-stdio-1.0
+  Default-Language:     Haskell2010
+  Hs-Source-Dirs:       src
+                      , test
+  Ghc-Options:          -Wall
+  Main-Is:              Spec.hs
+  Build-Depends:        base
+                      , QuickCheck
+                      , primitive-generator-mocks
+                      , hspec
+                      , HUnit
+                      , cobalt-kiosk-form-template
+                      , plow-extras-time
+                      , aeson
+                      , cereal
+                      , aeson-serialize
+                      , text     
+                      , bytestring                  
+                      , unordered-containers
+                      , containers >= 0.5.5.1
+                      , lens
+                      , serial-test-generators >= 0.1.3
+                      , template-haskell
+                      , attoparsec
+                      , tables
+                      , uuid
+                      , cassava
+                      , vector
+                      , time
+                      , old-locale
+                      , either
+
+
+Source-Repository head
+  Type:                 git
+  Location:             git@github.com:plow-technologies/cobalt-kiosk-data-template.git
