@@ -19,6 +19,7 @@ Library
                         Kiosk.Backend.Data.DataTemplateEntry
                         Kiosk.Backend.Data.MigrationClass
                         Kiosk.Backend.Data.Migrations
+                        Kiosk.Backend.Data.Migrations.FormVersionZero
   Other-Modules:        Kiosk.Backend.Data.DataTemplate
                         Kiosk.Backend.Data.DataTemplateEntryKey
                         Kiosk.Backend.Table
@@ -40,6 +41,7 @@ Library
                       , cereal                    
                       , cassava                  
                       , vector    
+
                       , time 
                       , old-locale 
            
