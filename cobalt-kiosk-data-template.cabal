@@ -20,6 +20,7 @@ Library
                         Kiosk.Backend.Data.MigrationClass
                         Kiosk.Backend.Data.Migrations
                         Kiosk.Backend.Data.Migrations.FormVersionZero
+                        Kiosk.Backend.Data.Migrations.CobaltBaseForm
   Other-Modules:        Kiosk.Backend.Data.DataTemplate
                         Kiosk.Backend.Data.DataTemplateEntryKey
                         Kiosk.Backend.Table
