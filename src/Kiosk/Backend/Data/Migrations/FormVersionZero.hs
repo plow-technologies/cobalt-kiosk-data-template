@@ -38,8 +38,7 @@ import Kiosk.Backend.Data.MigrationClass
 
 import Data.Text (Text)
 import           Kiosk.Backend.Data                (DataTemplateEntry (..),
-                                                    DataTemplateEntryKey (..),
-                                                    )
+                                                    DataTemplateEntryKey (..))
 -- |First half of the migration
 
 

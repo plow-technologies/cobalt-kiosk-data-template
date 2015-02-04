@@ -32,7 +32,8 @@ module Kiosk.Backend.Data.MigrationClass ( FormMigration(..)
                                          , makeTemplateItemInt
                                          , makeTemplateItemText) where
 import           Control.Lens                      (view)
-import           Kiosk.Backend.Data.DataTemplate   
+import           Kiosk.Backend.Data.DataTemplate  (TemplateItem(..)
+                                                  ,templateItems) 
 import Kiosk.Backend.Form.Element                 
 import Kiosk.Backend.Data ( DataTemplateEntry(..)
                           , DataTemplateEntryKey(..)
@@ -70,9 +71,9 @@ class (FromDataTemplate i, ToDataTemplate o) => FormMigration i o | i -> o  wher
 --------------------------------------------------
 
 -- | Utility Functions 
-
    
 -- | Use 'extractTemplateItems to get 'TemplateItem'
+
 extractTemplateItems :: DataTemplateEntry -> [TemplateItem]
 extractTemplateItems dt  = templateItems $ view dataTemplateEntryValue dt   
 
