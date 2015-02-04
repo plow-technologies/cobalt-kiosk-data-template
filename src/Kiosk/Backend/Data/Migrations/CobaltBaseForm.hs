@@ -19,7 +19,7 @@ various company forms
 
 -}
 
-module Kiosk.Backend.Data.Migrations.CobaltBaseForm (FormVersionOneEntry (..)) where        
+module Kiosk.Backend.Data.Migrations.CobaltBaseForm (CobaltBaseFormEntry (..)) where        
 
 import Kiosk.Backend.Data.MigrationClass
 import Data.Text (Text)
@@ -27,6 +27,7 @@ import Data.Either.Validation
 import Data.List (foldl')
 import Control.Lens (over)
 import Control.Applicative ((<$>))
+
 import qualified Data.Text                         as T
 import qualified Data.Text.Read as T
 import           Kiosk.Backend.Data.DataTemplate  ( TemplateItem (..)
@@ -43,10 +44,10 @@ import Kiosk.Backend.Data.Migrations.FormVersionZero ( FormVersionZeroEntry(..)
 
 data WaterType = PitWater | FlowBackWater | FreshWater | ProducedWater deriving (Show,Enum)
 
-data FormVersionOneEntry = FormVersionOneEntry { versionOneKey   :: DataTemplateEntryKey
-                                               , versionOneValue :: FormVersionOne  }
+data CobaltBaseFormEntry = CobaltBaseFormEntry { cobaltBaseKey   :: DataTemplateEntryKey
+                                               , cobaltBaseValue :: CobaltBaseForm  }
 
-data FormVersionOne = FormVersionOne { nameOfWaterHaulingCompany :: T.Text
+data CobaltBaseForm = CobaltBaseForm { nameOfWaterHaulingCompany :: T.Text
                                      , amount                    :: Double
                                      , date                      :: T.Text
                                      , timeIn                    :: T.Text
@@ -57,25 +58,22 @@ data FormVersionOne = FormVersionOne { nameOfWaterHaulingCompany :: T.Text
                                      , leaseName                 :: T.Text
                                      , signature                 :: T.Text  }
 
-
-instance ToDataTemplate FormVersionOneEntry where 
-  toDataTemplate = fromFormVersionOne
-
+instance ToDataTemplate CobaltBaseFormEntry where 
+  toDataTemplate = fromCobaltBaseForm
 
 -- | MigrationClasses are about migrating data not data templates so worry about only the output
 
+fromCobaltBaseForm :: CobaltBaseFormEntry -> DataTemplateEntry
+fromCobaltBaseForm f1e = DataTemplateEntry dtKey dtValue
+                 where dtKey = cobaltBaseKey f1e
+                       dtValue = convertCobaltBaseFormToDataTemplate (cobaltBaseValue f1e)
 
 
-fromFormVersionOne :: FormVersionOneEntry -> DataTemplateEntry
-fromFormVersionOne f1e = DataTemplateEntry dtKey dtValue
-                 where dtKey = versionOneKey f1e
-                       dtValue = convertFormVersionOneToDataTemplate (versionOneValue f1e)
 
+convertCobaltBaseFormToDataTemplate ::  CobaltBaseForm -> DataTemplate
+convertCobaltBaseFormToDataTemplate fv1 = dataTemplateBuilder fv1
 
-convertFormVersionOneToDataTemplate ::  FormVersionOne -> DataTemplate
-convertFormVersionOneToDataTemplate fv1 = dataTemplateBuilder fv1
-
-dataTemplateBuilder :: FormVersionOne -> DataTemplate
+dataTemplateBuilder :: CobaltBaseForm -> DataTemplate
 dataTemplateBuilder fv1 = DataTemplate $ convertFormToTemplateItems fv1
 
 printWaterType :: WaterType -> String
@@ -85,7 +83,8 @@ printWaterType wt = case wt of
            FreshWater    -> "Fresh Water"
            ProducedWater -> "Produced Water"
 
-convertFormToTemplateItems :: FormVersionOne -> [TemplateItem]
+
+convertFormToTemplateItems :: CobaltBaseForm -> [TemplateItem]
 convertFormToTemplateItems fv1 = [nItem, a , d ,tin , twh, tn, nlo, ln, s ]
                         where nItem = makeTemplateItemText "Name_of_Water_Hauling_Company" (nameOfWaterHaulingCompany fv1)
                               a     = makeTemplateItemDouble "Amount" (amount fv1)
@@ -108,18 +107,18 @@ fromWaterTypeFoundTextToDouble wtf@(WaterTypeFound _ txt) = eitherToValidation e
    putBackInWaterTypeFound d =  wtf {getAmount = d}
                                     
   
-formVersionZeroEntryToFormOneEntry
+
+formVersionZeroEntryToCobaltBaseEntry
   :: FormVersionZeroEntry
      -> Validation
-          (MigrationError Text FormVersionZeroEntry) FormVersionOneEntry
-formVersionZeroEntryToFormOneEntry v0e@(FormVersionZeroEntry v0EntryKey v0Form) = over _Failure makeErrorEntry (makeVOne <$> formVersionZeroToFormVersionOne v0Form)
+          (MigrationError Text FormVersionZeroEntry) CobaltBaseFormEntry
+formVersionZeroEntryToCobaltBaseEntry v0e@(FormVersionZeroEntry v0EntryKey v0Form) = over _Failure makeErrorEntry (makeVOne <$> formVersionZeroToCobaltBaseForm v0Form)
   where 
    makeErrorEntry (MigrationError e _) = MigrationError e v0e
-   makeVOne  = FormVersionOneEntry v0EntryKey{ _getFormId = 1 }   
+   makeVOne  = CobaltBaseFormEntry v0EntryKey{ _getFormId = 1 }   
 
-
-formVersionZeroToFormVersionOne :: FormVersionZero -> Validation (MigrationError Text FormVersionZero) FormVersionOne
-formVersionZeroToFormVersionOne  v0@(FormVersionZero { _signature_1                 
+formVersionZeroToCobaltBaseForm :: FormVersionZero -> Validation (MigrationError Text FormVersionZero) CobaltBaseForm
+formVersionZeroToCobaltBaseForm  v0@(FormVersionZero { _signature_1                 
                                                      , _nameOfWaterHaulingCompany_1 
                                                      , _flowbackWater_1             
                                                      , _pitWater_1                  
@@ -133,14 +132,14 @@ formVersionZeroToFormVersionOne  v0@(FormVersionZero { _signature_1
                                                      , _freshWater_1                
                                                      , _nameOfLeaseOperator_1        
                                                       }) =  
-    eitherToValidation $ validationToEither (validateWaterTypeOnlyOneFull  v0) >>=
+              eitherToValidation $ validationToEither (validateWaterTypeOnlyOneFull  v0) >>=
                 (\wt -> validationToEither (over _Failure makeMigrationError (fromWaterTypeFoundTextToDouble wt))) >>= 
                 decodeWithCorrectWaterType 
                        where
                          makeMigrationError :: String -> MigrationError Text FormVersionZero
                          makeMigrationError str = MigrationError (T.pack str) v0
                          decodeWithCorrectWaterType (WaterTypeFound wt amt)  = 
-                           return $ (FormVersionOne { nameOfWaterHaulingCompany = _nameOfWaterHaulingCompany_1
+                           return $ (CobaltBaseForm { nameOfWaterHaulingCompany = _nameOfWaterHaulingCompany_1
                                                     , amount = amt
                                                     , date = _date_1
                                                     , timeIn = _timeIn_1
@@ -188,7 +187,7 @@ data WaterTypeFound amt = WaterTypeFound {_getWaterType :: WaterType
 
 data WaterTypeSearch = TestThisWaterType WaterType | WaterTypeError  Text | FoundThisWaterType WaterType Text
 
-instance FormMigration FormVersionZeroEntry FormVersionOneEntry where
-  transformRecord = formVersionZeroEntryToFormOneEntry
+instance FormMigration FormVersionZeroEntry CobaltBaseFormEntry where
+  transformRecord = formVersionZeroEntryToCobaltBaseEntry
 
 
