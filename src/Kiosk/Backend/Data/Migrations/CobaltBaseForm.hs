@@ -19,7 +19,7 @@ various company forms
 
 -}
 
-module Kiosk.Backend.Data.Migrations.CobaltBaseForm (CobaltBaseForm (..)) where        
+module Kiosk.Backend.Data.Migrations.CobaltBaseForm (FormVersionOneEntry (..)) where        
 
 import Kiosk.Backend.Data.MigrationClass
 import Data.Text (Text)
@@ -41,17 +41,14 @@ import           Kiosk.Backend.Data                (DataTemplateEntry (..),
 import Kiosk.Backend.Data.Migrations.FormVersionZero ( FormVersionZeroEntry(..)
                                                      , FormVersionZero(..))
 
-
-
 data WaterType = PitWater | FlowBackWater | FreshWater | ProducedWater deriving (Show,Enum)
 
-data CobaltBaseForm = CobaltBaseForm { versionOneKey   :: DataTemplateEntryKey
+data FormVersionOneEntry = FormVersionOneEntry { versionOneKey   :: DataTemplateEntryKey
                                                , versionOneValue :: FormVersionOne  }
 
 data FormVersionOne = FormVersionOne { nameOfWaterHaulingCompany :: T.Text
                                      , amount                    :: Double
                                      , date                      :: T.Text
-                                     , customerTicketNumber      :: T.Text
                                      , timeIn                    :: T.Text
                                      , typeOfWaterHauled         :: WaterType
                                      , _truckNumber               :: T.Text
@@ -61,7 +58,7 @@ data FormVersionOne = FormVersionOne { nameOfWaterHaulingCompany :: T.Text
                                      , signature                 :: T.Text  }
 
 
-instance ToDataTemplate CobaltBaseForm where 
+instance ToDataTemplate FormVersionOneEntry where 
   toDataTemplate = fromFormVersionOne
 
 
@@ -69,7 +66,7 @@ instance ToDataTemplate CobaltBaseForm where
 
 
 
-fromFormVersionOne :: CobaltBaseForm -> DataTemplateEntry
+fromFormVersionOne :: FormVersionOneEntry -> DataTemplateEntry
 fromFormVersionOne f1e = DataTemplateEntry dtKey dtValue
                  where dtKey = versionOneKey f1e
                        dtValue = convertFormVersionOneToDataTemplate (versionOneValue f1e)
@@ -114,11 +111,11 @@ fromWaterTypeFoundTextToDouble wtf@(WaterTypeFound _ txt) = eitherToValidation e
 formVersionZeroEntryToFormOneEntry
   :: FormVersionZeroEntry
      -> Validation
-          (MigrationError Text FormVersionZeroEntry) CobaltBaseForm
+          (MigrationError Text FormVersionZeroEntry) FormVersionOneEntry
 formVersionZeroEntryToFormOneEntry v0e@(FormVersionZeroEntry v0EntryKey v0Form) = over _Failure makeErrorEntry (makeVOne <$> formVersionZeroToFormVersionOne v0Form)
   where 
    makeErrorEntry (MigrationError e _) = MigrationError e v0e
-   makeVOne  = CobaltBaseForm v0EntryKey{ _getFormId = 1 }   
+   makeVOne  = FormVersionOneEntry v0EntryKey{ _getFormId = 1 }   
 
 
 formVersionZeroToFormVersionOne :: FormVersionZero -> Validation (MigrationError Text FormVersionZero) FormVersionOne
@@ -147,7 +144,6 @@ formVersionZeroToFormVersionOne  v0@(FormVersionZero { _signature_1
                                                     , amount = amt
                                                     , date = _date_1
                                                     , timeIn = _timeIn_1
-                                                    , customerTicketNumber = ""
                                                     , typeOfWaterHauled = wt
                                                     , _truckNumber = _truckNumber_1
                                                     , waterHaulingPermit = _waterHaulingPermit_1
@@ -192,7 +188,7 @@ data WaterTypeFound amt = WaterTypeFound {_getWaterType :: WaterType
 
 data WaterTypeSearch = TestThisWaterType WaterType | WaterTypeError  Text | FoundThisWaterType WaterType Text
 
-instance FormMigration FormVersionZeroEntry CobaltBaseForm where
+instance FormMigration FormVersionZeroEntry FormVersionOneEntry where
   transformRecord = formVersionZeroEntryToFormOneEntry
 
 
