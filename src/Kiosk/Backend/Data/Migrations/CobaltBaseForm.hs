@@ -113,13 +113,13 @@ fromWaterTypeFoundTextToDouble wtf@(WaterTypeFound _ txt) = eitherToValidation e
 formVersionZeroEntryToCobaltBaseEntry
   :: FormVersionZeroEntry
      -> Validation
-          (MigrationError Text FormVersionZeroEntry) CobaltBaseFormEntry
+          (MigrationError Text (Maybe FormVersionZeroEntry)) CobaltBaseFormEntry
 formVersionZeroEntryToCobaltBaseEntry v0e@(FormVersionZeroEntry v0EntryKey v0Form) = over _Failure makeErrorEntry (makeVOne <$> formVersionZeroToCobaltBaseForm v0Form)
   where 
-   makeErrorEntry (MigrationError e _) = MigrationError e v0e
+   makeErrorEntry (MigrationError e _) = MigrationError e (Just v0e)
    makeVOne  = CobaltBaseFormEntry v0EntryKey{ _getFormId = 1 }   
 
-formVersionZeroToCobaltBaseForm :: FormVersionZero -> Validation (MigrationError Text FormVersionZero) CobaltBaseForm
+formVersionZeroToCobaltBaseForm :: FormVersionZero -> Validation (MigrationError Text (Maybe FormVersionZero)) CobaltBaseForm
 formVersionZeroToCobaltBaseForm  v0@(FormVersionZero { _signature_1                 
                                                      , _nameOfWaterHaulingCompany_1 
                                                      , _flowbackWater_1             
@@ -138,8 +138,8 @@ formVersionZeroToCobaltBaseForm  v0@(FormVersionZero { _signature_1
                 (\wt -> validationToEither (over _Failure makeMigrationError (fromWaterTypeFoundTextToDouble wt))) >>= 
                 decodeWithCorrectWaterType 
                        where
-                         makeMigrationError :: String -> MigrationError Text FormVersionZero
-                         makeMigrationError str = MigrationError (T.pack str) v0
+                         makeMigrationError :: String -> MigrationError Text (Maybe FormVersionZero)
+                         makeMigrationError str = MigrationError (T.pack str) (Just v0)
                          decodeWithCorrectWaterType (WaterTypeFound wt amt)  = 
                            return $ (CobaltBaseForm { _nameOfWaterHaulingCompany = _nameOfWaterHaulingCompany_1
                                                     , _amount = amt
@@ -155,12 +155,12 @@ formVersionZeroToCobaltBaseForm  v0@(FormVersionZero { _signature_1
 
 
 
-validateWaterTypeOnlyOneFull :: FormVersionZero -> Validation (MigrationError Text FormVersionZero) (WaterTypeFound Text)
+validateWaterTypeOnlyOneFull :: FormVersionZero -> Validation (MigrationError Text (Maybe FormVersionZero)) (WaterTypeFound Text)
 validateWaterTypeOnlyOneFull v0@(FormVersionZero { _flowbackWater_1             
                                                               , _pitWater_1                  
                                                               , _bblsProducedWater_1         
                                                               , _freshWater_1                
-                                                              }) = over _Failure  (\t -> MigrationError t v0) waterTypeAndForm
+                                                              }) = over _Failure  (\t -> MigrationError t (Just v0)) waterTypeAndForm
   where 
     waterTypeAndForm ::Validation Text   (WaterTypeFound Text)
     waterTypeAndForm = waterTypeSearchToValidation selectOneWaterType

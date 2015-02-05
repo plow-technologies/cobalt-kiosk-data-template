@@ -39,6 +39,7 @@ import Kiosk.Backend.Data ( DataTemplateEntry(..)
                           , DataTemplateEntryKey(..)
                           , dataTemplateEntryKey
                           , dataTemplateEntryValue)
+import Data.Monoid
 import GHC.Exts                          
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -53,7 +54,12 @@ import Data.Either.Validation (Validation (..))
 -- |Migration Errors are used in Validations on Migrations 
 data MigrationError e i = MigrationError { getError :: e
                                          , getIncomingData :: i }
+   deriving (Eq, Show)                                      
 
+instance (Monoid e, Monoid i) => Monoid (MigrationError e i) where 
+  mempty = MigrationError mempty mempty
+  mappend (MigrationError e i ) (MigrationError e' i' ) = (MigrationError (mappend e e') (mappend i i') )
+ 
 
 -- | The 'FromDataTemplate' , 'ToDataTemplate' and 'FormMigration' typeclasses
 -- should help standardize the migration interfaces between forms.   
@@ -61,12 +67,13 @@ data MigrationError e i = MigrationError { getError :: e
 class FromDataTemplate e where
   fromDataTemplate :: DataTemplateEntry -> e
 
+
 class ToDataTemplate e where
   toDataTemplate :: e -> DataTemplateEntry
 
-class (FromDataTemplate i, ToDataTemplate o) => FormMigration i o | i -> o  where   
-  transformRecord :: i -> Validation (MigrationError Text i) o
 
+class (FromDataTemplate i, ToDataTemplate o) => FormMigration i o | i -> o  where   
+  transformRecord :: i -> Validation (MigrationError Text (Maybe i)) o
 
 --------------------------------------------------
 

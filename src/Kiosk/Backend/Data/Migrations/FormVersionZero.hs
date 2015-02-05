@@ -39,9 +39,8 @@ import Kiosk.Backend.Data.MigrationClass
 import Data.Text (Text)
 import           Kiosk.Backend.Data                (DataTemplateEntry (..),
                                                     DataTemplateEntryKey (..))
+                                                    
 -- |First half of the migration
-
-
 
 data FormVersionZeroEntry = FormVersionZeroEntry { versionZeroKey    :: DataTemplateEntryKey
                                                   , versionZeroValue :: FormVersionZero  } deriving (Show)
