@@ -42,7 +42,7 @@ import           Kiosk.Backend.Data                (DataTemplateEntry (..),
 import Kiosk.Backend.Data.Migrations.FormVersionZero ( FormVersionZeroEntry(..)
                                                      , FormVersionZero(..))
 
-data WaterType = PitWater | FlowBackWater | FreshWater | ProducedWater deriving (Show,Enum)
+data WaterType = PitWater | FlowBackWater | FreshWater | ProducedWater deriving (Show,Enum,Eq)
 
 data CobaltBaseFormEntry = CobaltBaseFormEntry { cobaltBaseKey   :: DataTemplateEntryKey
                                                , cobaltBaseValue :: CobaltBaseForm  }
@@ -58,6 +58,7 @@ data CobaltBaseForm = CobaltBaseForm { _nameOfWaterHaulingCompany :: T.Text
                                      , _nameOfLeaseOperator       :: T.Text
                                      , _leaseName                 :: T.Text
                                      , _signature                 :: T.Text  }
+                    deriving (Show,Eq)
 
 instance ToDataTemplate CobaltBaseFormEntry where 
   toDataTemplate = fromCobaltBaseForm

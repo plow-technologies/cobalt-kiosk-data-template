@@ -47,38 +47,6 @@ getSysconfDir getSysconfDir30,31
 getDataFileName getDataFileName32,33
 getDataFileName getDataFileName33,34
 
-./dist/dist-sandbox-73106ab2/build/autogen/Paths_cobalt_kiosk_data_template.hs,1002
-module Paths_cobalt_kiosk_data_template Paths_cobalt_kiosk_data_template0,1
-catchIO catchIO11,12
-catchIO catchIO12,13
-version version15,16
-version version16,17
-bindir, libdir, datadir, libexecdir, sysconfdir sysconfdir17,18
-bindir, libdir, datadir, libexecdir,libexecdir17,18
-bindir, libdir, datadir,datadir17,18
-bindir, libdir,libdir17,18
-bindir,bindir17,18
-bindir bindir19,20
-libdir libdir20,21
-datadir datadir21,22
-libexecdir libexecdir22,23
-sysconfdir sysconfdir23,24
-getBinDir, getLibDir, getDataDir, getLibexecDir, getSysconfDir getSysconfDir25,26
-getBinDir, getLibDir, getDataDir, getLibexecDir,getLibexecDir25,26
-getBinDir, getLibDir, getDataDir,getDataDir25,26
-getBinDir, getLibDir,getLibDir25,26
-getBinDir,getBinDir25,26
-getBinDir getBinDir26,27
-getLibDir getLibDir27,28
-getDataDir getDataDir28,29
-getLibexecDir getLibexecDir29,30
-getSysconfDir getSysconfDir30,31
-getDataFileName getDataFileName32,33
-getDataFileName getDataFileName33,34
-
-./dist/dist-sandbox-73106ab2/setup/setup.hs,19
-import import0,1
-
 ./src/Kiosk/Backend/Data/DataTemplate.hs,1817
 module Kiosk.Backend.Data.DataTemplate Kiosk.Backend.Data.DataTemplate3,4
 import import31,32
@@ -179,42 +147,40 @@ data DataTemplateEntryKey = DataTemplateEntryKey DataTemplateEntryKey82,83
                           _getTicketId _getTicketId85,86
                           _getFormId _getFormId86,87
 
-./src/Kiosk/Backend/Data/flycheck_Migrations.hs,74
-module Kiosk.Backend.Data.Migrations Kiosk.Backend.Data.Migrations23,24
-
-./src/Kiosk/Backend/Data/MigrationClass.hs,1791
+./src/Kiosk/Backend/Data/MigrationClass.hs,1824
 module Kiosk.Backend.Data.MigrationClass Kiosk.Backend.Data.MigrationClass23,24
-data MigrationError MigrationError53,54
-data MigrationError e i = MigrationError MigrationError53,54
-data MigrationError e i = MigrationError { getError getError53,54
-                                         , getIncomingData getIncomingData54,55
-class FromDataTemplate FromDataTemplate60,61
-class FromDataTemplate FromDataTemplate60,61
-  fromDataTemplate fromDataTemplate61,62
-class ToDataTemplate ToDataTemplate63,64
-class ToDataTemplate ToDataTemplate63,64
-  toDataTemplate toDataTemplate64,65
-class (FromDataTemplate i, ToDataTemplate o) => FormMigration FormMigration66,67
-class (FromDataTemplate i, ToDataTemplate o) => FormMigration FormMigration66,67
-  transformRecord transformRecord67,68
-extractTemplateItems extractTemplateItems76,77
-extractTemplateItems extractTemplateItems77,78
-newtype TemplateItemLabel TemplateItemLabel81,82
-newtype TemplateItemLabel = TemplateItemLabel TemplateItemLabel81,82
-extractValueFromTemplateItems extractValueFromTemplateItems86,87
-extractValueFromTemplateItems extractValueFromTemplateItems87,88
-extractDataTemplateEntryKey extractDataTemplateEntryKey92,93
-extractDataTemplateEntryKey extractDataTemplateEntryKey93,94
-convertInputTypeToValue convertInputTypeToValue95,96
-convertInputTypeToValue convertInputTypeToValue96,97
-extractInputType extractInputType99,100
-extractInputType extractInputType100,101
-makeTemplateItemDouble makeTemplateItemDouble110,111
-makeTemplateItemDouble makeTemplateItemDouble111,112
-makeTemplateItemInt makeTemplateItemInt113,114
-makeTemplateItemInt makeTemplateItemInt114,115
-makeTemplateItemText makeTemplateItemText116,117
-makeTemplateItemText makeTemplateItemText117,118
+data MigrationError MigrationError54,55
+data MigrationError e i = MigrationError MigrationError54,55
+data MigrationError e i = MigrationError { getError getError54,55
+                                         , getIncomingData getIncomingData55,56
+instance instance58,59
+class FromDataTemplate FromDataTemplate66,67
+class FromDataTemplate FromDataTemplate66,67
+  fromDataTemplate fromDataTemplate67,68
+class ToDataTemplate ToDataTemplate70,71
+class ToDataTemplate ToDataTemplate70,71
+  toDataTemplate toDataTemplate71,72
+class (FromDataTemplate i, ToDataTemplate o) => FormMigration FormMigration74,75
+class (FromDataTemplate i, ToDataTemplate o) => FormMigration FormMigration74,75
+  transformRecord transformRecord75,76
+extractTemplateItems extractTemplateItems83,84
+extractTemplateItems extractTemplateItems84,85
+newtype TemplateItemLabel TemplateItemLabel88,89
+newtype TemplateItemLabel = TemplateItemLabel TemplateItemLabel88,89
+extractValueFromTemplateItems extractValueFromTemplateItems93,94
+extractValueFromTemplateItems extractValueFromTemplateItems94,95
+extractDataTemplateEntryKey extractDataTemplateEntryKey99,100
+extractDataTemplateEntryKey extractDataTemplateEntryKey100,101
+convertInputTypeToValue convertInputTypeToValue102,103
+convertInputTypeToValue convertInputTypeToValue103,104
+extractInputType extractInputType106,107
+extractInputType extractInputType107,108
+makeTemplateItemDouble makeTemplateItemDouble117,118
+makeTemplateItemDouble makeTemplateItemDouble118,119
+makeTemplateItemInt makeTemplateItemInt120,121
+makeTemplateItemInt makeTemplateItemInt121,122
+makeTemplateItemText makeTemplateItemText123,124
+makeTemplateItemText makeTemplateItemText124,125
 
 ./src/Kiosk/Backend/Data/Migrations/CobaltBaseForm.hs,3466
 module Kiosk.Backend.Data.Migrations.CobaltBaseForm Kiosk.Backend.Data.Migrations.CobaltBaseForm21,22
@@ -240,65 +206,170 @@ data CobaltBaseForm = CobaltBaseForm { _nameOfWaterHaulingCompany _nameOfWaterH
                                      , _nameOfLeaseOperator _nameOfLeaseOperator57,58
                                      , _leaseName _leaseName58,59
                                      , _signature _signature59,60
-instance instance61,62
-fromCobaltBaseForm fromCobaltBaseForm66,67
+instance instance62,63
 fromCobaltBaseForm fromCobaltBaseForm67,68
-convertCobaltBaseFormToDataTemplate convertCobaltBaseFormToDataTemplate73,74
+fromCobaltBaseForm fromCobaltBaseForm68,69
 convertCobaltBaseFormToDataTemplate convertCobaltBaseFormToDataTemplate74,75
-dataTemplateBuilder dataTemplateBuilder76,77
+convertCobaltBaseFormToDataTemplate convertCobaltBaseFormToDataTemplate75,76
 dataTemplateBuilder dataTemplateBuilder77,78
-printWaterType printWaterType79,80
+dataTemplateBuilder dataTemplateBuilder78,79
 printWaterType printWaterType80,81
-convertFormToTemplateItems convertFormToTemplateItems87,88
+printWaterType printWaterType81,82
 convertFormToTemplateItems convertFormToTemplateItems88,89
-fromWaterTypeFoundTextToDouble fromWaterTypeFoundTextToDouble103,104
-formVersionZeroEntryToCobaltBaseEntry formVersionZeroEntryToCobaltBaseEntry116,117
-formVersionZeroToCobaltBaseForm formVersionZeroToCobaltBaseForm121,122
+convertFormToTemplateItems convertFormToTemplateItems89,90
+fromWaterTypeFoundTextToDouble fromWaterTypeFoundTextToDouble104,105
+formVersionZeroEntryToCobaltBaseEntry formVersionZeroEntryToCobaltBaseEntry117,118
 formVersionZeroToCobaltBaseForm formVersionZeroToCobaltBaseForm122,123
-validateWaterTypeOnlyOneFull validateWaterTypeOnlyOneFull157,158
+formVersionZeroToCobaltBaseForm formVersionZeroToCobaltBaseForm123,124
 validateWaterTypeOnlyOneFull validateWaterTypeOnlyOneFull158,159
-findOneValidWaterType findOneValidWaterType173,174
+validateWaterTypeOnlyOneFull validateWaterTypeOnlyOneFull159,160
 findOneValidWaterType findOneValidWaterType174,175
-waterTypeSearchToValidation waterTypeSearchToValidation182,183
+findOneValidWaterType findOneValidWaterType175,176
 waterTypeSearchToValidation waterTypeSearchToValidation183,184
-data WaterTypeFound WaterTypeFound187,188
-data WaterTypeFound amt = WaterTypeFound WaterTypeFound187,188
-data WaterTypeFound amt = WaterTypeFound {_getWaterType _getWaterType187,188
-                                         ,getAmount getAmount188,189
-data WaterTypeSearch WaterTypeSearch190,191
-data WaterTypeSearch = TestThisWaterType TestThisWaterType190,191
-data WaterTypeSearch = TestThisWaterType WaterType | WaterTypeError WaterTypeError190,191
-data WaterTypeSearch = TestThisWaterType WaterType | WaterTypeError  Text | FoundThisWaterType FoundThisWaterType190,191
+waterTypeSearchToValidation waterTypeSearchToValidation184,185
+data WaterTypeFound WaterTypeFound188,189
+data WaterTypeFound amt = WaterTypeFound WaterTypeFound188,189
+data WaterTypeFound amt = WaterTypeFound {_getWaterType _getWaterType188,189
+                                         ,getAmount getAmount189,190
+data WaterTypeSearch WaterTypeSearch191,192
+data WaterTypeSearch = TestThisWaterType TestThisWaterType191,192
+data WaterTypeSearch = TestThisWaterType WaterType | WaterTypeError WaterTypeError191,192
+data WaterTypeSearch = TestThisWaterType WaterType | WaterTypeError  Text | FoundThisWaterType FoundThisWaterType191,192
 
-./src/Kiosk/Backend/Data/Migrations/FormVersionZero.hs,1711
+./src/Kiosk/Backend/Data/Migrations/CobaltBaseForm_flymake.hs,3466
+module Kiosk.Backend.Data.Migrations.CobaltBaseForm Kiosk.Backend.Data.Migrations.CobaltBaseForm21,22
+data WaterType WaterType44,45
+data WaterType = PitWater PitWater44,45
+data WaterType = PitWater | FlowBackWater FlowBackWater44,45
+data WaterType = PitWater | FlowBackWater | FreshWater FreshWater44,45
+data WaterType = PitWater | FlowBackWater | FreshWater | ProducedWater ProducedWater44,45
+data CobaltBaseFormEntry CobaltBaseFormEntry46,47
+data CobaltBaseFormEntry = CobaltBaseFormEntry CobaltBaseFormEntry46,47
+data CobaltBaseFormEntry = CobaltBaseFormEntry { cobaltBaseKey cobaltBaseKey46,47
+                                               , cobaltBaseValue cobaltBaseValue47,48
+data CobaltBaseForm CobaltBaseForm49,50
+data CobaltBaseForm = CobaltBaseForm CobaltBaseForm49,50
+data CobaltBaseForm = CobaltBaseForm { _nameOfWaterHaulingCompany _nameOfWaterHaulingCompany49,50
+                                     , _amount _amount50,51
+                                     , _customerTicketNumber _customerTicketNumber51,52
+                                     , _date _date52,53
+                                     , _timeIn _timeIn53,54
+                                     , _typeOfWaterHauled _typeOfWaterHauled54,55
+                                     , _truckNumber _truckNumber55,56
+                                     , _waterHaulingPermit _waterHaulingPermit56,57
+                                     , _nameOfLeaseOperator _nameOfLeaseOperator57,58
+                                     , _leaseName _leaseName58,59
+                                     , _signature _signature59,60
+instance instance62,63
+fromCobaltBaseForm fromCobaltBaseForm67,68
+fromCobaltBaseForm fromCobaltBaseForm68,69
+convertCobaltBaseFormToDataTemplate convertCobaltBaseFormToDataTemplate74,75
+convertCobaltBaseFormToDataTemplate convertCobaltBaseFormToDataTemplate75,76
+dataTemplateBuilder dataTemplateBuilder77,78
+dataTemplateBuilder dataTemplateBuilder78,79
+printWaterType printWaterType80,81
+printWaterType printWaterType81,82
+convertFormToTemplateItems convertFormToTemplateItems88,89
+convertFormToTemplateItems convertFormToTemplateItems89,90
+fromWaterTypeFoundTextToDouble fromWaterTypeFoundTextToDouble104,105
+formVersionZeroEntryToCobaltBaseEntry formVersionZeroEntryToCobaltBaseEntry117,118
+formVersionZeroToCobaltBaseForm formVersionZeroToCobaltBaseForm122,123
+formVersionZeroToCobaltBaseForm formVersionZeroToCobaltBaseForm123,124
+validateWaterTypeOnlyOneFull validateWaterTypeOnlyOneFull158,159
+validateWaterTypeOnlyOneFull validateWaterTypeOnlyOneFull159,160
+findOneValidWaterType findOneValidWaterType174,175
+findOneValidWaterType findOneValidWaterType175,176
+waterTypeSearchToValidation waterTypeSearchToValidation183,184
+waterTypeSearchToValidation waterTypeSearchToValidation184,185
+data WaterTypeFound WaterTypeFound188,189
+data WaterTypeFound amt = WaterTypeFound WaterTypeFound188,189
+data WaterTypeFound amt = WaterTypeFound {_getWaterType _getWaterType188,189
+                                         ,getAmount getAmount189,190
+data WaterTypeSearch WaterTypeSearch191,192
+data WaterTypeSearch = TestThisWaterType TestThisWaterType191,192
+data WaterTypeSearch = TestThisWaterType WaterType | WaterTypeError WaterTypeError191,192
+data WaterTypeSearch = TestThisWaterType WaterType | WaterTypeError  Text | FoundThisWaterType FoundThisWaterType191,192
+
+./src/Kiosk/Backend/Data/Migrations/flycheck_CobaltBaseForm.hs,3466
+module Kiosk.Backend.Data.Migrations.CobaltBaseForm Kiosk.Backend.Data.Migrations.CobaltBaseForm21,22
+data WaterType WaterType44,45
+data WaterType = PitWater PitWater44,45
+data WaterType = PitWater | FlowBackWater FlowBackWater44,45
+data WaterType = PitWater | FlowBackWater | FreshWater FreshWater44,45
+data WaterType = PitWater | FlowBackWater | FreshWater | ProducedWater ProducedWater44,45
+data CobaltBaseFormEntry CobaltBaseFormEntry46,47
+data CobaltBaseFormEntry = CobaltBaseFormEntry CobaltBaseFormEntry46,47
+data CobaltBaseFormEntry = CobaltBaseFormEntry { cobaltBaseKey cobaltBaseKey46,47
+                                               , cobaltBaseValue cobaltBaseValue47,48
+data CobaltBaseForm CobaltBaseForm49,50
+data CobaltBaseForm = CobaltBaseForm CobaltBaseForm49,50
+data CobaltBaseForm = CobaltBaseForm { _nameOfWaterHaulingCompany _nameOfWaterHaulingCompany49,50
+                                     , _amount _amount50,51
+                                     , _customerTicketNumber _customerTicketNumber51,52
+                                     , _date _date52,53
+                                     , _timeIn _timeIn53,54
+                                     , _typeOfWaterHauled _typeOfWaterHauled54,55
+                                     , _truckNumber _truckNumber55,56
+                                     , _waterHaulingPermit _waterHaulingPermit56,57
+                                     , _nameOfLeaseOperator _nameOfLeaseOperator57,58
+                                     , _leaseName _leaseName58,59
+                                     , _signature _signature59,60
+instance instance62,63
+fromCobaltBaseForm fromCobaltBaseForm67,68
+fromCobaltBaseForm fromCobaltBaseForm68,69
+convertCobaltBaseFormToDataTemplate convertCobaltBaseFormToDataTemplate74,75
+convertCobaltBaseFormToDataTemplate convertCobaltBaseFormToDataTemplate75,76
+dataTemplateBuilder dataTemplateBuilder77,78
+dataTemplateBuilder dataTemplateBuilder78,79
+printWaterType printWaterType80,81
+printWaterType printWaterType81,82
+convertFormToTemplateItems convertFormToTemplateItems88,89
+convertFormToTemplateItems convertFormToTemplateItems89,90
+fromWaterTypeFoundTextToDouble fromWaterTypeFoundTextToDouble104,105
+formVersionZeroEntryToCobaltBaseEntry formVersionZeroEntryToCobaltBaseEntry117,118
+formVersionZeroToCobaltBaseForm formVersionZeroToCobaltBaseForm122,123
+formVersionZeroToCobaltBaseForm formVersionZeroToCobaltBaseForm123,124
+validateWaterTypeOnlyOneFull validateWaterTypeOnlyOneFull158,159
+validateWaterTypeOnlyOneFull validateWaterTypeOnlyOneFull159,160
+findOneValidWaterType findOneValidWaterType174,175
+findOneValidWaterType findOneValidWaterType175,176
+waterTypeSearchToValidation waterTypeSearchToValidation183,184
+waterTypeSearchToValidation waterTypeSearchToValidation184,185
+data WaterTypeFound WaterTypeFound188,189
+data WaterTypeFound amt = WaterTypeFound WaterTypeFound188,189
+data WaterTypeFound amt = WaterTypeFound {_getWaterType _getWaterType188,189
+                                         ,getAmount getAmount189,190
+data WaterTypeSearch WaterTypeSearch191,192
+data WaterTypeSearch = TestThisWaterType TestThisWaterType191,192
+data WaterTypeSearch = TestThisWaterType WaterType | WaterTypeError WaterTypeError191,192
+data WaterTypeSearch = TestThisWaterType WaterType | WaterTypeError  Text | FoundThisWaterType FoundThisWaterType191,192
+
+./src/Kiosk/Backend/Data/Migrations/FormVersionZero.hs,1710
 module Kiosk.Backend.Data.Migrations.FormVersionZero Kiosk.Backend.Data.Migrations.FormVersionZero33,34
-data FormVersionZeroEntry FormVersionZeroEntry45,46
-data FormVersionZeroEntry = FormVersionZeroEntry FormVersionZeroEntry45,46
-data FormVersionZeroEntry = FormVersionZeroEntry { versionZeroKey versionZeroKey45,46
-                                                  , versionZeroValue versionZeroValue46,47
-data FormVersionZero FormVersionZero48,49
-data FormVersionZero = FormVersionZero FormVersionZero48,49
-data FormVersionZero = FormVersionZero { _signature_1 _signature_148,49
-                                       , _nameOfWaterHaulingCompany_1 _nameOfWaterHaulingCompany_149,50
-                                       , _flowbackWater_1 _flowbackWater_150,51
-                                       , _pitWater_1 _pitWater_151,52
-                                       , _truckNumber_1 _truckNumber_152,53
-                                       , _date_1 _date_153,54
-                                       , _leaseName_1 _leaseName_154,55
-                                       , _waterHaulingPermit_1 _waterHaulingPermit_155,56
-                                       , _bblsProducedWater_1 _bblsProducedWater_156,57
-                                       , _driverSignature_1 _driverSignature_157,58
-                                       , _timeIn_1 _timeIn_158,59
-                                       , _freshWater_1 _freshWater_159,60
-                                       , _nameOfLeaseOperator_1 _nameOfLeaseOperator_160,61
-instance instance64,65
+data FormVersionZeroEntry FormVersionZeroEntry44,45
+data FormVersionZeroEntry = FormVersionZeroEntry FormVersionZeroEntry44,45
+data FormVersionZeroEntry = FormVersionZeroEntry { versionZeroKey versionZeroKey44,45
+                                                 , versionZeroValue versionZeroValue45,46
+data FormVersionZero FormVersionZero47,48
+data FormVersionZero = FormVersionZero FormVersionZero47,48
+data FormVersionZero = FormVersionZero { _signature_1 _signature_147,48
+                                       , _nameOfWaterHaulingCompany_1 _nameOfWaterHaulingCompany_148,49
+                                       , _flowbackWater_1 _flowbackWater_149,50
+                                       , _pitWater_1 _pitWater_150,51
+                                       , _truckNumber_1 _truckNumber_151,52
+                                       , _date_1 _date_152,53
+                                       , _leaseName_1 _leaseName_153,54
+                                       , _waterHaulingPermit_1 _waterHaulingPermit_154,55
+                                       , _bblsProducedWater_1 _bblsProducedWater_155,56
+                                       , _driverSignature_1 _driverSignature_156,57
+                                       , _timeIn_1 _timeIn_157,58
+                                       , _freshWater_1 _freshWater_158,59
+                                       , _nameOfLeaseOperator_1 _nameOfLeaseOperator_159,60
+instance instance63,64
+toFormVersionZeroEntry toFormVersionZeroEntry68,69
 toFormVersionZeroEntry toFormVersionZeroEntry69,70
-toFormVersionZeroEntry toFormVersionZeroEntry70,71
 
 ./src/Kiosk/Backend/Data/Migrations.hs,74
-module Kiosk.Backend.Data.Migrations Kiosk.Backend.Data.Migrations23,24
-
-./src/Kiosk/Backend/Data/Migrations_flymake.hs,74
 module Kiosk.Backend.Data.Migrations Kiosk.Backend.Data.Migrations23,24
 
 ./src/Kiosk/Backend/Data.hs,50
@@ -383,10 +454,10 @@ validateBS validateBS74,75
 
 ./test/Kiosk/Backend/Data/MigrationsSpec.hs,148
 module Kiosk.Backend.Data.MigrationsSpec Kiosk.Backend.Data.MigrationsSpec3,4
-main main20,21
-main main21,22
-spec spec23,24
-spec spec24,25
+main main27,28
+main main28,29
+spec spec30,31
+spec spec31,32
 
 ./test/Kiosk/Backend/DataSpec.hs,796
 module Kiosk.Backend.DataSpec Kiosk.Backend.DataSpec1,2

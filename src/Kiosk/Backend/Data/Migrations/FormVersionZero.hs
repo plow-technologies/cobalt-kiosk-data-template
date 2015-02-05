@@ -43,7 +43,7 @@ import           Kiosk.Backend.Data                (DataTemplateEntry (..),
 -- |First half of the migration
 
 data FormVersionZeroEntry = FormVersionZeroEntry { versionZeroKey    :: DataTemplateEntryKey
-                                                  , versionZeroValue :: FormVersionZero  } deriving (Show)
+                                                 , versionZeroValue  :: FormVersionZero  } deriving (Show)
 
 data FormVersionZero = FormVersionZero { _signature_1                 :: Text
                                        , _nameOfWaterHaulingCompany_1 :: Text
