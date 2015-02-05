@@ -47,16 +47,17 @@ data WaterType = PitWater | FlowBackWater | FreshWater | ProducedWater deriving 
 data CobaltBaseFormEntry = CobaltBaseFormEntry { cobaltBaseKey   :: DataTemplateEntryKey
                                                , cobaltBaseValue :: CobaltBaseForm  }
 
-data CobaltBaseForm = CobaltBaseForm { nameOfWaterHaulingCompany :: T.Text
-                                     , amount                    :: Double
-                                     , date                      :: T.Text
-                                     , timeIn                    :: T.Text
-                                     , typeOfWaterHauled         :: WaterType
+data CobaltBaseForm = CobaltBaseForm { _nameOfWaterHaulingCompany :: T.Text
+                                     , _amount                    :: Double
+                                     , _customerTicketNumber      :: T.Text                               
+                                     , _date                      :: T.Text
+                                     , _timeIn                    :: T.Text
+                                     , _typeOfWaterHauled         :: WaterType
                                      , _truckNumber               :: T.Text
-                                     , waterHaulingPermit        :: T.Text
-                                     , nameOfLeaseOperator       :: T.Text
-                                     , leaseName                 :: T.Text
-                                     , signature                 :: T.Text  }
+                                     , _waterHaulingPermit        :: T.Text
+                                     , _nameOfLeaseOperator       :: T.Text
+                                     , _leaseName                 :: T.Text
+                                     , _signature                 :: T.Text  }
 
 instance ToDataTemplate CobaltBaseFormEntry where 
   toDataTemplate = fromCobaltBaseForm
@@ -85,16 +86,17 @@ printWaterType wt = case wt of
 
 
 convertFormToTemplateItems :: CobaltBaseForm -> [TemplateItem]
-convertFormToTemplateItems fv1 = [nItem, a , d ,tin , twh, tn, nlo, ln, s ]
-                        where nItem = makeTemplateItemText "Name_of_Water_Hauling_Company" (nameOfWaterHaulingCompany fv1)
-                              a     = makeTemplateItemDouble "Amount" (amount fv1)
-                              d     = makeTemplateItemText "Date" (date fv1)
-                              tin   = makeTemplateItemText "Time_in" (timeIn fv1)
-                              twh   = makeTemplateItemText "Type_of_Water_Hauled" (T.pack . printWaterType . typeOfWaterHauled $ fv1)
-                              tn    = makeTemplateItemText "Water_Hauling_Permit#" (waterHaulingPermit fv1)
-                              nlo   = makeTemplateItemText "Name_of_Lease_Operator" (nameOfLeaseOperator fv1)
-                              ln    = makeTemplateItemText "Lease_Name" (leaseName fv1)
-                              s     = makeTemplateItemText "Driver_Signature" (signature fv1)
+convertFormToTemplateItems fv1 = [nItem, a , customerTicketNumber , d ,tin , twh, tn, nlo, ln, s ]
+                        where nItem = makeTemplateItemText "Name_of_Water_Hauling_Company" (_nameOfWaterHaulingCompany fv1)
+                              a     = makeTemplateItemDouble "Amount" (_amount fv1)
+                              customerTicketNumber = makeTemplateItemText "Customer_Ticket_Number" (_customerTicketNumber fv1)
+                              d     = makeTemplateItemText "Date" (_date fv1)
+                              tin   = makeTemplateItemText "Time_in" (_timeIn fv1)
+                              twh   = makeTemplateItemText "Type_of_Water_Hauled" (T.pack . printWaterType . _typeOfWaterHauled $ fv1)
+                              tn    = makeTemplateItemText "Water_Hauling_Permit#" (_waterHaulingPermit fv1)
+                              nlo   = makeTemplateItemText "Name_of_Lease_Operator" (_nameOfLeaseOperator fv1)
+                              ln    = makeTemplateItemText "Lease_Name" (_leaseName fv1)
+                              s     = makeTemplateItemText "Driver_Signature" (_signature fv1)
 
 
 fromWaterTypeFoundTextToDouble
@@ -139,16 +141,17 @@ formVersionZeroToCobaltBaseForm  v0@(FormVersionZero { _signature_1
                          makeMigrationError :: String -> MigrationError Text FormVersionZero
                          makeMigrationError str = MigrationError (T.pack str) v0
                          decodeWithCorrectWaterType (WaterTypeFound wt amt)  = 
-                           return $ (CobaltBaseForm { nameOfWaterHaulingCompany = _nameOfWaterHaulingCompany_1
-                                                    , amount = amt
-                                                    , date = _date_1
-                                                    , timeIn = _timeIn_1
-                                                    , typeOfWaterHauled = wt
+                           return $ (CobaltBaseForm { _nameOfWaterHaulingCompany = _nameOfWaterHaulingCompany_1
+                                                    , _amount = amt
+                                                    , _customerTicketNumber = "" -- New Field
+                                                    , _date = _date_1
+                                                    , _timeIn = _timeIn_1
+                                                    , _typeOfWaterHauled = wt
                                                     , _truckNumber = _truckNumber_1
-                                                    , waterHaulingPermit = _waterHaulingPermit_1
-                                                    , nameOfLeaseOperator = _nameOfLeaseOperator_1
-                                                    , leaseName = _leaseName_1
-                                                    , signature = _signature_1})                                                            
+                                                    , _waterHaulingPermit = _waterHaulingPermit_1
+                                                    , _nameOfLeaseOperator = _nameOfLeaseOperator_1
+                                                    , _leaseName = _leaseName_1
+                                                    , _signature = _signature_1})                                                            
 
 
 
@@ -189,5 +192,6 @@ data WaterTypeSearch = TestThisWaterType WaterType | WaterTypeError  Text | Foun
 
 instance FormMigration FormVersionZeroEntry CobaltBaseFormEntry where
   transformRecord = formVersionZeroEntryToCobaltBaseEntry
+
 
 
