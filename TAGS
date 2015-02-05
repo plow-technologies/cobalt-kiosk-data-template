@@ -179,6 +179,9 @@ data DataTemplateEntryKey = DataTemplateEntryKey DataTemplateEntryKey82,83
                           _getTicketId _getTicketId85,86
                           _getFormId _getFormId86,87
 
+./src/Kiosk/Backend/Data/flycheck_Migrations.hs,74
+module Kiosk.Backend.Data.Migrations Kiosk.Backend.Data.Migrations23,24
+
 ./src/Kiosk/Backend/Data/MigrationClass.hs,1791
 module Kiosk.Backend.Data.MigrationClass Kiosk.Backend.Data.MigrationClass23,24
 data MigrationError MigrationError53,54
@@ -267,114 +270,6 @@ data WaterTypeSearch = TestThisWaterType TestThisWaterType190,191
 data WaterTypeSearch = TestThisWaterType WaterType | WaterTypeError WaterTypeError190,191
 data WaterTypeSearch = TestThisWaterType WaterType | WaterTypeError  Text | FoundThisWaterType FoundThisWaterType190,191
 
-./src/Kiosk/Backend/Data/Migrations/CobaltBaseForm_flymake.hs,3466
-module Kiosk.Backend.Data.Migrations.CobaltBaseForm Kiosk.Backend.Data.Migrations.CobaltBaseForm21,22
-data WaterType WaterType44,45
-data WaterType = PitWater PitWater44,45
-data WaterType = PitWater | FlowBackWater FlowBackWater44,45
-data WaterType = PitWater | FlowBackWater | FreshWater FreshWater44,45
-data WaterType = PitWater | FlowBackWater | FreshWater | ProducedWater ProducedWater44,45
-data CobaltBaseFormEntry CobaltBaseFormEntry46,47
-data CobaltBaseFormEntry = CobaltBaseFormEntry CobaltBaseFormEntry46,47
-data CobaltBaseFormEntry = CobaltBaseFormEntry { cobaltBaseKey cobaltBaseKey46,47
-                                               , cobaltBaseValue cobaltBaseValue47,48
-data CobaltBaseForm CobaltBaseForm49,50
-data CobaltBaseForm = CobaltBaseForm CobaltBaseForm49,50
-data CobaltBaseForm = CobaltBaseForm { _nameOfWaterHaulingCompany _nameOfWaterHaulingCompany49,50
-                                     , _amount _amount50,51
-                                     , _customerTicketNumber _customerTicketNumber51,52
-                                     , _date _date52,53
-                                     , _timeIn _timeIn53,54
-                                     , _typeOfWaterHauled _typeOfWaterHauled54,55
-                                     , _truckNumber _truckNumber55,56
-                                     , _waterHaulingPermit _waterHaulingPermit56,57
-                                     , _nameOfLeaseOperator _nameOfLeaseOperator57,58
-                                     , _leaseName _leaseName58,59
-                                     , _signature _signature59,60
-instance instance61,62
-fromCobaltBaseForm fromCobaltBaseForm66,67
-fromCobaltBaseForm fromCobaltBaseForm67,68
-convertCobaltBaseFormToDataTemplate convertCobaltBaseFormToDataTemplate73,74
-convertCobaltBaseFormToDataTemplate convertCobaltBaseFormToDataTemplate74,75
-dataTemplateBuilder dataTemplateBuilder76,77
-dataTemplateBuilder dataTemplateBuilder77,78
-printWaterType printWaterType79,80
-printWaterType printWaterType80,81
-convertFormToTemplateItems convertFormToTemplateItems87,88
-convertFormToTemplateItems convertFormToTemplateItems88,89
-fromWaterTypeFoundTextToDouble fromWaterTypeFoundTextToDouble103,104
-formVersionZeroEntryToCobaltBaseEntry formVersionZeroEntryToCobaltBaseEntry116,117
-formVersionZeroToCobaltBaseForm formVersionZeroToCobaltBaseForm121,122
-formVersionZeroToCobaltBaseForm formVersionZeroToCobaltBaseForm122,123
-validateWaterTypeOnlyOneFull validateWaterTypeOnlyOneFull157,158
-validateWaterTypeOnlyOneFull validateWaterTypeOnlyOneFull158,159
-findOneValidWaterType findOneValidWaterType173,174
-findOneValidWaterType findOneValidWaterType174,175
-waterTypeSearchToValidation waterTypeSearchToValidation182,183
-waterTypeSearchToValidation waterTypeSearchToValidation183,184
-data WaterTypeFound WaterTypeFound187,188
-data WaterTypeFound amt = WaterTypeFound WaterTypeFound187,188
-data WaterTypeFound amt = WaterTypeFound {_getWaterType _getWaterType187,188
-                                         ,getAmount getAmount188,189
-data WaterTypeSearch WaterTypeSearch190,191
-data WaterTypeSearch = TestThisWaterType TestThisWaterType190,191
-data WaterTypeSearch = TestThisWaterType WaterType | WaterTypeError WaterTypeError190,191
-data WaterTypeSearch = TestThisWaterType WaterType | WaterTypeError  Text | FoundThisWaterType FoundThisWaterType190,191
-
-./src/Kiosk/Backend/Data/Migrations/flycheck_CobaltBaseForm.hs,3466
-module Kiosk.Backend.Data.Migrations.CobaltBaseForm Kiosk.Backend.Data.Migrations.CobaltBaseForm21,22
-data WaterType WaterType44,45
-data WaterType = PitWater PitWater44,45
-data WaterType = PitWater | FlowBackWater FlowBackWater44,45
-data WaterType = PitWater | FlowBackWater | FreshWater FreshWater44,45
-data WaterType = PitWater | FlowBackWater | FreshWater | ProducedWater ProducedWater44,45
-data CobaltBaseFormEntry CobaltBaseFormEntry46,47
-data CobaltBaseFormEntry = CobaltBaseFormEntry CobaltBaseFormEntry46,47
-data CobaltBaseFormEntry = CobaltBaseFormEntry { cobaltBaseKey cobaltBaseKey46,47
-                                               , cobaltBaseValue cobaltBaseValue47,48
-data CobaltBaseForm CobaltBaseForm49,50
-data CobaltBaseForm = CobaltBaseForm CobaltBaseForm49,50
-data CobaltBaseForm = CobaltBaseForm { _nameOfWaterHaulingCompany _nameOfWaterHaulingCompany49,50
-                                     , _amount _amount50,51
-                                     , _customerTicketNumber _customerTicketNumber51,52
-                                     , _date _date52,53
-                                     , _timeIn _timeIn53,54
-                                     , _typeOfWaterHauled _typeOfWaterHauled54,55
-                                     , _truckNumber _truckNumber55,56
-                                     , _waterHaulingPermit _waterHaulingPermit56,57
-                                     , _nameOfLeaseOperator _nameOfLeaseOperator57,58
-                                     , _leaseName _leaseName58,59
-                                     , _signature _signature59,60
-instance instance61,62
-fromCobaltBaseForm fromCobaltBaseForm66,67
-fromCobaltBaseForm fromCobaltBaseForm67,68
-convertCobaltBaseFormToDataTemplate convertCobaltBaseFormToDataTemplate73,74
-convertCobaltBaseFormToDataTemplate convertCobaltBaseFormToDataTemplate74,75
-dataTemplateBuilder dataTemplateBuilder76,77
-dataTemplateBuilder dataTemplateBuilder77,78
-printWaterType printWaterType79,80
-printWaterType printWaterType80,81
-convertFormToTemplateItems convertFormToTemplateItems87,88
-convertFormToTemplateItems convertFormToTemplateItems88,89
-fromWaterTypeFoundTextToDouble fromWaterTypeFoundTextToDouble103,104
-formVersionZeroEntryToCobaltBaseEntry formVersionZeroEntryToCobaltBaseEntry116,117
-formVersionZeroToCobaltBaseForm formVersionZeroToCobaltBaseForm121,122
-formVersionZeroToCobaltBaseForm formVersionZeroToCobaltBaseForm122,123
-validateWaterTypeOnlyOneFull validateWaterTypeOnlyOneFull157,158
-validateWaterTypeOnlyOneFull validateWaterTypeOnlyOneFull158,159
-findOneValidWaterType findOneValidWaterType173,174
-findOneValidWaterType findOneValidWaterType174,175
-waterTypeSearchToValidation waterTypeSearchToValidation182,183
-waterTypeSearchToValidation waterTypeSearchToValidation183,184
-data WaterTypeFound WaterTypeFound187,188
-data WaterTypeFound amt = WaterTypeFound WaterTypeFound187,188
-data WaterTypeFound amt = WaterTypeFound {_getWaterType _getWaterType187,188
-                                         ,getAmount getAmount188,189
-data WaterTypeSearch WaterTypeSearch190,191
-data WaterTypeSearch = TestThisWaterType TestThisWaterType190,191
-data WaterTypeSearch = TestThisWaterType WaterType | WaterTypeError WaterTypeError190,191
-data WaterTypeSearch = TestThisWaterType WaterType | WaterTypeError  Text | FoundThisWaterType FoundThisWaterType190,191
-
 ./src/Kiosk/Backend/Data/Migrations/FormVersionZero.hs,1711
 module Kiosk.Backend.Data.Migrations.FormVersionZero Kiosk.Backend.Data.Migrations.FormVersionZero33,34
 data FormVersionZeroEntry FormVersionZeroEntry45,46
@@ -401,6 +296,9 @@ toFormVersionZeroEntry toFormVersionZeroEntry69,70
 toFormVersionZeroEntry toFormVersionZeroEntry70,71
 
 ./src/Kiosk/Backend/Data/Migrations.hs,74
+module Kiosk.Backend.Data.Migrations Kiosk.Backend.Data.Migrations23,24
+
+./src/Kiosk/Backend/Data/Migrations_flymake.hs,74
 module Kiosk.Backend.Data.Migrations Kiosk.Backend.Data.Migrations23,24
 
 ./src/Kiosk/Backend/Data.hs,50

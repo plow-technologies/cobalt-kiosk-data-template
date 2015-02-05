@@ -21,10 +21,10 @@ Each migration is tied to a form-id and another form-id.  Then there is a parser
 -}
 
 
-module Kiosk.Backend.Data.Migrations ( 
-                                       FormVersionOneEntry (..)
+module Kiosk.Backend.Data.Migrations ( FormVersionZeroEntry (..)
+                                     , CobaltBaseFormEntry (..)
                                      , FormMigration(..)) where
 
 import Kiosk.Backend.Data.MigrationClass
 import Kiosk.Backend.Data.Migrations.CobaltBaseForm
-
+import Kiosk.Backend.Data.Migrations.FormVersionZero
