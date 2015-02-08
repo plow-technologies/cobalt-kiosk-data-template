@@ -103,3 +103,7 @@ spec' = do
    it "should show that serialization works for lots of tests" $ do
      (tst,expected) <- encodeDecodeDataTemplateEntry
      tst `shouldBe` expected   
+
+
+
+

@@ -11,6 +11,7 @@ module Kiosk.Backend.Data ( DataTemplateEntry (..)
                           , DataTemplate (..)
                           , TemplateTable (..)
                           , TicketId (..)
+                          , TemplateItem (..)
                           , dataTemplateEntryKey
                           , dataTemplateEntryValue
                           , getTemplateTable

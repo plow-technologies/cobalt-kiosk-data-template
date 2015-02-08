@@ -46,6 +46,7 @@ data WaterType = PitWater | FlowBackWater | FreshWater | ProducedWater deriving 
 
 data CobaltBaseFormEntry = CobaltBaseFormEntry { cobaltBaseKey   :: DataTemplateEntryKey
                                                , cobaltBaseValue :: CobaltBaseForm  }
+                         deriving (Show,Eq) 
 
 data CobaltBaseForm = CobaltBaseForm { _nameOfWaterHaulingCompany :: T.Text
                                      , _amount                    :: Double
