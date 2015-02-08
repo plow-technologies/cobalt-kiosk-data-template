@@ -24,6 +24,7 @@ module Kiosk.Backend.Data.Migrations.CobaltBaseForm (CobaltBaseFormEntry (..)) w
 import Kiosk.Backend.Data.MigrationClass
 import Data.Text (Text)
 import Data.Either.Validation
+import Data.Monoid ((<>))
 import Data.List (foldl')
 import Control.Lens (over)
 import Control.Applicative ((<$>))
@@ -170,10 +171,13 @@ validateWaterTypeOnlyOneFull v0@(FormVersionZero { _flowbackWater_1
                    , _pitWater_1
                    , _bblsProducedWater_1
                    , _freshWater_1]                   
-    selectOneWaterType = foldl' findOneValidWaterType (TestThisWaterType FlowBackWater) allWaterText
+    selectOneWaterType = foldl' findOneValidWaterType (TestThisWaterType PitWater) allWaterText
 
 
 findOneValidWaterType :: WaterTypeSearch -> Text -> WaterTypeSearch                         
+findOneValidWaterType (TestThisWaterType ProducedWater) possibleWaterText
+   |T.null possibleWaterText = WaterTypeError ("did not decode " <> possibleWaterText <> " to any valid water type")
+   | otherwise = FoundThisWaterType ProducedWater possibleWaterText
 findOneValidWaterType (TestThisWaterType currentWaterType) possibleWaterText
    |T.null possibleWaterText = TestThisWaterType . succ $ currentWaterType
    | otherwise = FoundThisWaterType currentWaterType possibleWaterText
