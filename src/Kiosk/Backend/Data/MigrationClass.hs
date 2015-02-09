@@ -3,6 +3,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 {- |
 Module      :  Kiosk.Backend.Data.MigrationClass
@@ -39,6 +40,8 @@ import Kiosk.Backend.Data ( DataTemplateEntry(..)
                           , DataTemplateEntryKey(..)
                           , dataTemplateEntryKey
                           , dataTemplateEntryValue)
+import GHC.Generics
+import Data.Aeson 
 import Data.Monoid
 import GHC.Exts                          
 import Data.Text (Text)
@@ -54,7 +57,10 @@ import Data.Either.Validation (Validation (..))
 -- |Migration Errors are used in Validations on Migrations 
 data MigrationError e i = MigrationError { getError :: e
                                          , getIncomingData :: i }
-   deriving (Eq, Show)                                      
+   deriving (Eq, Show, Generic)                                      
+
+instance (ToJSON e, ToJSON i) => ToJSON (MigrationError e i) where 
+instance (FromJSON e, FromJSON i) => FromJSON (MigrationError e i) where 
 
 instance (Monoid e, Monoid i) => Monoid (MigrationError e i) where 
   mempty = MigrationError mempty mempty

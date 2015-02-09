@@ -2,6 +2,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 {- |
 Module      :  Kiosk.Backend.Data.Migrations.CobaltBaseForm
@@ -23,6 +24,8 @@ module Kiosk.Backend.Data.Migrations.CobaltBaseForm (CobaltBaseFormEntry (..)) w
 
 import Kiosk.Backend.Data.MigrationClass
 import Data.Text (Text)
+import Data.Aeson (ToJSON,FromJSON)
+import GHC.Generics
 import Data.Either.Validation
 import Data.Monoid ((<>))
 import Data.List (foldl')
@@ -43,11 +46,18 @@ import           Kiosk.Backend.Data                (DataTemplateEntry (..),
 import Kiosk.Backend.Data.Migrations.FormVersionZero ( FormVersionZeroEntry(..)
                                                      , FormVersionZero(..))
 
-data WaterType = PitWater | FlowBackWater | FreshWater | ProducedWater deriving (Show,Enum,Eq)
+data WaterType = PitWater | FlowBackWater | FreshWater | ProducedWater 
+  deriving (Show,Enum,Eq,Generic)
+
+instance ToJSON WaterType where 
+instance FromJSON WaterType where 
 
 data CobaltBaseFormEntry = CobaltBaseFormEntry { cobaltBaseKey   :: DataTemplateEntryKey
                                                , cobaltBaseValue :: CobaltBaseForm  }
-                         deriving (Show,Eq) 
+                         deriving (Show,Eq,Generic) 
+instance ToJSON CobaltBaseFormEntry where
+instance FromJSON CobaltBaseFormEntry where
+
 
 data CobaltBaseForm = CobaltBaseForm { _nameOfWaterHaulingCompany :: T.Text
                                      , _amount                    :: Double
@@ -60,7 +70,10 @@ data CobaltBaseForm = CobaltBaseForm { _nameOfWaterHaulingCompany :: T.Text
                                      , _nameOfLeaseOperator       :: T.Text
                                      , _leaseName                 :: T.Text
                                      , _signature                 :: T.Text  }
-                    deriving (Show,Eq)
+                    deriving (Show,Eq,Generic)
+
+instance ToJSON CobaltBaseForm where
+instance FromJSON CobaltBaseForm where
 
 instance ToDataTemplate CobaltBaseFormEntry where 
   toDataTemplate = fromCobaltBaseForm
@@ -100,7 +113,6 @@ convertFormToTemplateItems fv1 = [nItem, a , customerTicketNumber , d ,tin , twh
                               nlo   = makeTemplateItemText "Name_of_Lease_Operator" (_nameOfLeaseOperator fv1)
                               ln    = makeTemplateItemText "Lease_Name" (_leaseName fv1)
                               s     = makeTemplateItemText "Driver_Signature" (_signature fv1)
-
 
 fromWaterTypeFoundTextToDouble
   :: WaterTypeFound Text -> Validation String (WaterTypeFound Double)

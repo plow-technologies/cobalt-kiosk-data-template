@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-
+{-# LANGUAGE DeriveGeneric #-}
 
 {- |
 Module      :  Kiosk.Backend.Data.Migrations.FormVersionZero.hs
@@ -35,7 +35,8 @@ module Kiosk.Backend.Data.Migrations.FormVersionZero ( FormVersionZeroEntry(..)
                                                      , FormVersionZero(..)) where
 
 import Kiosk.Backend.Data.MigrationClass
-
+import GHC.Generics
+import Data.Aeson (ToJSON,FromJSON)
 import Data.Text (Text)
 import           Kiosk.Backend.Data                (DataTemplateEntry (..),
                                                     DataTemplateEntryKey (..))
@@ -43,7 +44,10 @@ import           Kiosk.Backend.Data                (DataTemplateEntry (..),
 -- |First half of the migration
 
 data FormVersionZeroEntry = FormVersionZeroEntry { versionZeroKey    :: DataTemplateEntryKey
-                                                 , versionZeroValue  :: FormVersionZero  } deriving (Show)
+                                                 , versionZeroValue  :: FormVersionZero  } deriving (Show,Generic)
+
+instance ToJSON FormVersionZeroEntry where
+instance FromJSON FormVersionZeroEntry where
 
 data FormVersionZero = FormVersionZero { _signature_1                 :: Text
                                        , _nameOfWaterHaulingCompany_1 :: Text
@@ -58,8 +62,11 @@ data FormVersionZero = FormVersionZero { _signature_1                 :: Text
                                        , _timeIn_1                    :: Text
                                        , _freshWater_1                :: Text
                                        , _nameOfLeaseOperator_1       :: Text
-                                       } deriving (Show)
+                                       } deriving (Show,Generic)
 
+
+instance ToJSON FormVersionZero where
+instance FromJSON FormVersionZero where
 
 instance FromDataTemplate FormVersionZeroEntry where
   fromDataTemplate = toFormVersionZeroEntry
