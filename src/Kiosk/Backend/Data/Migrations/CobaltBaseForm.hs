@@ -5,6 +5,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 
 {- |
+
 Module      :  Kiosk.Backend.Data.Migrations.CobaltBaseForm
 Description :  Base Form for all company forms to follow
 Copyright   :  Plow Technologies LLC 
@@ -14,17 +15,18 @@ Maintainer  :  Scott Murphy
 Stability   :  experimental
 Portability :  portable
 
-Basically, I don't want to do the work of changing every single form to match the 
-company so we are going to have one form that will be translated into the 
-various company forms
-
+Basically, I don't want to do the work of changing every 
+single form to match the company so we are going to have 
+one form that will be translated into the various company forms
 -}
 
 module Kiosk.Backend.Data.Migrations.CobaltBaseForm (CobaltBaseFormEntry (..)) where        
 
 import Kiosk.Backend.Data.MigrationClass
-import Data.Text (Text)
-import Data.Aeson (ToJSON,FromJSON)
+import Data.Text (Text,pack)
+import Data.Aeson ( ToJSON
+                  , FromJSON
+                  , eitherDecode)                                    
 import GHC.Generics
 import Data.Either.Validation
 import Data.Monoid ((<>))
@@ -34,17 +36,19 @@ import Control.Applicative ((<$>))
 
 import qualified Data.Text                         as T
 import qualified Data.Text.Read as T
+
 import           Kiosk.Backend.Data.DataTemplate  ( TemplateItem (..)
                                                   , DataTemplate (..)
                                                     )
 
-import           Kiosk.Backend.Data                (DataTemplateEntry (..),
-                                                    DataTemplateEntryKey (..)
 
-                                                    )
+import           Kiosk.Backend.Data                (DataTemplateEntry (..),
+                                                    DataTemplateEntryKey (..))
+
 
 import Kiosk.Backend.Data.Migrations.FormVersionZero ( FormVersionZeroEntry(..)
                                                      , FormVersionZero(..))
+
 
 data WaterType = PitWater | FlowBackWater | FreshWater | ProducedWater 
   deriving (Show,Enum,Eq,Generic)
@@ -192,11 +196,17 @@ findOneValidWaterType (TestThisWaterType ProducedWater) possibleWaterText
    | otherwise = FoundThisWaterType ProducedWater possibleWaterText
 findOneValidWaterType (TestThisWaterType currentWaterType) possibleWaterText
    |T.null possibleWaterText = TestThisWaterType . succ $ currentWaterType
+   |checkZero possibleWaterText = TestThisWaterType . succ $ currentWaterType   
    | otherwise = FoundThisWaterType currentWaterType possibleWaterText
-findOneValidWaterType f@(FoundThisWaterType _ _) possibleWaterText
+findOneValidWaterType f@(FoundThisWaterType wt _) possibleWaterText
    | T.null possibleWaterText = f
-   | otherwise = WaterTypeError "More Than One kind of watertype found"       
+   | otherwise = WaterTypeError $ "More Than One kind of watertype found first Type: " <> (pack.show $ wt) 
 findOneValidWaterType wtErr@(WaterTypeError _) _ = wtErr
+
+checkZero ::  Text  -> Bool
+checkZero "0" = True
+checkZero "0.0" = True
+checkZero _ = False
 
 waterTypeSearchToValidation :: WaterTypeSearch  -> Validation Text (WaterTypeFound Text)
 waterTypeSearchToValidation (TestThisWaterType _) = Failure "No Amount found, all water type are null"                                
