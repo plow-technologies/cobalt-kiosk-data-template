@@ -26,7 +26,7 @@ import Kiosk.Backend.Data.MigrationClass
 import Data.Text (Text,pack)
 import Data.Aeson ( ToJSON
                   , FromJSON
-                  , eitherDecode)                                    
+                   )                                    
 import GHC.Generics
 import Data.Either.Validation
 import Data.Monoid ((<>))
