@@ -25,8 +25,22 @@ test:
     - cabal test --show-details=streaming -j2:
         timeout: 3000
 
-# deployment:
-#   staging:
-#     branch: master
-#     commands:
-#       - ./deploy_staging.sh
+deployment:
+  staging:
+    branch: master
+    commands:
+      - cd ~/cobalt-kiosk-data-template/dist/build/kiosk-data-template/ && rsync -avz -e ssh kiosk-data-template scott@54.69.197.241:/home/scott/node/cobalt-kiosk-data-template/bin/:
+         timeout: 3000
+      - ssh scott@54.69.197.241 "./deploy/deploy_kiosk.sh && killall kiosk-data-template":
+         timeout: 3000
+
+
+  production:
+    branch: production
+    commands:
+      - cd ~/cobalt-kiosk-data-template/dist/build/kiosk-data-template/ && rsync -avz -e ssh kiosk-data-template node@108.168.240.123:/home/node/cobalt-kiosk-data-template/bin/:
+         timeout: 3000
+      - ssh node@108.168.240.123 "./deploy/deploy_kiosk.sh && killall kiosk-data-template":
+         timeout: 3000
+
+
