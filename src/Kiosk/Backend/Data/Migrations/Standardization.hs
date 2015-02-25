@@ -33,31 +33,31 @@ standardizers take a list of stuff like this and return a given result.
 module Kiosk.Backend.Data.Migrations.Standardization ( createStandardizer
                                                      , makeConstantStanderdizer
                                                      , makeStandardForm
-                                                     , makeAltForm
-                                                     , regexStandardizer
-                                                     , AltForm
+                                                     , makeRegexForm
+                                                     , RegexForm
                                                      , StandardForm
                                                      , Standardizer
                                                      , emptyStandardizer
                                                      , standardize
                                                      , union
-                                                     , makeStandardFormParser) where
+                                                     , makeStandardizer) where
 
-import Regex.Genex
-import Data.Monoid                           
-import Data.Text   (Text,pack,unpack)
-import Control.Arrow ((***))
-import qualified Data.Text as T
+
+import Data.Monoid (Monoid)                          
+import Data.Text   (Text)
+
 import Data.String (IsString)
 import qualified Data.HashMap.Strict as HM
 import Data.HashMap.Strict (HashMap)
-import Data.Attoparsec.Text (parseOnly
-                            ,Parser(..))
-import Control.Applicative              
-import Text.Parser.Combinators (manyTill)                          
-import Text.Parser.Token                
-import Text.Parser.Char 
-import Data.Hashable
+import Data.Attoparsec.Text (Parser)
+
+import Control.Applicative  ((*>)
+                            ,pure
+                            )   
+import Text.Regex.TDFA ((=~))
+import Text.Regex.TDFA.Text ()
+import Text.Parser.Token   (textSymbol)             
+import Data.Hashable (Hashable)
 -- | Standardization transformer properties
 -- 'StandardizationTransformer' compose
 
@@ -88,8 +88,8 @@ Just "Something"
 Just "Something Else"
 |-}
 
-newtype AltForm = AltForm {
-                                _getAltForm :: Text} 
+newtype RegexForm = RegexForm {
+                                _getRegexForm :: Text} 
   deriving (Show,Ord,Eq,IsString, Monoid,Read,Hashable)
 
 
@@ -97,19 +97,18 @@ newtype StandardForm = StandardForm {
                                        _getStandardForm :: Text } 
   deriving (Show,Ord,Eq,IsString, Monoid,Read)
 
-newtype Standardizer  = Standardizer {_getStandardizer ::(HashMap AltForm StandardForm)}
+newtype Standardizer  = Standardizer {_getStandardizer ::(HashMap RegexForm StandardForm)}
   deriving (Show,Eq,Monoid)
 
--- | make a standardizer such that if ta == ts, from (AltForm ta) and (StandardForm ts)
+-- | make a standardizer such that if ta == ts, from (RegexForm ta) and (StandardForm ts)
 --   then then makeConstantStandardizer will return ts when given
-
 makeConstantStanderdizer :: StandardForm -> Standardizer
-makeConstantStanderdizer sf@(StandardForm s) =  Standardizer . HM.insert (AltForm s) sf $ HM.empty      
+makeConstantStanderdizer sf@(StandardForm s) =  Standardizer . HM.insert (RegexForm s) sf $ HM.empty      
 
 -- |Standardizers allways are created iwth the Constant Standardizer
-createStandardizer :: AltForm ->
+createStandardizer :: RegexForm ->
                       StandardForm ->
-                      Standardizer
+                      Standardizer                      
 createStandardizer altForm standardForm = Standardizer . HM.insert altForm standardForm . 
                                           _getStandardizer $ standardFormConstantMap
   where
@@ -119,13 +118,11 @@ createStandardizer altForm standardForm = Standardizer . HM.insert altForm stand
 
 -- | I am a big jerk... so no Pattern matching on the external here... once they are made
 -- That is it!
-
 makeStandardForm :: Text -> StandardForm
 makeStandardForm = StandardForm
 
-makeAltForm :: Text -> AltForm      
-makeAltForm = AltForm
-
+makeRegexForm :: Text -> RegexForm      
+makeRegexForm = RegexForm
 
 -- | If left and right standardizers match, a is used
 union :: Standardizer ->
@@ -140,32 +137,21 @@ emptyStandardizer :: Standardizer
 emptyStandardizer = Standardizer HM.empty                     
 
 
-makeStandardFormParser :: AltForm ->
-                          StandardForm 
-                         -> Parser Text                         
-makeStandardFormParser (AltForm af) (StandardForm sf) = textSymbol af *> 
-                                                        pure sf    
-                                                        
+makeStandardizer :: RegexForm ->
+                              StandardForm 
+                             -> Parser Text                                  
+makeStandardizer (RegexForm af) (StandardForm sf) = textSymbol af *> 
+                                                            pure sf    
+
+
+
 standardize :: Standardizer -> Text -> Text
-standardize (Standardizer s) txt = HM.foldrWithKey generateAndRunParser txt s 
-  where                                                 
-    generateAndRunParser af sf txt = either (const txt) id $ symbolParser af sf txt
-    symbolParser af sf txt =  parseOnly (makeStandardFormParser af sf) txt
-    
-regexStandardizer :: Text -> Text -> Standardizer
-regexStandardizer regex standardText = foldr union emptyStandardizer zipListBuilder 
-   where         
-        altFormTexts = regexTextGenerator regex
-        standardFormTexts = repeat standardText
-        zippedFormTuple :: [(AltForm, StandardForm)]
-        zippedFormTuple = zipWith makeCorrectTypes 
-                                  altFormTexts
-                                  standardFormTexts 
-        zipListBuilder :: [Standardizer]
-        zipListBuilder = uncurry createStandardizer <$> zippedFormTuple                
-        makeCorrectTypes :: Text -> Text -> (AltForm, StandardForm) 
-        makeCorrectTypes stdFrm altFrm = (makeAltForm *** makeStandardForm)  (stdFrm,altFrm)
+standardize (Standardizer s) txt = maybe txt id $ HM.foldrWithKey generateAndRunParser Nothing s  
+  where                                                     
+    generateAndRunParser _ _ jt@(Just _) = jt
+    generateAndRunParser af sf Nothing = symbolParser af sf 
+    symbolParser :: RegexForm -> StandardForm -> Maybe Text
+    symbolParser (RegexForm af) (StandardForm sf) = if (txt =~ af)
+                                                    then Just sf
+                                                    else Nothing
 
-
-regexTextGenerator :: Text -> [Text]
-regexTextGenerator regexText = fmap pack . genexPure $ [unpack regexText]

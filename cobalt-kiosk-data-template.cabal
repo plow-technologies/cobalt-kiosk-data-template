@@ -51,6 +51,8 @@ Library
                       , vector
                       , hashable           
                       , regex-genex
+                      , regex-tdfa-text
+                      , regex-tdfa 
 
 Test-Suite spec
   Type:                 exitcode-stdio-1.0
@@ -83,7 +85,8 @@ Test-Suite spec
                       , tables
                       , uuid
                       , cassava
-                      , regex-tdfa
+                      , regex-tdfa-text
+                      , regex-tdfa 
                       , vector
                       , time
                       , old-locale
