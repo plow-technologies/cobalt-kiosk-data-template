@@ -40,24 +40,18 @@ module Kiosk.Backend.Data.Migrations.Standardization ( createStandardizer
                                                      , emptyStandardizer
                                                      , standardize
                                                      , union
-                                                     , makeStandardizer) where
+                                                      ) where
 
 
 import Data.Monoid (Monoid)                          
 import Data.Text   (Text)
-
 import Data.String (IsString)
 import qualified Data.HashMap.Strict as HM
 import Data.HashMap.Strict (HashMap)
-import Data.Attoparsec.Text (Parser)
-
-import Control.Applicative  ((*>)
-                            ,pure
-                            )   
 import Text.Regex.TDFA ((=~))
 import Text.Regex.TDFA.Text ()
-import Text.Parser.Token   (textSymbol)             
 import Data.Hashable (Hashable)
+import Data.Maybe (fromMaybe)
 -- | Standardization transformer properties
 -- 'StandardizationTransformer' compose
 
@@ -97,7 +91,7 @@ newtype StandardForm = StandardForm {
                                        _getStandardForm :: Text } 
   deriving (Show,Ord,Eq,IsString, Monoid,Read)
 
-newtype Standardizer  = Standardizer {_getStandardizer ::(HashMap RegexForm StandardForm)}
+newtype Standardizer  = Standardizer { _getStandardizer ::HashMap RegexForm StandardForm}
   deriving (Show,Eq,Monoid)
 
 -- | make a standardizer such that if ta == ts, from (RegexForm ta) and (StandardForm ts)
@@ -137,21 +131,15 @@ emptyStandardizer :: Standardizer
 emptyStandardizer = Standardizer HM.empty                     
 
 
-makeStandardizer :: RegexForm ->
-                              StandardForm 
-                             -> Parser Text                                  
-makeStandardizer (RegexForm af) (StandardForm sf) = textSymbol af *> 
-                                                            pure sf    
-
 
 
 standardize :: Standardizer -> Text -> Text
-standardize (Standardizer s) txt = maybe txt id $ HM.foldrWithKey generateAndRunParser Nothing s  
+standardize (Standardizer s) txt = fromMaybe txt $ HM.foldrWithKey generateAndRunParser Nothing s  
   where                                                     
     generateAndRunParser _ _ jt@(Just _) = jt
     generateAndRunParser af sf Nothing = symbolParser af sf 
     symbolParser :: RegexForm -> StandardForm -> Maybe Text
-    symbolParser (RegexForm af) (StandardForm sf) = if (txt =~ af)
+    symbolParser (RegexForm af) (StandardForm sf) = if txt =~ af
                                                     then Just sf
                                                     else Nothing
 
