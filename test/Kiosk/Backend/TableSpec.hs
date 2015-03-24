@@ -1,5 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 module Kiosk.Backend.TableSpec (main, spec) where
 
 import           Kiosk.Backend.Data

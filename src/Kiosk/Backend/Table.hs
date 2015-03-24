@@ -19,6 +19,7 @@ import Data.Aeson (ToJSON
                   ,FromJSON
                   ,parseJSON
                   ,toJSON)
+                  
 import           Data.Foldable                   (toList) 
 import Control.Applicative ((<$>))
 
