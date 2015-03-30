@@ -143,6 +143,3 @@ sortDataTemplatesEntry dte = dte {_dataTemplateEntryValue =s}
 
 
 
--- | Tabular
-
-
