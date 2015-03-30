@@ -10,7 +10,7 @@ dependencies:
     - "~/cobalt-kiosk-data-template/.cabal-sandbox"
 
   override:
-    -"if grep -Fxq 'remote-repo: hackage.plowtech.net:http://hackage.plowtech.net/packages/archive' ~/.cabal/config; then echo 'Already in config file'; else echo 'remote-repo: hackage.plowtech.net:http://hackage.plowtech.net/packages/archive' >> ~/.cabal/config; fi" 
+    - "if grep -Fxq 'remote-repo: hackage.plowtech.net:http://hackage.plowtech.net/packages/archive' ~/.cabal/config; then echo 'Already in config file'; else echo remote-repo: hackage.plowtech.net:http://hackage.plowtech.net/packages/archive >> ~/.cabal/config; fi"
     - cabal update
     - cabal sandbox init
     - cabal install   --only-dependencies --enable-tests -j2
