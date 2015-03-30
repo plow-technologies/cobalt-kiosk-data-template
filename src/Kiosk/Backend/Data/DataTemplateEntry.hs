@@ -37,11 +37,7 @@ import           Data.Aeson                              (FromJSON, ToJSON,
 import           Data.ByteString.Lazy                    (ByteString)
 import qualified Data.ByteString.Lazy                    as LBS
 import qualified Data.List                               as L
-import           Data.Table                              (Key, PKT, Primary,
-                                                          Supplemental, Tab,
-                                                          Tabular, fetch,
-                                                          forTab, ixTab, mkTab,
-                                                          primarily, primary)
+
 import           Data.Text                               (Text)
 
 import qualified Data.Csv                                as C (ToRecord, encode,
@@ -149,17 +145,4 @@ sortDataTemplatesEntry dte = dte {_dataTemplateEntryValue =s}
 
 -- | Tabular
 
-instance Tabular DataTemplateEntry where
-      type PKT DataTemplateEntry  = DataTemplateEntryKey
-      data Key k DataTemplateEntry b where
-        Key :: Key Primary DataTemplateEntry DataTemplateEntryKey
-        DValue :: Key Supplemental DataTemplateEntry DataTemplate
-      data Tab DataTemplateEntry i = DTab (i Primary DataTemplateEntryKey) (i Supplemental DataTemplate)
-      fetch Key = _dataTemplateEntryKey
-      fetch DValue = _dataTemplateEntryValue
-      primary = Key
-      primarily Key r = r
-      mkTab f = DTab <$> f Key <*> f DValue
-      forTab (DTab i s) f = DTab <$> f Key i <*> f DValue s
-      ixTab (DTab i _ ) Key = i
-      ixTab (DTab _ vs) DValue = vs
+

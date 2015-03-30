@@ -1,5 +1,3 @@
-
-
 {- |
 Module      :  Generators
 Description :  Generators for Forms and other cabal parts
@@ -11,6 +9,7 @@ Stability   :  experimental
 Portability :  portable
 
 Create Test forms for use in modules
+Uses regex-genex to give these forms a more realistic look
 
 -}
 {-# LANGUAGE OverloadedStrings #-}
@@ -29,10 +28,12 @@ import           Kiosk.Backend.Data              (DataTemplateEntry (..),
 import           Kiosk.Backend.Data.DataTemplate (DataTemplate (..),
                                                   TemplateItem (..))
 import           Kiosk.Backend.Form
-import           Mocks.Primitive.Generators      (GeneratorType (..),
-                                                  generateInts, generateTexts)
-import           Test.QuickCheck
+import           Mocks.Primitive.Generators      (GeneratorType (..), 
+                                                  generateInts )
+import qualified Data.Text as T                                                  
+import           Test.QuickCheck 
 
+import Regex.Genex
 -- | Form Generator
 
 generateForm :: GeneratorType -> Gen [Form]
@@ -52,22 +53,22 @@ generateForm gtype = do companies <- generateCompany gtype
 
 -- | Company Generator
 generateCompany :: GeneratorType -> Gen [Company]
-generateCompany gtype = do ctxt <- generateTexts gtype
-                           return $ Company <$> ctxt <*> [[]]
+generateCompany _ = do ctxt <- generatePrettyTexts "Cobalt|Rockshore"
+                       return $ Company <$> ctxt <*> [[]]
 -- | Address Generator
 generateAddress :: GeneratorType -> Gen [Address]
-generateAddress gtype = do atxt <- generateTexts gtype
-                           return $ Address <$> atxt <*> [[]]
+generateAddress _ = do atxt <- generatePrettyTexts "1114 Here we GO dr."
+                       return $ Address <$> atxt <*> [[]]
 
 -- | Logo Generator
 generateLogo :: GeneratorType -> Gen [Logo]
-generateLogo gtype = do atxt <- generateTexts gtype
-                        return $ Logo <$> atxt <*> [[]]
+generateLogo _ = do atxt <- generatePrettyTexts "Rockshore.logo"
+                    return $ Logo <$> atxt <*> [[]]
 
 -- | Phone Generator
 generatePhone :: GeneratorType -> Gen [Phone]
-generatePhone gtype = do atxt <- generateTexts gtype
-                         return $ Phone <$> atxt <*> [[]]
+generatePhone _ = do atxt <- generatePrettyTexts "[1-9]{3}-[1-9]{3}-[0-9]{4}"
+                     return $ Phone <$> atxt <*> [[]]
 
 
 -- | Row Generator
@@ -131,8 +132,8 @@ generateItemTypes Static = do lbls <- take 5 <$> generateLabel Static
 -- | Label Generator
 
 generateLabel :: GeneratorType -> Gen [Label]
-generateLabel gtype =  (fmap (flip Label []))  <$>
-                       generateTexts gtype
+generateLabel _ =  (fmap (flip Label []))  <$>
+                        generatePrettyTexts "Some Sort OF Label [0-9]"
 
 -- | Input Generator
 generateInput :: GeneratorType -> Gen [Input]
@@ -147,17 +148,17 @@ generateInputType gtype = do
                             , InputTypeSignature <$> inputSigs ]
 
 generateInputText :: GeneratorType -> Gen [InputText]
-generateInputText gtype = fmap InputText
-                          <$> generateTexts gtype
+generateInputText _ = fmap InputText
+                           <$> generatePrettyTexts "Some Input Text "
 
 generateInputSignatures :: GeneratorType -> Gen [Signature]
-generateInputSignatures gtype = do txts <- generateTexts gtype
-                                   return $ Signature <$> txts
+generateInputSignatures _ = do txts <- generatePrettyTexts "Signature Block"
+                               return $ Signature <$> txts
 
 -- | Button Generator
 generateButton :: GeneratorType -> Gen [Button]
-generateButton gtype = (fmap (flip Button [] )) <$>
-                       generateTexts gtype
+generateButton _ = (fmap (flip Button [] )) <$>
+                        generatePrettyTexts  "Button text"
 
 -- | EmptyBlock Generator
 generateEmptyBlock :: Monad m => t -> m EmptyBlock
@@ -165,21 +166,24 @@ generateEmptyBlock _gtype = return Null
 
 -- | TableTopHeader
 generateTableTopHeader :: GeneratorType -> Gen [TableTopHeader]
-generateTableTopHeader gtype = fmap TableTopHeader <$>
-                                 generateTexts gtype
+generateTableTopHeader _ = fmap TableTopHeader <$>
+                                  generatePrettyTexts "HeaerText"
 -- | TableLeftHeader
 generateTableLefts :: GeneratorType -> Gen [TableLeftHeader]
-generateTableLefts gtype = fmap TableLeftHeader  <$>
-                           generateTexts gtype
+generateTableLefts _ = fmap TableLeftHeader  <$>
+                            generatePrettyTexts "LeftTableLabel"
 
 
 -- | DataTemplate Generators
-
+generatePrettyTexts :: String -> Gen [T.Text]
+generatePrettyTexts str = return $ T.pack <$> genexPure [str]
 
 -- | TemplateItem Generator
 generateTemplateItem :: GeneratorType -> Gen [TemplateItem]
-generateTemplateItem gtype = ((<*>).fmap TemplateItem) <$>  generateTexts gtype
+generateTemplateItem gtype = ((<*>).fmap TemplateItem) <$>  generatePrettyTexts "item [0-7]"
                                                           <*>  generateInputType gtype
+
+
 
 generateTemplateItems :: GeneratorType -> Gen [TemplateItem]
 generateTemplateItems Dynamic = generateTemplateItem Dynamic
@@ -214,7 +218,7 @@ generateDataTemplateEntry gtype = do
                            dEntryKey <- generateDataTemplateEntryKey gtype
                            dEntry <- generateDataTemplate gtype
                            return . nub $ DataTemplateEntry <$> dEntryKey
-                                                                             <*> dEntry
+                                                            <*> dEntry
 
 
 checkStaticGeneratorConsistency :: Int -> Gen Bool
@@ -222,3 +226,4 @@ checkStaticGeneratorConsistency i = let x = (take i) <$> (generateDataTemplateEn
                                         y =  (take i) <$> (generateDataTemplateEntry Static)
                                     in (==) <$> (toJSON <$> x )
                                             <*> (toJSON <$> y)
+
