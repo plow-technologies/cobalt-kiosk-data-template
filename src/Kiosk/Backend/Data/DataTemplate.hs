@@ -25,6 +25,7 @@ module Kiosk.Backend.Data.DataTemplate ( fromFormToDataTemplate
                                        , checkType
                                        , decodeStringAsCompany
                                        , decodeStringAsAddress
+                                       , fitDataTemplate
 
                                         ,getAddress) where
 
@@ -39,14 +40,13 @@ import           Data.Text                     (Text)
 
 import           Kiosk.Backend.Form            (Address (..), Company (..),
                                                 Form (..), Input (..),
+                                                InputDate (..),
                                                 InputDouble (..), InputInt (..),
-                                                InputText (..), InputType (..),
+                                                InputText (..), InputTime (..),
+                                                InputType (..), InputType (..),
                                                 Item (..), ItemType (..),
                                                 Label (..), Row (..),
-                                                Signature (..)
-                                               ,InputType(..)
-                                               ,InputDate(..)
-                                               ,InputTime(..))
+                                                Signature (..))
 
 import           Control.Applicative           ((<$>), (<|>))
 
@@ -114,12 +114,15 @@ encodeTemplateItemsAsObject items = object (objectMaker <$> labelIncrementor ite
                        replaceOldLabels = zipWith (\ti l -> ti {label = l})
 
 
--- Decode Input Function
+-- | Decode Input Function
+-- This does decode the input function but it should be noted that the type signature basically never gets called b
+-- because in javascript form it looks identical to the InputText field
 decodeInput :: Value -> Parser InputType
 decodeInput v = InputTypeText . InputText  <$> parseJSON v  <|>
                 InputTypeSignature . Signature <$> parseJSON v <|>
                 InputTypeInt . InputInt <$> parseJSON v        <|>
                 InputTypeDouble . InputDouble <$> parseJSON v
+
 
 -- Decode Object Function
 decodeObjectAsTemplateItems :: Value -> Parser [TemplateItem]
@@ -180,8 +183,12 @@ fromDataTemplateToCSV =  C.encode
 checkType :: (Typeable a1, Typeable a) => a -> a1 -> Bool
 checkType a b = typeOf a == typeOf b
 
+
 checkCompanyType :: (Typeable a1, Typeable a) => a -> a1 -> Bool
 checkCompanyType = checkType
 
--- validateDataTemplate (DataTemplate c1 a1 d1) (DataTemplate c2 a2 d2) =
---                                    where companyValid = checkCompanyType c1 c2
+
+
+-- | Try to fit a given DataTemplate to a given form
+fitDataTemplate :: Form -> DataTemplate -> DataTemplate
+fitDataTemplate = undefined

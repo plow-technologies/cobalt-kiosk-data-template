@@ -1,52 +1,46 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-
 {- |
 Module      :  Kiosk.Backend.Data.DataTemplateEntryKey
-Description :  Key defining a data template entry uniquely 
-Copyright   :  Plow Technologies LLC 
+Description :  Key defining a data template entry uniquely
+Copyright   :  Plow Technologies LLC
 License     :  MIT License
-
 Maintainer  :  Scott Murphy
 Stability   :  experimental
 Portability :  portable
 
-
-
 -}
-
 
 module Kiosk.Backend.Data.DataTemplateEntryKey (DataTemplateEntryKey (..)
                                                ,TicketId(..)
                                                ,decodeUUID) where
 
-import           Data.Time                       ( formatTime
-                                                 , utcToZonedTime)
-import           Plow.Extras.Time                (intToUTCTime)                                    
+import           Data.Time           (formatTime, utcToZonedTime)
 
-import           System.Locale                   (defaultTimeLocale)                 
+import           Plow.Extras.Time    (intToUTCTime)
 
-import           Data.Time.LocalTime             (TimeZone (..))
+import           System.Locale       (defaultTimeLocale)
 
-import Data.Aeson (ToJSON
-                  ,toJSON
-                  ,FromJSON
-                  ,parseJSON
-                  ,Value(..)
-                  ,object
-                  ,(.:)
-                  ,(.=))
-import qualified Data.Text as T                  
-import           Data.Aeson.Types                (Parser ())                  
-import qualified Data.Vector                     as V                   
-import Control.Applicative ((<*>)
-                           ,(<$>))                  
-import           Control.Monad                   (liftM)                  
-import           Data.UUID                       (UUID, fromString, toString)                  
-import qualified Data.Csv                        as C 
+import           Data.Time.LocalTime (TimeZone (..))
+
+import           Control.Applicative ((<$>), (<*>))
+
+import           Control.Monad       (liftM)
+
+import           Data.Aeson          (FromJSON, ToJSON, Value (..), object,
+                                      parseJSON, toJSON, (.:), (.=))
+
+import           Data.Aeson.Types    (Parser ())
+
+import qualified Data.Csv            as C
+
+import qualified Data.Text           as T
+
+import           Data.UUID           (UUID, fromString, toString)
+
+import qualified Data.Vector         as V
 
 -- |Key for Data Template
-
 newtype TicketId = TicketId {_getTicketIdPair :: (Int,Int) } deriving (Eq, Ord, Show)
 
 decodeTicketID :: Value -> Parser TicketId
@@ -60,8 +54,8 @@ ticketIdToString (TicketId (a,b)) = show a ++ "_" ++ show b
 
 intTimeToHumanTime :: Int -> String
 intTimeToHumanTime intTime = formatTime defaultTimeLocale "%Y/%m/%dT%H:%M:%S" time
-                     where utcTime = intToUTCTime . div intTime $ 1000 
-                           time = utcToZonedTime oklahomaTimeZone utcTime
+                      where utcTime = intToUTCTime . div intTime $ 1000
+                            time = utcToZonedTime oklahomaTimeZone utcTime
 
 oklahomaTimeZone :: TimeZone
 oklahomaTimeZone = TimeZone (-360) False "CST"
@@ -69,7 +63,7 @@ oklahomaTimeZone = TimeZone (-360) False "CST"
 splitString :: T.Text -> (String, String)
 splitString s = (T.unpack t1, T.unpack $ T.drop 1 t2)
       where (t1, t2) = T.breakOn ("-"::T.Text) s
-                            
+
 decodeUUID :: Value -> Parser UUID
 decodeUUID v = do
            uuid <- fromString <$> parseJSON v
@@ -91,7 +85,10 @@ data DataTemplateEntryKey = DataTemplateEntryKey {
 
 instance C.ToRecord DataTemplateEntryKey  where
   toRecord (DataTemplateEntryKey d uid tid fid ) = V.fromList $ C.toField <$> lst
-                                    where lst = [C.toField (intTimeToHumanTime d), C.toField fid, C.toField . ticketIdToString $ tid, C.toField . toString $ uid ]
+                                    where lst = [C.toField (intTimeToHumanTime d)
+                                                , C.toField fid
+                                                , C.toField . ticketIdToString $ tid
+                                                , C.toField . toString $ uid ]
 
 instance ToJSON DataTemplateEntryKey where
   toJSON (DataTemplateEntryKey date uuid ticketid fId) = object [

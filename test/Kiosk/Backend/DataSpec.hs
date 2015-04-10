@@ -1,4 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
+
 module Kiosk.Backend.DataSpec (main, spec, testGenerateDataTemplate, encodeDecodeHashTests) where
 
 import           Control.Applicative             ((<$>))
@@ -11,10 +12,12 @@ import           Control.Arrow                   ((***))
 import qualified Data.HashMap.Strict             as HM
 import           Data.List                       (sort)
 import           Generators                      (GeneratorType (..), checkStaticGeneratorConsistency,
+                                                  generateDataTemplate,
                                                   generateDataTemplateEntry,
                                                   generateForm)
 import           Kiosk.Backend.Data              (DataTemplateEntry (..))
 import           Kiosk.Backend.Data.DataTemplate (DataTemplate (..),
+                                                  fitDataTemplate,
                                                   fromFormToDataTemplate,
                                                   fromJSONToDataTemplate)
 import           Kiosk.Backend.Form
@@ -27,7 +30,7 @@ main :: IO ()
 main = hspec spec
 
 spec :: Spec
-spec = do 
+spec = do
   describe (nameBase 'fromFormToDataTemplate) $
     it "should transform a Actual Onping Form to a DataTemplate" $ do
       let
@@ -47,6 +50,10 @@ spec = do
        (Right result) = testJSONIpadEncoding
        recodedJSON    = encode result
      decodeToValue recodedJSON `shouldBe` decodeToValue testJSON
+  describe (nameBase 'fitDataTemplate) $ do
+   it "Should match a form with a DataTemplate and try and fix the types" $ do
+     dataTemplate <- generate . generateDataTemplate $ Static
+     True `shouldBe` True
 
 
 encodeDecodeDataTemplate :: IO (Either String [DataTemplate],Either String [DataTemplate])
@@ -97,12 +104,12 @@ spec' :: Spec
 spec' = do
   describe (nameBase 'checkStaticGeneratorConsistency) $
     it "should check that the generative tests hold equivalence for static cases" $
-      property $ checkStaticGeneratorConsistency  
+      property $ checkStaticGeneratorConsistency
 
   describe (nameBase ''DataTemplateEntry ++ " Dynamic Aeson Test") $
    it "should show that serialization works for lots of tests" $ do
      (tst,expected) <- encodeDecodeDataTemplateEntry
-     tst `shouldBe` expected   
+     tst `shouldBe` expected
 
 
 

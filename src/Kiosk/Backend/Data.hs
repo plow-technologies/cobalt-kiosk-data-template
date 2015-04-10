@@ -1,13 +1,10 @@
-{-# LANGUAGE GADTs                      #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE RankNTypes                 #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE TemplateHaskell            #-}
-{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 module Kiosk.Backend.Data ( DataTemplateEntry (..)
-                           ,DataTemplateEntryKey (..)
+                          , DataTemplateEntryKey (..)
                           , DataTemplate (..)
                           , TicketId (..)
                           , TemplateItem (..)
@@ -18,15 +15,8 @@ module Kiosk.Backend.Data ( DataTemplateEntry (..)
                           , fromDataTemplateEntryToCsv
                           , fromDataTemplateEntryToS3Csv) where
 
-
-import Kiosk.Backend.Data.DataTemplate
-import Kiosk.Backend.Data.DataTemplateEntry
-import Kiosk.Backend.Data.DataTemplateEntryKey
-
-
-
-
-
-
+import           Kiosk.Backend.Data.DataTemplate
+import           Kiosk.Backend.Data.DataTemplateEntry
+import           Kiosk.Backend.Data.DataTemplateEntryKey
 
 
