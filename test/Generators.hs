@@ -21,6 +21,7 @@ module Generators (GeneratorType (..)
 import           Control.Applicative             ((<$>), (<*>))
 import           Data.Aeson                      (toJSON)
 import           Data.List                       (nub)
+import qualified Data.Text                       as T
 import           Data.UUID                       (nil)
 import           Kiosk.Backend.Data              (DataTemplateEntry (..),
                                                   DataTemplateEntryKey (..),
@@ -28,12 +29,11 @@ import           Kiosk.Backend.Data              (DataTemplateEntry (..),
 import           Kiosk.Backend.Data.DataTemplate (DataTemplate (..),
                                                   TemplateItem (..))
 import           Kiosk.Backend.Form
-import           Mocks.Primitive.Generators      (GeneratorType (..), 
-                                                  generateInts )
-import qualified Data.Text as T                                                  
-import           Test.QuickCheck 
+import           Mocks.Primitive.Generators      (GeneratorType (..),
+                                                  generateInts)
+import           Test.QuickCheck
 
-import Regex.Genex
+import           Regex.Genex
 -- | Form Generator
 
 generateForm :: GeneratorType -> Gen [Form]
@@ -226,4 +226,6 @@ checkStaticGeneratorConsistency i = let x = (take i) <$> (generateDataTemplateEn
                                         y =  (take i) <$> (generateDataTemplateEntry Static)
                                     in (==) <$> (toJSON <$> x )
                                             <*> (toJSON <$> y)
+
+
 

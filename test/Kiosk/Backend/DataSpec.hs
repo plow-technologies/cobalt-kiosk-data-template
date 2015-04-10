@@ -3,14 +3,15 @@
 module Kiosk.Backend.DataSpec (main, spec, testGenerateDataTemplate, encodeDecodeHashTests) where
 
 import           Control.Applicative             ((<$>))
+import           Control.Arrow                   ((***))
 import           Data.Aeson                      (Value (..), decode,
                                                   eitherDecode, encode, toJSON)
 import           Data.ByteString.Lazy.Internal   (ByteString)
-import           Data.Text                       (Text)
-
-import           Control.Arrow                   ((***))
+import           Data.Either                     (rights)
+import           Data.Either.Validation          (Validation (..))
 import qualified Data.HashMap.Strict             as HM
 import           Data.List                       (sort)
+import           Data.Text                       (Text)
 import           Generators                      (GeneratorType (..), checkStaticGeneratorConsistency,
                                                   generateDataTemplate,
                                                   generateDataTemplateEntry,
@@ -52,8 +53,11 @@ spec = do
      decodeToValue recodedJSON `shouldBe` decodeToValue testJSON
   describe (nameBase 'fitDataTemplate) $ do
    it "Should match a form with a DataTemplate and try and fix the types" $ do
-     dataTemplate <- generate . generateDataTemplate $ Static
-     True `shouldBe` True
+     forms <- generate . generateForm $ Static
+     let templatesFromForm = fromFormToDataTemplate <$> forms
+         (Just decodedTemplates) = decode . encode $ templatesFromForm
+         (newDTs) = rights $ zipWith fitDataTemplate forms  decodedTemplates
+     newDTs `shouldBe` templatesFromForm
 
 
 encodeDecodeDataTemplate :: IO (Either String [DataTemplate],Either String [DataTemplate])

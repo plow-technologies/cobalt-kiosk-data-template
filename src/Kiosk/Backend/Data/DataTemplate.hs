@@ -29,11 +29,11 @@ module Kiosk.Backend.Data.DataTemplate ( fromFormToDataTemplate
 
                                         ,getAddress) where
 
-
 import           Data.Aeson                    (FromJSON, ToJSON, Value (..),
                                                 eitherDecode, object, parseJSON,
                                                 toJSON, (.=))
 import           Data.Aeson.Types              (Parser)
+
 
 import           Data.ByteString.Lazy.Internal (ByteString)
 import           Data.Text                     (Text)
@@ -190,5 +190,5 @@ checkCompanyType = checkType
 
 
 -- | Try to fit a given DataTemplate to a given form
-fitDataTemplate :: Form -> DataTemplate -> DataTemplate
+fitDataTemplate :: Form -> DataTemplate -> Either Text DataTemplate
 fitDataTemplate = undefined
