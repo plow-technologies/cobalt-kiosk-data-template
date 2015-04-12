@@ -26,8 +26,7 @@ module Kiosk.Backend.Data.DataTemplate ( fromFormToDataTemplate
                                        , decodeStringAsCompany
                                        , decodeStringAsAddress
                                        , fitDataTemplate
-
-                                        ,getAddress) where
+                                       , getAddress) where
 
 import           Data.Aeson                    (FromJSON, ToJSON, Value (..),
                                                 eitherDecode, object, parseJSON,
@@ -58,14 +57,15 @@ import           Control.Lens                  (folded, folding, makeClassy_,
 import qualified Data.Csv                      as C
 import           Data.Foldable                 (foldl')
 import qualified Data.HashMap.Strict           as HM
+import           Data.Map                      (Map)
+import qualified Data.Map                      as M
 import           Data.Typeable
 import qualified Data.Vector                   as V
 
-
 -- Data Template Type
-data DataTemplate = DataTemplate {
-                                   templateItems :: [TemplateItem]}
-                                   deriving (Ord,Eq,Show)
+newtype DataTemplate = DataTemplate {
+                                        templateItems :: [TemplateItem]}
+                                        deriving (Ord,Eq,Show)
 
 instance C.ToRecord DataTemplate where
   toRecord (DataTemplate ts) = V.fromList $ C.toField <$> ts
@@ -187,8 +187,38 @@ checkType a b = typeOf a == typeOf b
 checkCompanyType :: (Typeable a1, Typeable a) => a -> a1 -> Bool
 checkCompanyType = checkType
 
-
+type LabelMap = Map Text InputType
 
 -- | Try to fit a given DataTemplate to a given form
-fitDataTemplate :: Form -> DataTemplate -> Either Text DataTemplate
-fitDataTemplate = undefined
+fitDataTemplate :: Form -> DataTemplate -> DataTemplate
+fitDataTemplate frm dt = fromLabelMap $ fitDT dt
+  where
+    dtMapFromForm :: LabelMap
+    dtMapFromForm = toLabelMap.fromFormToDataTemplate $ frm
+    fitDT dt' =  mergeFormDTwithTargetDT dtMapFromForm . toLabelMap $ dt'
+    mergeFormDTwithTargetDT :: LabelMap -> LabelMap -> LabelMap
+    mergeFormDTwithTargetDT referenceDTmap = M.mapWithKey
+                                              (convertTypeIfNeeded referenceDTmap)
+    convertTypeIfNeeded :: LabelMap -> Text -> InputType -> InputType
+    convertTypeIfNeeded referenceDTMap k targetInput = maybe targetInput
+                                                             (typeMatchAndConvert targetInput )
+                                                             (M.lookup k referenceDTMap)
+
+    typeMatchAndConvert targetInput referenceInput
+     |checkType targetInput referenceInput = targetInput
+     |otherwise = convertIfPossible referenceInput targetInput
+
+toLabelMap :: DataTemplate -> Map Text InputType
+toLabelMap dt' = foldr createLabelMap M.empty (templateItems dt')
+  where
+     createLabelMap templateItem labelMap = (
+       M.insert (label templateItem)
+                (templateValue templateItem) labelMap )
+
+fromLabelMap :: Map Text InputType -> DataTemplate
+fromLabelMap lmap = DataTemplate convertedMap
+  where
+   convertedMap = M.foldWithKey makeTemplateItem [] lmap
+   makeTemplateItem lbl inputType lst = TemplateItem lbl inputType : lst
+
+
