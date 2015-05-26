@@ -1,5 +1,5 @@
 Name:                   cobalt-kiosk-data-template
-Version:                1.4.0
+Version:                1.5.1
 Author:                 Lingpo Huang <lingpo.huang@plowtech.net>
 Maintainer:             Lingpo Huang <lingpo.huang@plowtech.net>
 License:                BSD3
@@ -29,22 +29,23 @@ Library
                          
   Build-Depends:        aeson
                       , base                       >= 4 && < 5
-                      , bytestring >= 0.10.4.0 
+                      , bytestring >= 0.10.4.0
                       , cassava >= 0.4.0
-                      , cereal >= 0.4.0 
-                      , cobalt-kiosk-form-template >= 1.2.6 
-                      , unordered-containers >= 0.2.5.1 
-                      , either >= 4.3.1 
-                      , lens                      >= 4.4 
-                      , old-locale >= 1.0.0.6 
+                      , cereal >= 0.4.0
+                      , cobalt-kiosk-form-template == 1.3.0.7569
+                      , containers >= 0.5.5.1
+                      , either >= 4.3.1
+                      , hashable >= 1.2.3.1
+                      , lens                      >= 4.4
+                      , old-locale >= 1.0.0.6
                       , plow-extras-time  >= 0.1.1
-                      , text >= 1.1 
-                      , time >= 1.4.2 
-                      , uuid >= 1.3.8 
-                      , vector >= 0.10.12.2 
-                      , hashable >= 1.2.3.1 
-                      , regex-tdfa-text >= 1.0.0.2 
                       , regex-tdfa >= 1.2.0
+                      , regex-tdfa-text >= 1.0.0.2
+                      , text >= 1.1
+                      , time >= 1.4.2
+                      , unordered-containers >= 0.2.5.1
+                      , uuid >= 1.3.8
+                      , vector >= 0.10.12.2
 
 
 Test-Suite spec
@@ -54,36 +55,37 @@ Test-Suite spec
                       , test
   Ghc-Options:          -Wall
   Main-Is:              Spec.hs
-  Build-Depends:        base
+  Build-Depends:        HUnit
                       , QuickCheck
-                      , regex-genex
-                      , primitive-generator-mocks
-                      , hspec
-                      , HUnit
-                      , cobalt-kiosk-form-template
-                      , plow-extras-time
                       , aeson
-                      , cereal
                       , aeson-serialize
-                      , text     
-                      , bytestring                  
-                      , unordered-containers
-                      , containers >= 0.5.5.1
-                      , lens
-                      , parsers
-                      , hashable
-                      , serial-test-generators >= 0.1.3
-                      , template-haskell
                       , attoparsec
-                      , tables
-                      , uuid
+                      , base
+                      , bytestring
                       , cassava
-                      , regex-tdfa-text
-                      , regex-tdfa 
-                      , vector
-                      , time
-                      , old-locale
+                      , cereal
+                      , cobalt-kiosk-form-template
+                      , containers >= 0.5.5.1
+                      , containers >= 0.5.5.1
                       , either
+                      , hashable
+                      , hspec
+                      , lens
+                      , old-locale
+                      , parsers
+                      , plow-extras-time
+                      , primitive-generator-mocks
+                      , regex-genex
+                      , regex-tdfa
+                      , regex-tdfa-text
+                      , serial-test-generators >= 0.1.3
+                      , tables
+                      , template-haskell
+                      , text
+                      , time
+                      , unordered-containers
+                      , uuid
+                      , vector
 
 
 Source-Repository head

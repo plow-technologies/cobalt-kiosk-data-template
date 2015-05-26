@@ -33,9 +33,9 @@ import           Data.Aeson                    (FromJSON, ToJSON, Value (..),
                                                 toJSON, (.=))
 import           Data.Aeson.Types              (Parser)
 
-
 import           Data.ByteString.Lazy.Internal (ByteString)
 import           Data.Text                     (Text)
+import           Kiosk.Backend.Form.Converter  (convertInputIfPossible)
 
 import           Kiosk.Backend.Form            (Address (..), Company (..),
                                                 Form (..), Input (..),
@@ -187,7 +187,9 @@ checkType a b = typeOf a == typeOf b
 checkCompanyType :: (Typeable a1, Typeable a) => a -> a1 -> Bool
 checkCompanyType = checkType
 
+
 type LabelMap = Map Text InputType
+
 
 -- | Try to fit a given DataTemplate to a given form
 fitDataTemplate :: Form -> DataTemplate -> DataTemplate
@@ -206,14 +208,15 @@ fitDataTemplate frm dt = fromLabelMap $ fitDT dt
 
     typeMatchAndConvert targetInput referenceInput
      |checkType targetInput referenceInput = targetInput
-     |otherwise = convertIfPossible referenceInput targetInput
+     |otherwise = convertInputIfPossible referenceInput targetInput
+
+
 
 toLabelMap :: DataTemplate -> Map Text InputType
 toLabelMap dt' = foldr createLabelMap M.empty (templateItems dt')
   where
-     createLabelMap templateItem labelMap = (
-       M.insert (label templateItem)
-                (templateValue templateItem) labelMap )
+     createLabelMap templateItem  = M.insert (label templateItem)
+                (templateValue templateItem)
 
 fromLabelMap :: Map Text InputType -> DataTemplate
 fromLabelMap lmap = DataTemplate convertedMap
