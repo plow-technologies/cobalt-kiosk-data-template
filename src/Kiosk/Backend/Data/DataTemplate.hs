@@ -25,18 +25,14 @@ module Kiosk.Backend.Data.DataTemplate ( fromFormToDataTemplate
                                        , checkType
                                        , decodeStringAsCompany
                                        , decodeStringAsAddress
-                                       , fitDataTemplate
+                                       , fitDataTemplateToForm
                                        , getAddress) where
-
 import           Data.Aeson                    (FromJSON, ToJSON, Value (..),
                                                 eitherDecode, object, parseJSON,
                                                 toJSON, (.=))
 import           Data.Aeson.Types              (Parser)
-
 import           Data.ByteString.Lazy.Internal (ByteString)
 import           Data.Text                     (Text)
-import           Kiosk.Backend.Form.Converter  (convertInputIfPossible)
-
 import           Kiosk.Backend.Form            (Address (..), Company (..),
                                                 Form (..), Input (..),
                                                 InputDate (..),
@@ -46,6 +42,7 @@ import           Kiosk.Backend.Form            (Address (..), Company (..),
                                                 Item (..), ItemType (..),
                                                 Label (..), Row (..),
                                                 Signature (..))
+import           Kiosk.Backend.Form.Converter  (convertInputIfPossible)
 
 import           Control.Applicative           ((<$>), (<|>))
 
@@ -192,8 +189,8 @@ type LabelMap = Map Text InputType
 
 
 -- | Try to fit a given DataTemplate to a given form
-fitDataTemplate :: Form -> DataTemplate -> DataTemplate
-fitDataTemplate frm dt = fromLabelMap $ fitDT dt
+fitDataTemplateToForm :: Form -> DataTemplate -> DataTemplate
+fitDataTemplateToForm frm dt = fromLabelMap $ fitDT dt
   where
     dtMapFromForm :: LabelMap
     dtMapFromForm = toLabelMap.fromFormToDataTemplate $ frm

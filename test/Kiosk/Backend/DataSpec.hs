@@ -18,7 +18,7 @@ import           Generators                      (GeneratorType (..), checkStati
                                                   generateForm)
 import           Kiosk.Backend.Data              (DataTemplateEntry (..))
 import           Kiosk.Backend.Data.DataTemplate (DataTemplate (..),
-                                                  fitDataTemplate,
+                                                  fitDataTemplateToForm,
                                                   fromFormToDataTemplate,
                                                   fromJSONToDataTemplate)
 import           Kiosk.Backend.Form
@@ -51,12 +51,12 @@ spec = do
        (Right result) = testJSONIpadEncoding
        recodedJSON    = encode result
      decodeToValue recodedJSON `shouldBe` decodeToValue testJSON
-  describe (nameBase 'fitDataTemplate) $ do
+  describe (nameBase 'fitDataTemplateToForm) $ do
    it "Should match a form with a DataTemplate and try and fix the types" $ do
      forms <- generate . generateForm $ Static
-     let templatesFromForm = fromFormToDataTemplate <$> forms
+     let templatesFromForm = fromFormToDataTemplate <$> (take 500 forms)
          (Just decodedTemplates) = decode . encode $ templatesFromForm
-         (newDTs) = rights $ zipWith fitDataTemplate forms  decodedTemplates
+         (newDTs) = zipWith fitDataTemplateToForm forms decodedTemplates
      newDTs `shouldBe` templatesFromForm
 
 
