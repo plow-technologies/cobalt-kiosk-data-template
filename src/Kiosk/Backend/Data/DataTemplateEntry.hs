@@ -25,7 +25,8 @@ module Kiosk.Backend.Data.DataTemplateEntry ( DataTemplateEntry(..)
                                             , dataTemplateEntryValue
                                             , getListOfSortedTemplateItems
                                             , fromDataTemplateEntryToCsv
-                                            , fromDataTemplateEntryToS3Csv) where
+                                            , fromDataTemplateEntryToS3Csv
+                                            , toXlsx) where
 
 
 import           Control.Applicative                     ((<$>), (<*>))
@@ -39,12 +40,25 @@ import qualified Data.ByteString.Lazy                    as LBS
 import qualified Data.List                               as L
 
 import           Data.Text                               (Text)
+import           Data.Text.Encoding                      (decodeUtf8)
+import           Data.Foldable                           (foldr)
 
 import qualified Data.Csv                                as C (ToRecord, encode,
                                                                toField,
-                                                               toRecord)
+                                                               toRecord,
+                                                               ToRecord,
+                                                               Field)
 
 import qualified Data.Vector                             as V
+import           Codec.Xlsx                              (Xlsx(..),
+                                                          CellMap,
+                                                          Cell(_cellValue),
+                                                          CellValue(CellText),
+                                                          def,
+                                                          Worksheet(_wsCells))
+
+
+import           Data.Map                                (empty, fromList, union, insert)
 import           Kiosk.Backend.Data.DataTemplate         (DataTemplate (..),
                                                           InputText (..),
                                                           InputType (..),
@@ -52,6 +66,7 @@ import           Kiosk.Backend.Data.DataTemplate         (DataTemplate (..),
                                                           fromDataTemplateToCSV,
                                                           _templateItems)
 import           Kiosk.Backend.Data.DataTemplateEntryKey
+import           Prelude hiding (foldr)
 
 -- |Data Template Entry defines a return value of a form
 data DataTemplateEntry = DataTemplateEntry {
@@ -142,6 +157,25 @@ sortDataTemplatesEntry :: DataTemplateEntry -> DataTemplateEntry
 sortDataTemplatesEntry dte = dte {_dataTemplateEntryValue =s}
        where s = sortDataTemplatesWRemoveField $ view dataTemplateEntryValue dte
 
+type RowIndex    = Int
+type ColumnIndex = Int
 
+toXlsx :: C.ToRecord a => [a] -> Xlsx
+toXlsx xs = def { _xlSheets = workSheets }
+  where
+    workSheets = fromList [("", workSheet)]
+    workSheet  = def { _wsCells = cells }
+    cells      = snd $ foldr toCellMap (0, empty) xs
 
+toCellMap :: C.ToRecord a => a -> (RowIndex, CellMap) -> (RowIndex, CellMap)
+toCellMap a (row, acc) = (row + 1, union acc cellMap)
+ where
+  (_, cellMap) = foldr (\field (col, acc') -> toCell row col field acc')
+                       (0, empty)
+                       (C.toRecord a)
 
+toCell :: RowIndex -> ColumnIndex -> C.Field -> CellMap -> (ColumnIndex, CellMap)
+toCell row column field cells = (column + 1, insert (row,column) cell cells)
+  where
+    cell      = def { _cellValue = Just (CellText cellValue) }
+    cellValue = decodeUtf8 field
