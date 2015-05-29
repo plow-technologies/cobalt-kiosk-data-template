@@ -33,6 +33,7 @@ import           Data.Aeson                    (FromJSON, ToJSON, Value (..),
 import           Data.Aeson.Types              (Parser)
 import           Data.ByteString.Lazy.Internal (ByteString)
 import           Data.Text                     (Text)
+import qualified Data.Text                     as T
 import           Kiosk.Backend.Form            (Address (..), Company (..),
                                                 Form (..), Input (..),
                                                 InputDate (..),
@@ -42,20 +43,20 @@ import           Kiosk.Backend.Form            (Address (..), Company (..),
                                                 Item (..), ItemType (..),
                                                 Label (..), Row (..),
                                                 Signature (..))
-import           Kiosk.Backend.Form.Converter  (convertInputIfPossible)
 
 import           Control.Applicative           ((<$>), (<|>))
 
 import           Control.Lens                  (folded, folding, makeClassy_,
                                                 makeLenses, makePrisms,
                                                 traverse, (^..))
-
+import           Data.Monoid                   ((<>))
 -- import           Control.Monad                 (mzero)
 import qualified Data.Csv                      as C
 import           Data.Foldable                 (foldl')
 import qualified Data.HashMap.Strict           as HM
 import           Data.Map                      (Map)
 import qualified Data.Map                      as M
+import qualified Data.Traversable              as Traversable
 import           Data.Typeable
 import qualified Data.Vector                   as V
 
@@ -189,24 +190,26 @@ type LabelMap = Map Text InputType
 
 
 -- | Try to fit a given DataTemplate to a given form
-fitDataTemplateToForm :: Form -> DataTemplate -> DataTemplate
-fitDataTemplateToForm frm dt = fromLabelMap $ fitDT dt
+fitDataTemplateToForm :: Form -> DataTemplate -> Either String DataTemplate
+fitDataTemplateToForm frm dt = fromLabelMap <$> fitDT dt
   where
     dtMapFromForm :: LabelMap
     dtMapFromForm = toLabelMap.fromFormToDataTemplate $ frm
     fitDT dt' =  mergeFormDTwithTargetDT dtMapFromForm . toLabelMap $ dt'
-    mergeFormDTwithTargetDT :: LabelMap -> LabelMap -> LabelMap
-    mergeFormDTwithTargetDT referenceDTmap = M.mapWithKey
-                                              (convertTypeIfNeeded referenceDTmap)
-    convertTypeIfNeeded :: LabelMap -> Text -> InputType -> InputType
-    convertTypeIfNeeded referenceDTMap k targetInput = maybe targetInput
+    mergeFormDTwithTargetDT :: LabelMap -> LabelMap -> Either String LabelMap
+    mergeFormDTwithTargetDT referenceDTmap lmap = Traversable.sequence $ M.mapWithKey
+                                                  (convertTypeIfNeeded referenceDTmap) lmap
+    convertTypeIfNeeded :: LabelMap -> Text -> InputType -> Either String InputType
+    convertTypeIfNeeded referenceDTMap k targetInput = maybe (Left $ "Input Type not found at" <> (T.unpack k))
                                                              (typeMatchAndConvert targetInput )
                                                              (M.lookup k referenceDTMap)
 
-    typeMatchAndConvert targetInput referenceInput
-     |checkType targetInput referenceInput = targetInput
-     |otherwise = convertInputIfPossible referenceInput targetInput
 
+-- | take two InputTypes and transform one into the other if
+typeMatchAndConvert :: InputType -> InputType -> Either String InputType
+typeMatchAndConvert targetInput referenceInput
+ |checkType targetInput referenceInput = Right targetInput
+ |otherwise = Left "Error Input Types do not match"
 
 
 toLabelMap :: DataTemplate -> Map Text InputType
@@ -219,6 +222,4 @@ fromLabelMap :: Map Text InputType -> DataTemplate
 fromLabelMap lmap = DataTemplate convertedMap
   where
    convertedMap = M.foldWithKey makeTemplateItem [] lmap
-   makeTemplateItem lbl inputType lst = TemplateItem lbl inputType : lst
-
-
+   makeTemplateItem lbl inputType lst = TemplateItem lbl inputType:lst
