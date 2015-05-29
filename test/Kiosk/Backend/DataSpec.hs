@@ -8,12 +8,11 @@ import           Data.Aeson                      (Value (..), decode,
                                                   eitherDecode, encode, toJSON)
 import           Data.ByteString.Lazy.Internal   (ByteString)
 import           Data.Either                     (rights)
-import           Data.Either.Validation          (Validation (..))
+
 import qualified Data.HashMap.Strict             as HM
 import           Data.List                       (sort)
 import           Data.Text                       (Text)
 import           Generators                      (GeneratorType (..), checkStaticGeneratorConsistency,
-                                                  generateDataTemplate,
                                                   generateDataTemplateEntry,
                                                   generateForm)
 import           Kiosk.Backend.Data              (DataTemplateEntry (..))
@@ -57,7 +56,7 @@ spec = do
      let templatesFromForm = fromFormToDataTemplate <$> (take 500 forms)
          (Just decodedTemplates) = decode . encode $ templatesFromForm
          (newDTs) = zipWith fitDataTemplateToForm forms decodedTemplates
-     newDTs `shouldBe` templatesFromForm
+     (rights newDTs) `shouldBe` templatesFromForm
 
 
 encodeDecodeDataTemplate :: IO (Either String [DataTemplate],Either String [DataTemplate])
@@ -73,9 +72,9 @@ encodeDecodeDataTemplate = do
 
 encodeDecodeDataTemplateEntry :: IO (Either String [DataTemplateEntry],Either String [DataTemplateEntry])
 encodeDecodeDataTemplateEntry = do
-       entries <- fmap (take 1) . generate $ generateDataTemplateEntry Static
-       let tst = eitherDecode . encode $ entries
-       return (tst,Right entries )
+  entries <- fmap (take 1) . generate $ generateDataTemplateEntry Static
+  let tst = eitherDecode . encode $ entries
+  return (tst, Right entries)
 
 encodeDecodeHashTests :: IO [(Text, Value)]
 encodeDecodeHashTests = do

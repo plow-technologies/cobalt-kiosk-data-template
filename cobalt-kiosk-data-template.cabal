@@ -79,7 +79,6 @@ Test-Suite spec
                       , regex-tdfa
                       , regex-tdfa-text
                       , serial-test-generators >= 0.1.3
-                      , tables
                       , template-haskell
                       , text
                       , time
