@@ -64,6 +64,8 @@ import           Codec.Xlsx                              (Xlsx(..),
 
 
 import           Data.Map                                (empty, fromList, union, insert, keys)
+import           Data.HashMap.Strict                     (HashMap)
+import qualified Data.HashMap.Strict as HashMap          (empty,insert)
 import qualified Data.HashMap.Strict as HM               (keys)
 import           Data.Monoid                             ((<>), mempty)
 
@@ -182,9 +184,21 @@ instance C.ToNamedRecord DataTemplate where
 instance C.ToNamedRecord TemplateItem where
   toNamedRecord item@TemplateItem{..} =
     C.namedRecord [ (encodeUtf8 label) C..= item ]
-                
+
 fromDataTemplateEntryToXlsx :: [DataTemplateEntry] -> Xlsx
-fromDataTemplateEntryToXlsx = undefined
+fromDataTemplateEntryToXlsx dataTemplateEntries =
+  fromDataTemplateEntryToXlsx' dataTemplateHeaders dataTemplateEntries
+  where
+    dataTemplateItems =
+      concatMap (templateItems . _dataTemplateEntryValue) dataTemplateEntries
+
+    dataTemplateHeaders =
+      foldl (\headers templateItem ->
+               HashMap.insert (encodeUtf8 (label templateItem))
+                              templateItem
+                              headers)
+            (HashMap.empty :: HashMap BS.ByteString TemplateItem)
+            dataTemplateItems
 
 fromDataTemplateEntryToXlsx' :: (C.ToRecord a, C.ToNamedRecord b) => b -> [a] -> Xlsx
 fromDataTemplateEntryToXlsx' headers_ data_ = def { _xlSheets = workSheets }
@@ -195,9 +209,9 @@ fromDataTemplateEntryToXlsx' headers_ data_ = def { _xlSheets = workSheets }
     headerCells = mkHeaderCells headers_
     dataCellsStartRow = 1
 
-mkHeaderCells :: C.ToNamedRecord b => b -> CellMap 
+mkHeaderCells :: C.ToNamedRecord b => b -> CellMap
 mkHeaderCells b = fst $ foldl fn (mempty, 0) names
-   where    
+   where
     names = HM.keys $ C.toNamedRecord b
 
 fn :: (CellMap, ColumnIndex) -> BS.ByteString -> (CellMap, ColumnIndex)
@@ -205,7 +219,7 @@ fn (cellMap, col) name = (cellMap', col + 1)
   where
     cell     = def{ _cellValue = Just (CellText (decodeUtf8 name)) }
     cellMap' = insert (0,col) cell cellMap
-    
+
 mkCellsFromRecord :: C.ToRecord a => a
                   -> (RowIndex, Row)
                   -> (RowIndex, Row)
@@ -215,8 +229,8 @@ mkCellsFromRecord a (rowIndex, acc) = (rowIndex + 1, union acc row)
                        (0, empty)
                        (C.toRecord a)
   rowFromField field (columnIndex, acc') =
-    mkCellFromFields rowIndex columnIndex field acc'                       
-                       
+    mkCellFromFields rowIndex columnIndex field acc'
+
 mkCellFromFields :: RowIndex
                  -> ColumnIndex
                  -> C.Field

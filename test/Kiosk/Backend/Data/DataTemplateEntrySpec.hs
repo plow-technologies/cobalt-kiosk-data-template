@@ -126,9 +126,9 @@ testDataTemplateEntryValue1 = DataTemplate
 
 testDataTemplateEntryValue2 = DataTemplate
   { templateItems =
-      [TemplateItem "1b" (InputTypeText (InputText "A"))
-      ,TemplateItem "2b" (InputTypeText (InputText "B"))
-      ,TemplateItem "3b" (InputTypeText (InputText "C"))
-      ,TemplateItem "4b" (InputTypeText (InputText "D"))
-      ,TemplateItem "5b" (InputTypeText (InputText "E"))]
+      [TemplateItem "1a" (InputTypeText (InputText "A"))
+      ,TemplateItem "2a" (InputTypeText (InputText "B"))
+      ,TemplateItem "3a" (InputTypeText (InputText "C"))
+      ,TemplateItem "4a" (InputTypeText (InputText "D"))
+      ,TemplateItem "5a" (InputTypeText (InputText "E"))]
   }
