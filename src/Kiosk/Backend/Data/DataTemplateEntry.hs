@@ -4,7 +4,6 @@
 {-# LANGUAGE TemplateHaskell     #-}
 {-# LANGUAGE TypeFamilies        #-}
 
-
 {- |
 Module      :  Kiosk.Backend.Data.DataTemplateEntry
 Description :  Individual Entries for Data Templates
@@ -19,14 +18,13 @@ description
 
 -}
 
-
 module Kiosk.Backend.Data.DataTemplateEntry ( DataTemplateEntry(..)
                                             , dataTemplateEntryKey
                                             , dataTemplateEntryValue
                                             , getListOfSortedTemplateItems
                                             , fromDataTemplateEntryToCsv
                                             , fromDataTemplateEntryToS3Csv
-                                            , toXlsx) where
+                                            , fromDataTemplateEntryToXlsx) where
 
 
 import           Control.Applicative                     ((<$>), (<*>))
@@ -103,7 +101,7 @@ instance FromJSON DataTemplateEntry where
 
 fromDataTemplateEntryToCsv :: [DataTemplateEntry] -> ByteString
 fromDataTemplateEntryToCsv templateEntries = LBS.append (appendKeyHeaders . getHeaders $ templatesWithSortedItems) (C.encode . sortDataTemplatesEntries $ templateEntries)
-                           where dataTemplates  = fromDataTemplatesEntryToDataTemplates templateEntries
+                           where dataTemplates = fromDataTemplatesEntryToDataTemplates templateEntries
                                  templatesWithSortedItems = sortDataTemplatesWRemoveField <$> dataTemplates
 
 sortDataTemplatesWRemoveField :: DataTemplate -> DataTemplate
@@ -130,12 +128,12 @@ getHeaders [] = ""
 getHeaders lstOfTemplates = LBS.append dropComma "\r\n"
                where  bs = LBS.concat . fromLabelsToHeaders . templateItems . head $ lstOfTemplates
                       dropComma = LBS.take (LBS.length bs -1) bs
+
 -- | Transformations
 fromDataTemplateEntryToS3Csv :: [DataTemplateEntry] -> ByteString
 fromDataTemplateEntryToS3Csv templateEntries = LBS.append (getHeaders templatesWithSortedItems) (fromDataTemplateToCSV templatesWithSortedItems)
                            where dataTemplates  = fromDataTemplatesEntryToDataTemplates templateEntries
                                  templatesWithSortedItems = sortDataTemplates <$> dataTemplates
-
 
 fromDataTemplatesEntryToDataTemplates :: [DataTemplateEntry] -> [DataTemplate]
 fromDataTemplatesEntryToDataTemplates dtes = view dataTemplateEntryValue <$> dtes
@@ -152,30 +150,43 @@ sortDataTemplates dts = dts {templateItems = newDts}
 sortDataTemplatesEntries :: [DataTemplateEntry] -> [DataTemplateEntry]
 sortDataTemplatesEntries dtes = sortDataTemplatesEntry <$> dtes
 
-
 sortDataTemplatesEntry :: DataTemplateEntry -> DataTemplateEntry
 sortDataTemplatesEntry dte = dte {_dataTemplateEntryValue =s}
        where s = sortDataTemplatesWRemoveField $ view dataTemplateEntryValue dte
 
 type RowIndex    = Int
 type ColumnIndex = Int
+type Row         = CellMap
 
-toXlsx :: C.ToRecord a => [a] -> Xlsx
-toXlsx xs = def { _xlSheets = workSheets }
+fromDataTemplateEntryToXlsx :: C.ToRecord a => [a] -> Xlsx
+fromDataTemplateEntryToXlsx xs = def { _xlSheets = workSheets }
   where
     workSheets = fromList [("", workSheet)]
     workSheet  = def { _wsCells = cells }
-    cells      = snd $ foldr toCellMap (0, empty) xs
+    cells      = snd $ foldr mkCellsFromRecord (0, empty) xs
 
-toCellMap :: C.ToRecord a => a -> (RowIndex, CellMap) -> (RowIndex, CellMap)
-toCellMap a (row, acc) = (row + 1, union acc cellMap)
+mkCellsFromRecord :: C.ToRecord a => a
+                  -> (RowIndex, Row)
+                  -> (RowIndex, Row)
+mkCellsFromRecord a (rowIndex, acc) = (rowIndex + 1, union acc row)
  where
-  (_, cellMap) = foldr (\field (col, acc') -> toCell row col field acc')
+  (_, row) = foldr rowFromField
                        (0, empty)
                        (C.toRecord a)
+  rowFromField field (columnIndex, acc') =
+    mkCellFromFields rowIndex columnIndex field acc'                       
+                       
+mkCellFromFields :: RowIndex
+                 -> ColumnIndex
+                 -> C.Field
+                 -> Row
+                 -> (ColumnIndex, Row)
+mkCellFromFields rowIndex
+                 columnIndex
+                 field
+                 row =
+  (columnIndex + 1, insert (rowIndex,columnIndex) cell row)
+ where
+   cell      = def { _cellValue = Just (CellText cellValue) }
+   cellValue = decodeUtf8 field
 
-toCell :: RowIndex -> ColumnIndex -> C.Field -> CellMap -> (ColumnIndex, CellMap)
-toCell row column field cells = (column + 1, insert (row,column) cell cells)
-  where
-    cell      = def { _cellValue = Just (CellText cellValue) }
-    cellValue = decodeUtf8 field

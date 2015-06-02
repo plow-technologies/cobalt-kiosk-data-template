@@ -13,12 +13,19 @@ Uses regex-genex to give these forms a more realistic look
 
 -}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleInstances #-}
+
 module Generators (GeneratorType (..)
                   ,generateForm
                   ,generateDataTemplateEntry
                   ,generateDataTemplate
-                  ,checkStaticGeneratorConsistency) where
+                  ,checkStaticGeneratorConsistency
+                  ,generatePrettyTexts
+                  ,genCompany
+                  ,generateCompany) where
+import           Control.Monad                   (ap)
 import           Control.Applicative             ((<$>), (<*>))
+import qualified Data.Traversable as TRVS        (sequenceA)
 import           Data.Aeson                      (toJSON)
 import           Data.List                       (nub)
 import qualified Data.Text                       as T
@@ -33,8 +40,12 @@ import           Mocks.Primitive.Generators      (GeneratorType (..),
                                                   generateInts)
 import           Test.QuickCheck
 
+
 import           Regex.Genex
 -- | Form Generator
+
+-- instance Arbitrary DataTemplateEntry where
+--   arbitrary = generateDataTemplateEntry
 
 generateForm :: GeneratorType -> Gen [Form]
 generateForm gtype = do companies <- generateCompany gtype
@@ -55,11 +66,23 @@ generateForm gtype = do companies <- generateCompany gtype
 generateCompany :: GeneratorType -> Gen [Company]
 generateCompany _ = do ctxt <- generatePrettyTexts "Cobalt|Rockshore"
                        return $ Company <$> ctxt <*> [[]]
+
+genCompany :: GeneratorType -> Gen Company
+genCompany _ = do
+  ctxt <- generatePrettyTexts "Cobalt|Rockshore"
+  Company `fmap` elements ctxt `ap` return []
+                       
 -- | Address Generator
 generateAddress :: GeneratorType -> Gen [Address]
 generateAddress _ = do atxt <- generatePrettyTexts "1114 Here we GO dr."
                        return $ Address <$> atxt <*> [[]]
 
+-- | Address Generator
+genAddress :: GeneratorType -> Gen Address
+genAddress _ = do
+  atxt <- generatePrettyTexts "1114 Here we GO dr."
+  Address `fmap` elements atxt `ap` return []
+                       
 -- | Logo Generator
 generateLogo :: GeneratorType -> Gen [Logo]
 generateLogo _ = do atxt <- generatePrettyTexts "Rockshore.logo"
@@ -226,6 +249,9 @@ checkStaticGeneratorConsistency i = let x = (take i) <$> (generateDataTemplateEn
                                         y =  (take i) <$> (generateDataTemplateEntry Static)
                                     in (==) <$> (toJSON <$> x )
                                             <*> (toJSON <$> y)
+
+instance Arbitrary [DataTemplateEntry] where
+  arbitrary = generateDataTemplateEntry Dynamic 
 
 
 
