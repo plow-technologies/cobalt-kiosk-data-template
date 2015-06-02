@@ -3,6 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
 {-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE RecordWildCards     #-}
 
 {- |
 Module      :  Kiosk.Backend.Data.DataTemplateEntry
@@ -34,17 +35,23 @@ import           Data.Aeson                              (FromJSON, ToJSON,
                                                           parseJSON, toJSON,
                                                           (.:), (.=))
 import           Data.ByteString.Lazy                    (ByteString)
+import qualified Data.ByteString                         as BS  (ByteString)
 import qualified Data.ByteString.Lazy                    as LBS
 import qualified Data.List                               as L
 
 import           Data.Text                               (Text)
-import           Data.Text.Encoding                      (decodeUtf8)
-import           Data.Foldable                           (foldr)
+import           Data.Text.Encoding                      (decodeUtf8, encodeUtf8)
+import           Data.Foldable                           (foldr, foldl)
 
-import qualified Data.Csv                                as C (ToRecord, encode,
+import qualified Data.Csv                                as C ((.=),
+                                                               ToRecord,
+                                                               encode,
                                                                toField,
                                                                toRecord,
                                                                ToRecord,
+                                                               ToNamedRecord(..),
+                                                               namedRecord,
+                                                               toNamedRecord,
                                                                Field)
 
 import qualified Data.Vector                             as V
@@ -56,7 +63,13 @@ import           Codec.Xlsx                              (Xlsx(..),
                                                           Worksheet(_wsCells))
 
 
-import           Data.Map                                (empty, fromList, union, insert)
+import           Data.Map                                (empty, fromList, union, insert, keys)
+import qualified Data.HashMap.Strict as HM               (keys)
+import           Data.Monoid                             ((<>), mempty)
+
+import           Prelude hiding (foldr, foldl)
+
+
 import           Kiosk.Backend.Data.DataTemplate         (DataTemplate (..),
                                                           InputText (..),
                                                           InputType (..),
@@ -64,7 +77,7 @@ import           Kiosk.Backend.Data.DataTemplate         (DataTemplate (..),
                                                           fromDataTemplateToCSV,
                                                           _templateItems)
 import           Kiosk.Backend.Data.DataTemplateEntryKey
-import           Prelude hiding (foldr)
+
 
 -- |Data Template Entry defines a return value of a form
 data DataTemplateEntry = DataTemplateEntry {
@@ -100,9 +113,13 @@ instance FromJSON DataTemplateEntry where
 -- | CSV Stuff
 
 fromDataTemplateEntryToCsv :: [DataTemplateEntry] -> ByteString
-fromDataTemplateEntryToCsv templateEntries = LBS.append (appendKeyHeaders . getHeaders $ templatesWithSortedItems) (C.encode . sortDataTemplatesEntries $ templateEntries)
+fromDataTemplateEntryToCsv templateEntries = LBS.append (appendKeyHeaders . getHeaders $ templatesWithSortedItems templateEntries)
+                                                        (C.encode . sortDataTemplatesEntries $ templateEntries)
                            where dataTemplates = fromDataTemplatesEntryToDataTemplates templateEntries
-                                 templatesWithSortedItems = sortDataTemplatesWRemoveField <$> dataTemplates
+
+templatesWithSortedItems dataTemplateEntries =
+  sortDataTemplatesWRemoveField `fmap`
+  (fromDataTemplatesEntryToDataTemplates dataTemplateEntries)
 
 sortDataTemplatesWRemoveField :: DataTemplate -> DataTemplate
 sortDataTemplatesWRemoveField dts = dts {templateItems = newDts}
@@ -158,13 +175,37 @@ type RowIndex    = Int
 type ColumnIndex = Int
 type Row         = CellMap
 
-fromDataTemplateEntryToXlsx :: C.ToRecord a => [a] -> Xlsx
-fromDataTemplateEntryToXlsx xs = def { _xlSheets = workSheets }
+instance C.ToNamedRecord DataTemplate where
+  toNamedRecord (DataTemplate templateItems ) =
+    foldl (\l -> (l <>) . C.toNamedRecord) mempty templateItems
+
+instance C.ToNamedRecord TemplateItem where
+  toNamedRecord item@TemplateItem{..} =
+    C.namedRecord [ (encodeUtf8 label) C..= item ]
+                
+fromDataTemplateEntryToXlsx :: [DataTemplateEntry] -> Xlsx
+fromDataTemplateEntryToXlsx = undefined
+
+fromDataTemplateEntryToXlsx' :: (C.ToRecord a, C.ToNamedRecord b) => b -> [a] -> Xlsx
+fromDataTemplateEntryToXlsx' headers_ data_ = def { _xlSheets = workSheets }
   where
     workSheets = fromList [("", workSheet)]
-    workSheet  = def { _wsCells = cells }
-    cells      = snd $ foldr mkCellsFromRecord (0, empty) xs
+    workSheet  = def { _wsCells = headerCells `union` dataCells }
+    dataCells  = snd $ foldr mkCellsFromRecord (dataCellsStartRow, empty) data_
+    headerCells = mkHeaderCells headers_
+    dataCellsStartRow = 1
 
+mkHeaderCells :: C.ToNamedRecord b => b -> CellMap 
+mkHeaderCells b = fst $ foldl fn (mempty, 0) names
+   where    
+    names = HM.keys $ C.toNamedRecord b
+
+fn :: (CellMap, ColumnIndex) -> BS.ByteString -> (CellMap, ColumnIndex)
+fn (cellMap, col) name = (cellMap', col + 1)
+  where
+    cell     = def{ _cellValue = Just (CellText (decodeUtf8 name)) }
+    cellMap' = insert (0,col) cell cellMap
+    
 mkCellsFromRecord :: C.ToRecord a => a
                   -> (RowIndex, Row)
                   -> (RowIndex, Row)
@@ -189,4 +230,3 @@ mkCellFromFields rowIndex
  where
    cell      = def { _cellValue = Just (CellText cellValue) }
    cellValue = decodeUtf8 field
-

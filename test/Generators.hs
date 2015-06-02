@@ -214,8 +214,8 @@ generateTemplateItems Static = take 10 <$> generateTemplateItem Static
 
 generateTicketId :: GeneratorType -> Gen TicketId
 generateTicketId gtype = do
-   n1 <- generateInts gtype
-   n2 <- generateInts gtype
+   n1 <- generateInts gtype `suchThat` (not . null)
+   n2 <- generateInts gtype `suchThat` (not . null)
    return $ TicketId (head n1, head n2)
 
 -- | DataTemplateEntryKey
