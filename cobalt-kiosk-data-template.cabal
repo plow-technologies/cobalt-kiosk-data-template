@@ -93,3 +93,15 @@ Test-Suite spec
 Source-Repository head
   Type:                 git
   Location:             git@github.com:plow-technologies/cobalt-kiosk-data-template.git
+
+benchmark criterion-benchmarks
+  build-depends:
+    base,
+    cobalt-kiosk-data-template,
+    cobalt-kiosk-form-template,
+    criterion,
+    uuid
+  default-language: Haskell2010
+  hs-source-dirs:   benchmarks
+  main-is:          CriterionBenchmarks.hs
+  type:             exitcode-stdio-1.0
