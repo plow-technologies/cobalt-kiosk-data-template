@@ -63,9 +63,11 @@ import           Codec.Xlsx                              (Xlsx(..),
                                                           Worksheet(_wsCells))
 
 
-import           Data.Map                                (empty, fromList, union, insert, keys)
-import           Data.HashMap.Strict                     (HashMap)
-import qualified Data.HashMap.Strict as HashMap          (empty,fromList,insert,union)
+import qualified Data.HashMap.Strict as HashMap (toList)
+import           Data.Map (Map)
+import qualified Data.Map as Map (empty,fromList,insert,keys,union)
+
+import           Data.Map                                (empty, fromList, union, insert)
 import qualified Data.HashMap.Strict as HM               (keys)
 import           Data.Monoid                             ((<>), mempty)
 
@@ -193,22 +195,22 @@ fromDataTemplateEntryToXlsx dataTemplateEntries =
       concatMap (templateItems . _dataTemplateEntryValue) dataTemplateEntries
 
     dataTemplateHeaders =
-      HashMap.union dataTemplateCustomHeaders dataTemplateDefaultHeaders
+      Map.union dataTemplateCustomHeaders dataTemplateDefaultHeaders
 
     dataTemplateCustomHeaders =
       foldl (\headers templateItem ->
-               HashMap.insert (encodeUtf8 (label templateItem))
-                              templateItem
-                              headers)
-            HashMap.empty
+               Map.insert (encodeUtf8 (label templateItem))
+                          templateItem
+                          headers)
+            Map.empty
             dataTemplateItems
 
-dataTemplateDefaultHeaders :: HashMap BS.ByteString TemplateItem
+dataTemplateDefaultHeaders :: Map BS.ByteString TemplateItem
 dataTemplateDefaultHeaders =
-  HashMap.fromList [("UUID",    headerTemplateItem "UUID")
-                   ,("TicketId",headerTemplateItem "TicketId")
-                   ,("FormId",  headerTemplateItem "FormId")
-                   ,("Date",    headerTemplateItem "Date")]
+  Map.fromList [("UUID",    headerTemplateItem "UUID")
+               ,("TicketId",headerTemplateItem "TicketId")
+               ,("FormId",  headerTemplateItem "FormId")
+               ,("Date",    headerTemplateItem "Date")]
   where
     headerTemplateItem header = TemplateItem
       { label         = header
@@ -227,7 +229,7 @@ fromDataTemplateEntryToXlsx' headers_ data_ = def { _xlSheets = workSheets }
 mkHeaderCells :: C.ToNamedRecord b => b -> CellMap
 mkHeaderCells b = fst $ foldl fn (mempty, 0) names
    where
-    names = HM.keys $ C.toNamedRecord b
+    names = Map.keys (Map.fromList (HashMap.toList (C.toNamedRecord b)))
 
 fn :: (CellMap, ColumnIndex) -> BS.ByteString -> (CellMap, ColumnIndex)
 fn (cellMap, col) name = (cellMap', col + 1)
