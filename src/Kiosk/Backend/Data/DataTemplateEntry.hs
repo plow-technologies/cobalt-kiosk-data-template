@@ -65,7 +65,7 @@ import           Codec.Xlsx                              (Xlsx(..),
 
 import           Data.Map                                (empty, fromList, union, insert, keys)
 import           Data.HashMap.Strict                     (HashMap)
-import qualified Data.HashMap.Strict as HashMap          (empty,insert)
+import qualified Data.HashMap.Strict as HashMap          (empty,fromList,insert,union)
 import qualified Data.HashMap.Strict as HM               (keys)
 import           Data.Monoid                             ((<>), mempty)
 
@@ -193,12 +193,27 @@ fromDataTemplateEntryToXlsx dataTemplateEntries =
       concatMap (templateItems . _dataTemplateEntryValue) dataTemplateEntries
 
     dataTemplateHeaders =
+      HashMap.union dataTemplateCustomHeaders dataTemplateDefaultHeaders
+
+    dataTemplateCustomHeaders =
       foldl (\headers templateItem ->
                HashMap.insert (encodeUtf8 (label templateItem))
                               templateItem
                               headers)
-            (HashMap.empty :: HashMap BS.ByteString TemplateItem)
+            HashMap.empty
             dataTemplateItems
+
+dataTemplateDefaultHeaders :: HashMap BS.ByteString TemplateItem
+dataTemplateDefaultHeaders =
+  HashMap.fromList [("UUID",    headerTemplateItem "UUID")
+                   ,("TicketId",headerTemplateItem "TicketId")
+                   ,("FormId",  headerTemplateItem "FormId")
+                   ,("Date",    headerTemplateItem "Date")]
+  where
+    headerTemplateItem header = TemplateItem
+      { label         = header
+      , templateValue = InputTypeText (InputText header)
+      }
 
 fromDataTemplateEntryToXlsx' :: (C.ToRecord a, C.ToNamedRecord b) => b -> [a] -> Xlsx
 fromDataTemplateEntryToXlsx' headers_ data_ = def { _xlSheets = workSheets }
