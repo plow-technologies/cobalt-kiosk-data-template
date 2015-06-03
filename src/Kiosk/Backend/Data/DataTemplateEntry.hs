@@ -211,16 +211,16 @@ fromDataTemplateEntryToXlsx' headers_ data_ = def { _xlSheets = workSheets }
     workSheet  = def { _wsCells = headerCells `union` dataCells }
     dataCells  = snd $ foldr mkCellsFromRecord (dataCellsStartRow, empty) data_
     headerCells = mkHeaderCells headers_
-    dataCellsStartRow = 1
+    dataCellsStartRow = 2
 
 mkHeaderCells :: [Text] -> CellMap
-mkHeaderCells names = fst $ foldl fn (mempty, 0) names
+mkHeaderCells names = fst $ foldl fn (mempty, 1) names
 
 fn :: (CellMap, ColumnIndex) -> Text -> (CellMap, ColumnIndex)
 fn (cellMap, col) name = (cellMap', col + 1)
   where
     cell     = def{ _cellValue = Just (CellText name) }
-    cellMap' = insert (0,col) cell cellMap
+    cellMap' = insert (1,col) cell cellMap
 
 mkCellsFromRecord :: C.ToRecord a => a
                   -> (RowIndex, Row)
@@ -228,7 +228,7 @@ mkCellsFromRecord :: C.ToRecord a => a
 mkCellsFromRecord a (rowIndex, acc) = (rowIndex + 1, union acc row)
  where
   (_, row) = foldl (flip rowFromField)
-                       (0, empty)
+                       (1, empty)
                        (C.toRecord a)
   rowFromField field (columnIndex, acc') =
     mkCellFromFields rowIndex columnIndex field acc'
