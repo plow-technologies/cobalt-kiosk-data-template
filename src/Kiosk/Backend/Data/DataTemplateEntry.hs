@@ -188,36 +188,23 @@ instance C.ToNamedRecord TemplateItem where
     C.namedRecord [ (encodeUtf8 label) C..= item ]
 
 fromDataTemplateEntryToXlsx :: [DataTemplateEntry] -> Xlsx
+fromDataTemplateEntryToXlsx []                  = def
 fromDataTemplateEntryToXlsx dataTemplateEntries =
-  fromDataTemplateEntryToXlsx' dataTemplateHeaders dataTemplateEntries
+  fromDataTemplateEntryToXlsx' dataTemplateHeaders sortedDataTemplateEntries
   where
+    sortedDataTemplateEntries = sortDataTemplatesEntries dataTemplateEntries
+
     dataTemplateItems =
-      concatMap (templateItems . _dataTemplateEntryValue) dataTemplateEntries
+      head (map (templateItems . _dataTemplateEntryValue) sortedDataTemplateEntries)
 
-    dataTemplateHeaders =
-      Map.union dataTemplateCustomHeaders dataTemplateDefaultHeaders
+    dataTemplateHeaders = dataTemplateDefaultHeaders ++ dataTemplateCustomHeaders
 
-    dataTemplateCustomHeaders =
-      foldl (\headers templateItem ->
-               Map.insert (encodeUtf8 (label templateItem))
-                          templateItem
-                          headers)
-            Map.empty
-            dataTemplateItems
+    dataTemplateCustomHeaders = map label dataTemplateItems
 
-dataTemplateDefaultHeaders :: Map BS.ByteString TemplateItem
-dataTemplateDefaultHeaders =
-  Map.fromList [("UUID",    headerTemplateItem "UUID")
-               ,("TicketId",headerTemplateItem "TicketId")
-               ,("FormId",  headerTemplateItem "FormId")
-               ,("Date",    headerTemplateItem "Date")]
-  where
-    headerTemplateItem header = TemplateItem
-      { label         = header
-      , templateValue = InputTypeText (InputText header)
-      }
+dataTemplateDefaultHeaders :: [Text]
+dataTemplateDefaultHeaders = ["Date","FormId","TicketId","UUID"]
 
-fromDataTemplateEntryToXlsx' :: (C.ToRecord a, C.ToNamedRecord b) => b -> [a] -> Xlsx
+fromDataTemplateEntryToXlsx' :: (C.ToRecord a) => [Text] -> [a] -> Xlsx
 fromDataTemplateEntryToXlsx' headers_ data_ = def { _xlSheets = workSheets }
   where
     workSheets = fromList [("", workSheet)]
@@ -226,15 +213,13 @@ fromDataTemplateEntryToXlsx' headers_ data_ = def { _xlSheets = workSheets }
     headerCells = mkHeaderCells headers_
     dataCellsStartRow = 1
 
-mkHeaderCells :: C.ToNamedRecord b => b -> CellMap
-mkHeaderCells b = fst $ foldl fn (mempty, 0) names
-   where
-    names = Map.keys (Map.fromList (HashMap.toList (C.toNamedRecord b)))
+mkHeaderCells :: [Text] -> CellMap
+mkHeaderCells names = fst $ foldl fn (mempty, 0) names
 
-fn :: (CellMap, ColumnIndex) -> BS.ByteString -> (CellMap, ColumnIndex)
+fn :: (CellMap, ColumnIndex) -> Text -> (CellMap, ColumnIndex)
 fn (cellMap, col) name = (cellMap', col + 1)
   where
-    cell     = def{ _cellValue = Just (CellText (decodeUtf8 name)) }
+    cell     = def{ _cellValue = Just (CellText name) }
     cellMap' = insert (0,col) cell cellMap
 
 mkCellsFromRecord :: C.ToRecord a => a
@@ -242,7 +227,7 @@ mkCellsFromRecord :: C.ToRecord a => a
                   -> (RowIndex, Row)
 mkCellsFromRecord a (rowIndex, acc) = (rowIndex + 1, union acc row)
  where
-  (_, row) = foldr rowFromField
+  (_, row) = foldl (flip rowFromField)
                        (0, empty)
                        (C.toRecord a)
   rowFromField field (columnIndex, acc') =

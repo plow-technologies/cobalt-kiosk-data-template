@@ -60,14 +60,20 @@ prop_no_data_loss_rows xs = numDataTemplateEntries == numRowsInExcelSheet
   numDataTemplateEntries = length xs + numHeaderRows
   sheet                  = fromMaybe def $ M.lookup "" (_xlSheets (fromDataTemplateEntryToXlsx xs))
   numRowsInExcelSheet    = length . nub . (fmap fst) . M.keys  $  _wsCells sheet
-  numHeaderRows          = 1
+  numHeaderRows          = if null xs then 0 else 1
   
 prop_no_data_loss_cells :: [DataTemplateEntry] -> Bool
 prop_no_data_loss_cells xs = numCellsInDataTemplateEntries == numCellsInExcelSheet
   where
     numCellsInDataTemplateEntries =
-      sum (map (length . templateItems . _dataTemplateEntryValue) xs) +
-      numDefaultKeyHeaders * length xs
+      if null xs
+         then 0
+         else numRows * numColumns
+
+    numRows = length xs + 1
+    numColumns =
+      (length . templateItems . _dataTemplateEntryValue) (head xs) + numDefaultKeyHeaders
+
     numDefaultKeyHeaders = 4
     sheet = fromMaybe def $ M.lookup "" (_xlSheets (fromDataTemplateEntryToXlsx xs))
     numCellsInExcelSheet = M.size (_wsCells sheet)
