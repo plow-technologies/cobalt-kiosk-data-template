@@ -35,23 +35,19 @@ import           Data.Aeson                              (FromJSON, ToJSON,
                                                           parseJSON, toJSON,
                                                           (.:), (.=))
 import           Data.ByteString.Lazy                    (ByteString)
-import qualified Data.ByteString                         as BS  (ByteString)
+--import qualified Data.ByteString                         as BS  (ByteString)
 import qualified Data.ByteString.Lazy                    as LBS
 import qualified Data.List                               as L
 
 import           Data.Text                               (Text)
-import           Data.Text.Encoding                      (decodeUtf8, encodeUtf8)
+import           Data.Text.Encoding                      (decodeUtf8)
 import           Data.Foldable                           (foldr, foldl)
 
-import qualified Data.Csv                                as C ((.=),
-                                                               ToRecord,
+import qualified Data.Csv                                as C (ToRecord,
                                                                encode,
                                                                toField,
                                                                toRecord,
                                                                ToRecord,
-                                                               ToNamedRecord(..),
-                                                               namedRecord,
-                                                               toNamedRecord,
                                                                Field)
 
 import qualified Data.Vector                             as V
@@ -63,13 +59,8 @@ import           Codec.Xlsx                              (Xlsx(..),
                                                           Worksheet(_wsCells))
 
 
-import qualified Data.HashMap.Strict as HashMap (toList)
-import           Data.Map (Map)
-import qualified Data.Map as Map (empty,fromList,insert,keys,union)
-
 import           Data.Map                                (empty, fromList, union, insert)
-import qualified Data.HashMap.Strict as HM               (keys)
-import           Data.Monoid                             ((<>), mempty)
+import           Data.Monoid                             (mempty)
 
 import           Prelude hiding (foldr, foldl)
 
@@ -119,8 +110,8 @@ instance FromJSON DataTemplateEntry where
 fromDataTemplateEntryToCsv :: [DataTemplateEntry] -> ByteString
 fromDataTemplateEntryToCsv templateEntries = LBS.append (appendKeyHeaders . getHeaders $ templatesWithSortedItems templateEntries)
                                                         (C.encode . sortDataTemplatesEntries $ templateEntries)
-                           where dataTemplates = fromDataTemplatesEntryToDataTemplates templateEntries
 
+templatesWithSortedItems :: [DataTemplateEntry] -> [DataTemplate]
 templatesWithSortedItems dataTemplateEntries =
   sortDataTemplatesWRemoveField `fmap`
   (fromDataTemplatesEntryToDataTemplates dataTemplateEntries)
@@ -152,9 +143,9 @@ getHeaders lstOfTemplates = LBS.append dropComma "\r\n"
 
 -- | Transformations
 fromDataTemplateEntryToS3Csv :: [DataTemplateEntry] -> ByteString
-fromDataTemplateEntryToS3Csv templateEntries = LBS.append (getHeaders templatesWithSortedItems) (fromDataTemplateToCSV templatesWithSortedItems)
+fromDataTemplateEntryToS3Csv templateEntries = LBS.append (getHeaders templatesWithSortedItems_) (fromDataTemplateToCSV templatesWithSortedItems_)
                            where dataTemplates  = fromDataTemplatesEntryToDataTemplates templateEntries
-                                 templatesWithSortedItems = sortDataTemplates <$> dataTemplates
+                                 templatesWithSortedItems_ = sortDataTemplates <$> dataTemplates
 
 fromDataTemplatesEntryToDataTemplates :: [DataTemplateEntry] -> [DataTemplate]
 fromDataTemplatesEntryToDataTemplates dtes = view dataTemplateEntryValue <$> dtes
@@ -178,14 +169,6 @@ sortDataTemplatesEntry dte = dte {_dataTemplateEntryValue =s}
 type RowIndex    = Int
 type ColumnIndex = Int
 type Row         = CellMap
-
-instance C.ToNamedRecord DataTemplate where
-  toNamedRecord (DataTemplate templateItems ) =
-    foldl (\l -> (l <>) . C.toNamedRecord) mempty templateItems
-
-instance C.ToNamedRecord TemplateItem where
-  toNamedRecord item@TemplateItem{..} =
-    C.namedRecord [ (encodeUtf8 label) C..= item ]
 
 fromDataTemplateEntryToXlsx :: [DataTemplateEntry] -> Xlsx
 fromDataTemplateEntryToXlsx []                  = def

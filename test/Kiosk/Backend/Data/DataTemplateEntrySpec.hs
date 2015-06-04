@@ -1,46 +1,20 @@
-{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Kiosk.Backend.Data.DataTemplateEntrySpec where
 
--- import           Control.Applicative             ((<$>))
--- import           Control.Arrow                   ((***))
--- import           Data.Aeson                      (Value (..), decode,
---                                                   eitherDecode, encode, toJSON)
--- import           Data.ByteString.Lazy.Internal   (ByteString)
--- import           Data.Either                     (rights)
-
--- import qualified Data.HashMap.Strict             as HM
--- import           Data.List                       (sort)
--- import           Data.Text                       (Text)
--- import           Generators                      (GeneratorType (..), checkStaticGeneratorConsistency,
---                                                   generateDataTemplateEntry,
---                                                   generateForm)
-
-import           Codec.Xlsx.Types                ( def
-                                                 , Xlsx (..)
-                                                 , Worksheet (..)
-                                                 )
-import           Data.Maybe                      (fromMaybe)
-import           Data.List                       (nub)
-import qualified Data.Map as M                   (lookup, keys, size)
+import           Codec.Xlsx.Types                     (def, Xlsx (..), Worksheet (..))
+import           Data.List                            (nub)
+import           Data.Maybe                           (fromMaybe, fromJust)
+import           Data.UUID                            (fromString)
+import           Generators                           ()
 import           Kiosk.Backend.Data.DataTemplateEntry (fromDataTemplateEntryToXlsx)
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
-import           Test.QuickCheck                 -- (quickCheckWith,stdArgs)
-import           Generators
+import           Test.QuickCheck                      (property)
+import qualified Data.Map as M                        (lookup, keys, size)
 
-import           Kiosk.Backend.Data              (DataTemplateEntry (..),DataTemplate(..))
-
-import Data.Map (toList)
-import Data.Maybe (fromJust)
-import Data.UUID (fromString)
 import Kiosk.Backend.Data
 import Kiosk.Backend.Form
-
-
--- import           TestImport                      (testJSON)
-
 
 main :: IO ()
 main = hspec spec
@@ -49,23 +23,21 @@ spec :: Spec
 spec = do
   modifyMaxSuccess (\_ -> 100) . modifyMaxSize (\_ -> 10) $
     describe "no data loss" $ do
-      it "xlsx should have a row for each data template entry" $
-        property prop_no_data_loss_rows
-      it "xlsx should have a cell for each field" $
-        property prop_no_data_loss_cells
-
+      it "xlsx should have a row for each data template entry" $ property prop_no_data_loss_rows
+      it "xlsx should have a cell for each field"              $ property prop_no_data_loss_cells
+     
 prop_no_data_loss_rows :: [DataTemplateEntry] -> Bool
 prop_no_data_loss_rows xs = numDataTemplateEntries == numRowsInExcelSheet
  where
   numDataTemplateEntries = length xs + numHeaderRows
-  sheet                  = fromMaybe def $ M.lookup "" (_xlSheets (fromDataTemplateEntryToXlsx xs))
-  numRowsInExcelSheet    = length . nub . (fmap fst) . M.keys  $  _wsCells sheet
+  sheet_                 = fromMaybe def $ M.lookup "" (_xlSheets (fromDataTemplateEntryToXlsx xs))
+  numRowsInExcelSheet    = length . nub . (fmap fst) . M.keys  $  _wsCells sheet_
   numHeaderRows          = if null xs then 0 else 1
   
 prop_no_data_loss_cells :: [DataTemplateEntry] -> Bool
-prop_no_data_loss_cells xs = numCellsInDataTemplateEntries == numCellsInExcelSheet
+prop_no_data_loss_cells xs = numCellsInDataTemplateEntries_ == numCellsInExcelSheet_
   where
-    numCellsInDataTemplateEntries =
+    numCellsInDataTemplateEntries_ =
       if null xs
          then 0
          else numRows * numColumns
@@ -75,18 +47,18 @@ prop_no_data_loss_cells xs = numCellsInDataTemplateEntries == numCellsInExcelShe
       (length . templateItems . _dataTemplateEntryValue) (head xs) + numDefaultKeyHeaders
 
     numDefaultKeyHeaders = 4
-    sheet = fromMaybe def $ M.lookup "" (_xlSheets (fromDataTemplateEntryToXlsx xs))
-    numCellsInExcelSheet = M.size (_wsCells sheet)
+    sheet_ = fromMaybe def $ M.lookup "" (_xlSheets (fromDataTemplateEntryToXlsx xs))
+    numCellsInExcelSheet_ = M.size (_wsCells sheet_)
 
+numCellsInDataTemplateEntries :: [DataTemplateEntry] -> Int
 numCellsInDataTemplateEntries xs =
   sum (map (length . templateItems . _dataTemplateEntryValue) xs) + length xs
 
+sheet :: [DataTemplateEntry] -> Worksheet
 sheet xs = fromMaybe def $ M.lookup "" (_xlSheets (fromDataTemplateEntryToXlsx xs))
 
+numCellsInExcelSheet :: [DataTemplateEntry] -> Int
 numCellsInExcelSheet xs = M.size (_wsCells $ sheet xs)
-
-testItems = concatMap (templateItems . _dataTemplateEntryValue) testDataTemplateEntries
-testCells = toList (_wsCells (sheet testDataTemplateEntries))
 
 testDataTemplateEntries :: [DataTemplateEntry]
 testDataTemplateEntries = [testDataTemplateEntry1,testDataTemplateEntry2]

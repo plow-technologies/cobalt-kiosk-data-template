@@ -12,8 +12,9 @@ Create Test forms for use in modules
 Uses regex-genex to give these forms a more realistic look
 
 -}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Generators (GeneratorType (..)
                   ,generateForm
@@ -25,7 +26,6 @@ module Generators (GeneratorType (..)
                   ,generateCompany) where
 import           Control.Monad                   (ap)
 import           Control.Applicative             ((<$>), (<*>))
-import qualified Data.Traversable as TRVS        (sequenceA)
 import           Data.Aeson                      (toJSON)
 import           Data.List                       (nub)
 import qualified Data.Text                       as T
@@ -76,12 +76,6 @@ genCompany _ = do
 generateAddress :: GeneratorType -> Gen [Address]
 generateAddress _ = do atxt <- generatePrettyTexts "1114 Here we GO dr."
                        return $ Address <$> atxt <*> [[]]
-
--- | Address Generator
-genAddress :: GeneratorType -> Gen Address
-genAddress _ = do
-  atxt <- generatePrettyTexts "1114 Here we GO dr."
-  Address `fmap` elements atxt `ap` return []
                        
 -- | Logo Generator
 generateLogo :: GeneratorType -> Gen [Logo]
