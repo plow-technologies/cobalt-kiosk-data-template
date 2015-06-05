@@ -129,7 +129,6 @@ fromLabelsToHeaders :: [TemplateItem] -> [ByteString]
 fromLabelsToHeaders tis = flip LBS.append "," <$> (LBS.fromStrict . C.toField . label <$> tis)
 
 -- | Ordering
-
 sortDataTemplates :: DataTemplate -> DataTemplate
 sortDataTemplates dts = dts {templateItems = newDts}
              where newDts = L.sort . filterTemplateItems $ view _templateItems dts
@@ -137,11 +136,6 @@ sortDataTemplates dts = dts {templateItems = newDts}
 sortDataTemplatesEntries :: [DataTemplateEntry] -> [DataTemplateEntry]
 sortDataTemplatesEntries dtes = sortDataTemplatesEntry <$> dtes
 
-
 sortDataTemplatesEntry :: DataTemplateEntry -> DataTemplateEntry
 sortDataTemplatesEntry dte = dte {_dataTemplateEntryValue =s}
        where s = sortDataTemplatesWRemoveField $ view dataTemplateEntryValue dte
-
-
-
-
