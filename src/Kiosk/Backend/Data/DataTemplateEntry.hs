@@ -25,7 +25,8 @@ module Kiosk.Backend.Data.DataTemplateEntry ( DataTemplateEntry(..)
                                             , getListOfSortedTemplateItems
                                             , fromDataTemplateEntryToCsv
                                             , fromDataTemplateEntryToS3Csv
-                                            , fromDataTemplateEntryToXlsx) where
+                                            , fromDataTemplateEntryToXlsxWorksheet  
+                                            ) where
 
 
 import           Control.Applicative                     ((<$>), (<*>))
@@ -51,19 +52,15 @@ import qualified Data.Csv                                as C (ToRecord,
                                                                Field)
 
 import qualified Data.Vector                             as V
-import           Codec.Xlsx                              (Xlsx(..),
-                                                          CellMap,
+import           Codec.Xlsx                              (CellMap,
                                                           Cell(_cellValue),
                                                           CellValue(CellText),
                                                           def,
-                                                          Worksheet(_wsCells))
-
-
-import           Data.Map                                (empty, fromList, union, insert)
+                                                          Worksheet(_wsCells),
+                                                         )
+import           Data.Map                                (empty, union, insert)
 import           Data.Monoid                             (mempty)
-
-import           Prelude hiding (foldr, foldl)
-
+import           Prelude hiding                          (foldr, foldl)
 
 import           Kiosk.Backend.Data.DataTemplate         (DataTemplate (..),
                                                           InputText (..),
@@ -170,9 +167,9 @@ type RowIndex    = Int
 type ColumnIndex = Int
 type Row         = CellMap
 
-fromDataTemplateEntryToXlsx :: [DataTemplateEntry] -> Xlsx
-fromDataTemplateEntryToXlsx []                  = def
-fromDataTemplateEntryToXlsx dataTemplateEntries =
+fromDataTemplateEntryToXlsxWorksheet :: [DataTemplateEntry] -> Worksheet
+fromDataTemplateEntryToXlsxWorksheet []                  = def
+fromDataTemplateEntryToXlsxWorksheet dataTemplateEntries =
   fromDataTemplateEntryToXlsx' dataTemplateHeaders sortedDataTemplateEntries
   where
     sortedDataTemplateEntries = sortDataTemplatesEntries dataTemplateEntries
@@ -187,11 +184,9 @@ fromDataTemplateEntryToXlsx dataTemplateEntries =
 dataTemplateDefaultHeaders :: [Text]
 dataTemplateDefaultHeaders = ["Date","FormId","TicketId","UUID"]
 
-fromDataTemplateEntryToXlsx' :: (C.ToRecord a) => [Text] -> [a] -> Xlsx
-fromDataTemplateEntryToXlsx' headers_ data_ = def { _xlSheets = workSheets }
+fromDataTemplateEntryToXlsx' :: (C.ToRecord a) => [Text] -> [a] -> Worksheet
+fromDataTemplateEntryToXlsx' headers_ data_ = def { _wsCells = headerCells `union` dataCells }
   where
-    workSheets = fromList [("", workSheet)]
-    workSheet  = def { _wsCells = headerCells `union` dataCells }
     dataCells  = snd $ foldr mkCellsFromRecord (dataCellsStartRow, empty) data_
     headerCells = mkHeaderCells headers_
     dataCellsStartRow = 2
