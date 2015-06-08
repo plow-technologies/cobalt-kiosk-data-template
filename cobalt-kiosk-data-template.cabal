@@ -1,10 +1,10 @@
 Name:                   cobalt-kiosk-data-template
 Version:                1.5.2
 Author:                 Lingpo Huang <lingpo.huang@plowtech.net>
-Maintainer:             Lingpo Huang <lingpo.huang@plowtech.net>
+Maintainer:             Scott Murphy <scott.murphy@plowtech.net>
 License:                BSD3
 License-File:           LICENSE
-Category:               Apple
+Category:               Ipad
 Synopsis:               Combined Form Data and Form Template for Cobalt Kiosk Application Backend
 Description:            Combined Form Data and Form Template for Cobalt Kiosk Application Backend
 Cabal-Version:          >= 1.10
