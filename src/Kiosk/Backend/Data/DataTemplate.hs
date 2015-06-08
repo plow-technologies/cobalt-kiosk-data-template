@@ -1,6 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE RecordWildCards   #-}
 
 module Kiosk.Backend.Data.DataTemplate ( fromFormToDataTemplate
                                         ,fromJSONToDataTemplate
@@ -34,7 +33,6 @@ import           Data.Aeson                    (FromJSON, ToJSON, Value (..),
 import           Data.Aeson.Types              (Parser)
 import           Data.ByteString.Lazy.Internal (ByteString)
 import           Data.Text                     (Text)
-import           Data.Text.Encoding            (encodeUtf8)
 import qualified Data.Text                     as T
 import           Kiosk.Backend.Form            (Address (..), Company (..),
                                                 Form (..), Input (..),
@@ -61,7 +59,6 @@ import qualified Data.Map                      as M
 import qualified Data.Traversable              as Traversable
 import           Data.Typeable
 import qualified Data.Vector                   as V
-import           Data.Monoid                   (mempty)
 
 -- Data Template Type
 newtype DataTemplate = DataTemplate {
@@ -78,10 +75,6 @@ data TemplateItem = TemplateItem {
             , templateValue :: InputType }
             deriving (Show,Ord,Eq)
 
-instance C.ToNamedRecord TemplateItem where
-  toNamedRecord item@TemplateItem{..} =
-    C.namedRecord [ (encodeUtf8 label) C..= item ]
-                     
 instance C.ToField TemplateItem where
   toField (TemplateItem _ (InputTypeText (InputText t))) = C.toField t
   toField (TemplateItem _ (InputTypeInt (InputInt i))) = C.toField i
@@ -154,10 +147,7 @@ instance ToJSON DataTemplate where
 instance FromJSON DataTemplate where
          parseJSON o =  DataTemplate <$> decodeObjectAsTemplateItems o
 
-instance C.ToNamedRecord DataTemplate where
-  toNamedRecord (DataTemplate templateItems ) =
-    foldl (\l -> (l <>) . C.toNamedRecord) mempty templateItems
-         
+
 -- Type for tranform function
 data ArgConstructor a b c = EmptyItem (a -> b -> c) | OneArgument (b -> c) | FullItem c
 type TemplateItemConstructor = ArgConstructor Text InputType TemplateItem
