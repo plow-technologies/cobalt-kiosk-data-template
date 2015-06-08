@@ -2,19 +2,23 @@
 
 module Kiosk.Backend.Data.DataTemplateEntrySpec where
 
-import           Codec.Xlsx.Types                     (def, Xlsx (..), Worksheet (..))
+import           Codec.Xlsx.Types                     (Worksheet (..),
+                                                       Xlsx (..))
 import           Data.List                            (nub)
-import           Data.Maybe                           (fromMaybe, fromJust)
+import qualified Data.Map                             as M (keys, lookup, size)
+import           Data.Maybe                           (fromJust, fromMaybe)
 import           Data.UUID                            (fromString)
 import           Generators                           ()
-import           Kiosk.Backend.Data.DataTemplateEntry (fromDataTemplateEntryToXlsx)
+import           Kiosk.Backend.Data.DataTemplateEntry (fromDataTemplateEntryToXlsxWorksheet)
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
 import           Test.QuickCheck                      (property)
-import qualified Data.Map as M                        (lookup, keys, size)
 
-import Kiosk.Backend.Data
-import Kiosk.Backend.Form
+import           Kiosk.Backend.Data
+import           Kiosk.Backend.Form
+
+
+fromDataTemplateEntryToXlsx = fromDataTemplateEntryToXlsxWorksheet
 
 main :: IO ()
 main = hspec spec
@@ -25,15 +29,15 @@ spec = do
     describe "no data loss" $ do
       it "xlsx should have a row for each data template entry" $ property prop_no_data_loss_rows
       it "xlsx should have a cell for each field"              $ property prop_no_data_loss_cells
-     
+
 prop_no_data_loss_rows :: [DataTemplateEntry] -> Bool
 prop_no_data_loss_rows xs = numDataTemplateEntries == numRowsInExcelSheet
  where
   numDataTemplateEntries = length xs + numHeaderRows
-  sheet_                 = fromMaybe def $ M.lookup "" (_xlSheets (fromDataTemplateEntryToXlsx xs))
+  sheet_                 = fromDataTemplateEntryToXlsx xs
   numRowsInExcelSheet    = length . nub . (fmap fst) . M.keys  $  _wsCells sheet_
   numHeaderRows          = if null xs then 0 else 1
-  
+
 prop_no_data_loss_cells :: [DataTemplateEntry] -> Bool
 prop_no_data_loss_cells xs = numCellsInDataTemplateEntries_ == numCellsInExcelSheet_
   where
@@ -47,7 +51,7 @@ prop_no_data_loss_cells xs = numCellsInDataTemplateEntries_ == numCellsInExcelSh
       (length . templateItems . _dataTemplateEntryValue) (head xs) + numDefaultKeyHeaders
 
     numDefaultKeyHeaders = 4
-    sheet_ = fromMaybe def $ M.lookup "" (_xlSheets (fromDataTemplateEntryToXlsx xs))
+    sheet_ = fromDataTemplateEntryToXlsx xs
     numCellsInExcelSheet_ = M.size (_wsCells sheet_)
 
 numCellsInDataTemplateEntries :: [DataTemplateEntry] -> Int
@@ -55,7 +59,7 @@ numCellsInDataTemplateEntries xs =
   sum (map (length . templateItems . _dataTemplateEntryValue) xs) + length xs
 
 sheet :: [DataTemplateEntry] -> Worksheet
-sheet xs = fromMaybe def $ M.lookup "" (_xlSheets (fromDataTemplateEntryToXlsx xs))
+sheet = fromDataTemplateEntryToXlsx
 
 numCellsInExcelSheet :: [DataTemplateEntry] -> Int
 numCellsInExcelSheet xs = M.size (_wsCells $ sheet xs)

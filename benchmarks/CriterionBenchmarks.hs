@@ -2,14 +2,17 @@
 
 module Main (main) where
 
-import Kiosk.Backend.Data
-import Kiosk.Backend.Form
+import           Kiosk.Backend.Data
+import           Kiosk.Backend.Form
 
-import Kiosk.Backend.Data.DataTemplateEntry (fromDataTemplateEntryToXlsx)
+import           Kiosk.Backend.Data.DataTemplateEntry (fromDataTemplateEntryToXlsxWorksheet)
 
-import Criterion.Main (bench,bgroup,defaultMain,whnf)
-import Data.Maybe (fromJust)
-import Data.UUID (fromString)
+import           Criterion.Main                       (bench, bgroup,
+                                                       defaultMain, whnf)
+import           Data.Maybe                           (fromJust)
+import           Data.UUID                            (fromString)
+
+fromDataTemplateEntryToXlsx  = fromDataTemplateEntryToXlsxWorksheet
 
 main :: IO ()
 main =
