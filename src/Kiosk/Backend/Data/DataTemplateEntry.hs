@@ -193,7 +193,9 @@ fromDataTemplateEntryToXlsx' headers_ data_ = def { _wsCells = headerCells `unio
     headerCells = mkHeaderCells headers_
     dataCellsStartRow = 2
 
-    columnIndexes = zip headers_ [1..]
+    numDefaultKeyHeaders = length dataTemplateDefaultHeaders
+    columnIndexes        = zip (drop numDefaultKeyHeaders headers_)
+                               [numDefaultKeyHeaders+1..]
 
 mkHeaderCells :: [Text] -> CellMap
 mkHeaderCells names = fst $ foldl fn (mempty, 1) names
