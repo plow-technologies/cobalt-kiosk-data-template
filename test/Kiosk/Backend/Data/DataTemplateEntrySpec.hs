@@ -24,7 +24,7 @@ spec = do
   modifyMaxSuccess (\_ -> 100) . modifyMaxSize (\_ -> 10) $
     describe "no data loss" $ do
       it "xlsx should have a row for each data template entry" $ property prop_no_data_loss_rows
---      it "xlsx should have a cell for each field"              $ property prop_no_data_loss_cells
+      it "xlsx should have a cell for each field"              $ property prop_no_data_loss_cells
 
 prop_no_data_loss_rows :: [DataTemplateEntry] -> Bool
 prop_no_data_loss_rows xs = numDataTemplateEntries == numRowsInExcelSheet
