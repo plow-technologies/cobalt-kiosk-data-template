@@ -200,7 +200,7 @@ fitDataTemplateToForm frm dt = fromLabelMap <$> fitDT dt
     mergeFormDTwithTargetDT referenceDTmap lmap = Traversable.sequence $ M.mapWithKey
                                                   (convertTypeIfNeeded referenceDTmap) lmap
     convertTypeIfNeeded :: LabelMap -> Text -> InputType -> Either String InputType
-    convertTypeIfNeeded referenceDTMap k targetInput = maybe (Left $ "Input Type not found at" <> (T.unpack k))
+    convertTypeIfNeeded referenceDTMap k targetInput = maybe (Left $ "Input Type not found at" <> T.unpack k)
                                                              (typeMatchAndConvert targetInput )
                                                              (M.lookup k referenceDTMap)
 

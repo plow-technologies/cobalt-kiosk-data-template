@@ -1,10 +1,10 @@
 Name:                   cobalt-kiosk-data-template
-Version:                1.5.1
+Version:                1.5.3
 Author:                 Lingpo Huang <lingpo.huang@plowtech.net>
-Maintainer:             Lingpo Huang <lingpo.huang@plowtech.net>
+Maintainer:             Scott Murphy <scott.murphy@plowtech.net>
 License:                BSD3
 License-File:           LICENSE
-Category:               Apple
+Category:               Ipad
 Synopsis:               Combined Form Data and Form Template for Cobalt Kiosk Application Backend
 Description:            Combined Form Data and Form Template for Cobalt Kiosk Application Backend
 Cabal-Version:          >= 1.10
@@ -30,9 +30,9 @@ Library
   Build-Depends:        aeson
                       , base                       >= 4 && < 5
                       , bytestring >= 0.10.4.0
-                      , cassava >= 0.4.0
+                      , cassava >= 0.4.0.0 && <= 0.4.2.1
                       , cereal >= 0.4.0
-                      , cobalt-kiosk-form-template >= 1.4.1
+                      , cobalt-kiosk-form-template >= 1.5.0 && < 1.6.0
                       , containers >= 0.5.5.1
                       , either >= 4.3.1
                       , hashable >= 1.2.3.1
@@ -46,6 +46,8 @@ Library
                       , unordered-containers >= 0.2.5.1
                       , uuid >= 1.3.8
                       , vector >= 0.10.12.2
+                      , xlsx >= 0.1.0.4 && < 0.2.0.0
+                      , mtl
 
 
 Test-Suite spec
@@ -59,7 +61,7 @@ Test-Suite spec
                       , QuickCheck
                       , aeson
                       , aeson-serialize
-                      , attoparsec
+                      , attoparsec >= 0.12 && < 0.13
                       , base
                       , bytestring
                       , cassava
@@ -85,8 +87,20 @@ Test-Suite spec
                       , unordered-containers
                       , uuid
                       , vector
-
+                      , xlsx
 
 Source-Repository head
   Type:                 git
   Location:             git@github.com:plow-technologies/cobalt-kiosk-data-template.git
+
+benchmark criterion-benchmarks
+  build-depends:
+    base,
+    cobalt-kiosk-data-template,
+    cobalt-kiosk-form-template,
+    criterion,
+    uuid
+  default-language: Haskell2010
+  hs-source-dirs:   benchmarks
+  main-is:          CriterionBenchmarks.hs
+  type:             exitcode-stdio-1.0

@@ -13,7 +13,9 @@ module Kiosk.Backend.Data ( DataTemplateEntry (..)
                           , decodeUUID
                           , getListOfSortedTemplateItems
                           , fromDataTemplateEntryToCsv
-                          , fromDataTemplateEntryToS3Csv) where
+                          , fromDataTemplateEntryToS3Csv
+                          , fromDataTemplateEntryToXlsxWorksheet                            
+                          ) where
 
 import           Kiosk.Backend.Data.DataTemplate
 import           Kiosk.Backend.Data.DataTemplateEntry
