@@ -167,6 +167,8 @@ type RowIndex    = Int
 type ColumnIndex = Int
 type Row         = CellMap
 
+type Header = Text
+
 fromDataTemplateEntryToXlsxWorksheet :: [DataTemplateEntry] -> Worksheet
 fromDataTemplateEntryToXlsxWorksheet []                  = def
 fromDataTemplateEntryToXlsxWorksheet dataTemplateEntries =
@@ -184,12 +186,14 @@ fromDataTemplateEntryToXlsxWorksheet dataTemplateEntries =
 dataTemplateDefaultHeaders :: [Text]
 dataTemplateDefaultHeaders = ["Date","FormId","TicketId","UUID"]
 
-fromDataTemplateEntryToXlsx' :: (C.ToRecord a) => [Text] -> [a] -> Worksheet
+fromDataTemplateEntryToXlsx' :: [Text] -> [DataTemplateEntry] -> Worksheet
 fromDataTemplateEntryToXlsx' headers_ data_ = def { _wsCells = headerCells `union` dataCells }
   where
-    dataCells  = snd $ foldr mkCellsFromRecord (dataCellsStartRow, empty) data_
+    dataCells  = snd $ foldr (mkCellsFromRecord columnIndexes) (dataCellsStartRow, empty) data_
     headerCells = mkHeaderCells headers_
     dataCellsStartRow = 2
+
+    columnIndexes = zip headers_ [1..]
 
 mkHeaderCells :: [Text] -> CellMap
 mkHeaderCells names = fst $ foldl fn (mempty, 1) names
@@ -200,16 +204,23 @@ fn (cellMap, col) name = (cellMap', col + 1)
     cell     = def{ _cellValue = Just (CellText name) }
     cellMap' = insert (1,col) cell cellMap
 
-mkCellsFromRecord :: C.ToRecord a => a
+mkCellsFromRecord :: [(Header,ColumnIndex)]
+                  -> DataTemplateEntry
                   -> (RowIndex, Row)
                   -> (RowIndex, Row)
-mkCellsFromRecord a (rowIndex, acc) = (rowIndex + 1, union acc row)
- where
-  (_, row) = foldl (flip rowFromField)
-                       (1, empty)
-                       (C.toRecord a)
-  rowFromField field (columnIndex, acc') =
-    mkCellFromFields rowIndex columnIndex field acc'
+mkCellsFromRecord columnIndexes a (rowIndex, acc) =(rowIndex + 1,union acc row)
+  where
+    row = union keyRow valueRow
+
+    (_, keyRow) = foldl rowFromField
+                        (1, empty)
+                        (C.toRecord (_dataTemplateEntryKey a))
+    rowFromField (columnIndex, acc') field =
+      mkCellFromFields rowIndex columnIndex field acc'
+
+
+    valueItems = templateItems (_dataTemplateEntryValue a)
+    valueRow   = makeRowFromTemplateItems rowIndex columnIndexes valueItems
 
 mkCellFromFields :: RowIndex
                  -> ColumnIndex
@@ -224,3 +235,26 @@ mkCellFromFields rowIndex
  where
    cell      = def { _cellValue = Just (CellText cellValue) }
    cellValue = decodeUtf8 field
+
+makeRowFromTemplateItems
+  :: RowIndex
+  -> [(Header,ColumnIndex)]
+  -> [TemplateItem]
+  -> Row
+makeRowFromTemplateItems rowIndex columnIndexes =
+  foldl (flip (insertTemplateItemInRow rowIndex columnIndexes)) empty
+
+insertTemplateItemInRow
+  :: RowIndex
+  -> [(Header,ColumnIndex)]
+  -> TemplateItem
+  -> Row
+  -> Row
+insertTemplateItemInRow rowIndex columnIndexes templateItem row =
+  case lookup header columnIndexes of
+    Nothing          -> row
+    Just columnIndex -> insert (rowIndex,columnIndex) cell row
+  where
+    header    = label templateItem
+    cell      = def { _cellValue = Just (CellText cellValue) }
+    cellValue = decodeUtf8 (C.toField templateItem)
