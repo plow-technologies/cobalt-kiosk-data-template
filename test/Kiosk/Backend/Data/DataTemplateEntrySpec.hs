@@ -2,11 +2,10 @@
 
 module Kiosk.Backend.Data.DataTemplateEntrySpec where
 
-import           Codec.Xlsx.Types                     (Worksheet (..),
-                                                       Xlsx (..))
+import           Codec.Xlsx.Types                     (Worksheet(..))
 import           Data.List                            (nub)
-import qualified Data.Map                             as M (keys, lookup, size)
-import           Data.Maybe                           (fromJust, fromMaybe)
+import qualified Data.Map                             as M (keys, size)
+import           Data.Maybe                           (fromJust)
 import           Data.UUID                            (fromString)
 import           Generators                           ()
 import           Kiosk.Backend.Data.DataTemplateEntry (fromDataTemplateEntryToXlsxWorksheet)
@@ -14,11 +13,8 @@ import           Test.Hspec
 import           Test.Hspec.QuickCheck
 import           Test.QuickCheck                      (property)
 
-import           Kiosk.Backend.Data
+import           Kiosk.Backend.Data hiding (fromDataTemplateEntryToXlsxWorksheet)
 import           Kiosk.Backend.Form
-
-
-fromDataTemplateEntryToXlsx = fromDataTemplateEntryToXlsxWorksheet
 
 main :: IO ()
 main = hspec spec
@@ -34,7 +30,7 @@ prop_no_data_loss_rows :: [DataTemplateEntry] -> Bool
 prop_no_data_loss_rows xs = numDataTemplateEntries == numRowsInExcelSheet
  where
   numDataTemplateEntries = length xs + numHeaderRows
-  sheet_                 = fromDataTemplateEntryToXlsx xs
+  sheet_                 = fromDataTemplateEntryToXlsxWorksheet xs
   numRowsInExcelSheet    = length . nub . (fmap fst) . M.keys  $  _wsCells sheet_
   numHeaderRows          = if null xs then 0 else 1
 
@@ -44,14 +40,17 @@ prop_no_data_loss_cells xs = numCellsInDataTemplateEntries_ == numCellsInExcelSh
     numCellsInDataTemplateEntries_ =
       if null xs
          then 0
-         else numRows * numColumns
+         else numHeaders + numCells
 
-    numRows = length xs + 1
-    numColumns =
-      (length . templateItems . _dataTemplateEntryValue) (head xs) + numDefaultKeyHeaders
+    numHeaders =
+      maximum (fmap (length . templateItems . _dataTemplateEntryValue) xs)
+        + numDefaultKeyHeaders
+
+    numCells =
+      sum (fmap ((+) numDefaultKeyHeaders . length . templateItems . _dataTemplateEntryValue) xs)
 
     numDefaultKeyHeaders = 4
-    sheet_ = fromDataTemplateEntryToXlsx xs
+    sheet_ = fromDataTemplateEntryToXlsxWorksheet xs
     numCellsInExcelSheet_ = M.size (_wsCells sheet_)
 
 numCellsInDataTemplateEntries :: [DataTemplateEntry] -> Int
@@ -59,7 +58,7 @@ numCellsInDataTemplateEntries xs =
   sum (map (length . templateItems . _dataTemplateEntryValue) xs) + length xs
 
 sheet :: [DataTemplateEntry] -> Worksheet
-sheet = fromDataTemplateEntryToXlsx
+sheet = fromDataTemplateEntryToXlsxWorksheet
 
 numCellsInExcelSheet :: [DataTemplateEntry] -> Int
 numCellsInExcelSheet xs = M.size (_wsCells $ sheet xs)
@@ -111,6 +110,6 @@ testDataTemplateEntryValue2 = DataTemplate
       [TemplateItem "1a" (InputTypeText (InputText "A"))
       ,TemplateItem "2a" (InputTypeText (InputText "B"))
       ,TemplateItem "3a" (InputTypeText (InputText "C"))
-      ,TemplateItem "4a" (InputTypeText (InputText "D"))
+ --     ,TemplateItem "4a" (InputTypeText (InputText "D"))
       ,TemplateItem "5a" (InputTypeText (InputText "E"))]
   }
