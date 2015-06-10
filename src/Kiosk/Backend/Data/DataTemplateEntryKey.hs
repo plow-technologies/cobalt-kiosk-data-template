@@ -16,8 +16,8 @@ module Kiosk.Backend.Data.DataTemplateEntryKey (DataTemplateEntryKey (..)
                                                ,decodeUUID) where
 
 import           Data.Time           (formatTime, utcToZonedTime)
-
 import           Plow.Extras.Time    (intToUTCTime)
+import           Text.Read           (readMaybe)
 
 import           System.Locale       (defaultTimeLocale)
 
@@ -46,7 +46,9 @@ newtype TicketId = TicketId {_getTicketIdPair :: (Int,Int) } deriving (Eq, Ord, 
 decodeTicketID :: Value -> Parser TicketId
 decodeTicketID (String s) = do
          let (s1, s2) = splitString s
-         return $ TicketId (read s1, read s2)
+         i1 <- parserRead "TicketId s1 fail" s1
+         i2 <- parserRead "TicketId s2 fail" s2
+         return $ TicketId (i1, i2)
 decodeTicketID _ = fail "Expected String, Received Other"
 
 ticketIdToString :: TicketId -> String
@@ -98,8 +100,22 @@ instance ToJSON DataTemplateEntryKey where
                                               , "formid" .= show fId ]
 
 instance FromJSON DataTemplateEntryKey where
-  parseJSON (Object o) = DataTemplateEntryKey <$> liftM read (o .: "date")
-                                              <*> ((o .: "uuid") >>= decodeUUID)
-                                              <*> ((o .: "ticketid") >>= decodeTicketID)
-                                              <*> liftM read (o .: "formid")
+  parseJSON (Object o) = jsonParseDataTemplateEntryKey o
   parseJSON _ = fail "Expecting DataTemplateEntryKey Object, Received Other"
+
+
+jsonParseDataTemplateEntryKey o = parseEntryKey
+  where
+    parseEntryKey = DataTemplateEntryKey <$> ((o .: "date") >>= parserRead "Error reading DataTemplateEntryKey date")
+                                           <*> ((o .: "uuid") >>= decodeUUID)
+                                           <*> ((o .: "ticketid") >>= decodeTicketID)
+                                           <*> (o .: "formid" >>= parserRead "Error reading DataTemplateEntryKey formid")
+
+
+
+
+
+parserRead :: (Read a, Monad m) => String -> String -> m a
+parserRead errmsg i = case readMaybe i of
+                        Nothing -> fail errmsg
+                        (Just i) -> return i
