@@ -1,3 +1,5 @@
+# Version 1.5.6
+Fixed read function
 # Version 1.5.5
 Fixed row ordering problem in excel
 Fixed Cobalt double labeling of data (we hope)
