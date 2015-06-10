@@ -55,7 +55,7 @@ ticketIdToString :: TicketId -> String
 ticketIdToString (TicketId (a,b)) = show a ++ "_" ++ show b
 
 intTimeToHumanTime :: Int -> String
-intTimeToHumanTime intTime = formatTime defaultTimeLocale "%Y/%m/%dT%H:%M:%S" time
+intTimeToHumanTime intTime = formatTime defaultTimeLocale "%Y/%m/%dT%H:%M:%S %Z" time
                       where utcTime = intToUTCTime . div intTime $ 1000
                             time = utcToZonedTime oklahomaTimeZone utcTime
 
