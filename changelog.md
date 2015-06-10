@@ -1,3 +1,5 @@
+# Version 1.5.7
+Fixed date timezone thing
 # Version 1.5.6
 Fixed read function
 # Version 1.5.5
