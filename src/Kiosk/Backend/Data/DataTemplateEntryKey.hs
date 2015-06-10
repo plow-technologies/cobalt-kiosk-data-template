@@ -25,7 +25,7 @@ import           Data.Time.LocalTime (TimeZone (..))
 
 import           Control.Applicative ((<$>), (<*>))
 
-import           Control.Monad       (liftM)
+-- import           Control.Monad       (liftM)
 
 import           Data.Aeson          (FromJSON, ToJSON, Value (..), object,
                                       parseJSON, toJSON, (.:), (.=))
@@ -100,22 +100,19 @@ instance ToJSON DataTemplateEntryKey where
                                               , "formid" .= show fId ]
 
 instance FromJSON DataTemplateEntryKey where
-  parseJSON (Object o) = jsonParseDataTemplateEntryKey o
+  parseJSON (Object o) = DataTemplateEntryKey <$> ((o .: "date") >>= parserRead "Error reading DataTemplateEntryKey date")
+                                                <*> ((o .: "uuid") >>= decodeUUID)
+                                                <*> ((o .: "ticketid") >>= decodeTicketID)
+                                                <*> (o .: "formid" >>= parserRead "Error reading DataTemplateEntryKey formid")
   parseJSON _ = fail "Expecting DataTemplateEntryKey Object, Received Other"
 
-
-jsonParseDataTemplateEntryKey o = parseEntryKey
-  where
-    parseEntryKey = DataTemplateEntryKey <$> ((o .: "date") >>= parserRead "Error reading DataTemplateEntryKey date")
-                                           <*> ((o .: "uuid") >>= decodeUUID)
-                                           <*> ((o .: "ticketid") >>= decodeTicketID)
-                                           <*> (o .: "formid" >>= parserRead "Error reading DataTemplateEntryKey formid")
 
 
 
 
 
 parserRead :: (Read a, Monad m) => String -> String -> m a
-parserRead errmsg i = case readMaybe i of
-                        Nothing -> fail errmsg
-                        (Just i) -> return i
+parserRead errmsg incomingString = case readMaybe incomingString of
+                                     Nothing -> fail errmsg
+                                     (Just resultVal) -> return resultVal
+
