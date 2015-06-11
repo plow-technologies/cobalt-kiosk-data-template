@@ -43,6 +43,7 @@ import           Kiosk.Backend.Form            (Address (..), Company (..),
                                                 Item (..), ItemType (..),
                                                 Label (..), Row (..),
                                                 Signature (..))
+import           Kiosk.Backend.Form.Converter  (convertInputIfPossible)
 
 import           Control.Applicative           ((<$>), (<|>))
 
@@ -190,18 +191,18 @@ type LabelMap = Map Text InputType
 
 
 -- | Try to fit a given DataTemplate to a given form
-fitDataTemplateToForm :: Form -> DataTemplate -> Either String DataTemplate
-fitDataTemplateToForm frm dt = fromLabelMap <$> fitDT dt
+
+fitDataTemplateToForm :: Form -> DataTemplate -> DataTemplate
+fitDataTemplateToForm frm dt = fromLabelMap . fitDT $ dt
   where
     dtMapFromForm :: LabelMap
     dtMapFromForm = toLabelMap.fromFormToDataTemplate $ frm
     fitDT dt' =  mergeFormDTwithTargetDT dtMapFromForm . toLabelMap $ dt'
-    mergeFormDTwithTargetDT :: LabelMap -> LabelMap -> Either String LabelMap
-    mergeFormDTwithTargetDT referenceDTmap lmap = Traversable.sequence $ M.mapWithKey
-                                                  (convertTypeIfNeeded referenceDTmap) lmap
-    convertTypeIfNeeded :: LabelMap -> Text -> InputType -> Either String InputType
-    convertTypeIfNeeded referenceDTMap k targetInput = maybe (Left $ "Input Type not found at" <> T.unpack k)
-                                                             (typeMatchAndConvert targetInput )
+    mergeFormDTwithTargetDT :: LabelMap -> LabelMap -> LabelMap
+    mergeFormDTwithTargetDT referenceDTmap lmap = M.mapWithKey (convertTypeIfNeeded referenceDTmap) lmap
+    convertTypeIfNeeded :: LabelMap -> Text -> InputType -> InputType
+    convertTypeIfNeeded referenceDTMap k targetInput = maybe targetInput
+                                                             (flip convertInputIfPossible targetInput )
                                                              (M.lookup k referenceDTMap)
 
 
