@@ -1,9 +1,9 @@
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
 {-# LANGUAGE TypeFamilies        #-}
-{-# LANGUAGE RecordWildCards     #-}
 
 {- |
 Module      :  Kiosk.Backend.Data.DataTemplateEntry
@@ -25,7 +25,7 @@ module Kiosk.Backend.Data.DataTemplateEntry ( DataTemplateEntry(..)
                                             , getListOfSortedTemplateItems
                                             , fromDataTemplateEntryToCsv
                                             , fromDataTemplateEntryToS3Csv
-                                            , fromDataTemplateEntryToXlsxWorksheet  
+                                            , fromDataTemplateEntryToXlsxWorksheet
                                             ) where
 
 
@@ -38,29 +38,25 @@ import           Data.Aeson                              (FromJSON, ToJSON,
 import           Data.ByteString.Lazy                    (ByteString)
 --import qualified Data.ByteString                         as BS  (ByteString)
 import qualified Data.ByteString.Lazy                    as LBS
+import           Data.Foldable                           (foldl, foldr)
 import qualified Data.List                               as L
-
 import           Data.Text                               (Text)
 import           Data.Text.Encoding                      (decodeUtf8)
-import           Data.Foldable                           (foldr, foldl)
 
-import qualified Data.Csv                                as C (ToRecord,
-                                                               encode,
+import qualified Data.Csv                                as C (Field, ToRecord,
+                                                               ToRecord, encode,
                                                                toField,
-                                                               toRecord,
-                                                               ToRecord,
-                                                               Field)
+                                                               toRecord)
 
-import qualified Data.Vector                             as V
-import           Codec.Xlsx                              (CellMap,
-                                                          Cell(_cellValue),
-                                                          CellValue(CellText),
-                                                          def,
-                                                          Worksheet(_wsCells),
-                                                         )
-import           Data.Map                                (empty, union, insert)
+import           Codec.Xlsx                              (Cell (_cellValue),
+                                                          CellMap,
+                                                          CellValue (CellText),
+                                                          Worksheet (_wsCells),
+                                                          def)
+import           Data.Map                                (empty, insert, union)
 import           Data.Monoid                             (mempty)
-import           Prelude hiding                          (foldr, foldl)
+import qualified Data.Vector                             as V
+import           Prelude                                 hiding (foldl, foldr)
 
 import           Kiosk.Backend.Data.DataTemplate         (DataTemplate (..),
                                                           InputText (..),
@@ -103,7 +99,6 @@ instance FromJSON DataTemplateEntry where
 
 
 -- | CSV Stuff
-
 fromDataTemplateEntryToCsv :: [DataTemplateEntry] -> ByteString
 fromDataTemplateEntryToCsv templateEntries = LBS.append (appendKeyHeaders . getHeaders $ templatesWithSortedItems templateEntries)
                                                         (C.encode . sortDataTemplatesEntries $ templateEntries)
