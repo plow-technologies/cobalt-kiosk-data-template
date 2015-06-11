@@ -27,7 +27,7 @@ import           Test.QuickCheck
 import           TestImport                      (testJSON)
 
 main :: IO ()
-main = hspec spec
+main = print "got here" >> hspec spec
 
 spec :: Spec
 spec = do
@@ -57,6 +57,8 @@ spec = do
          (Just decodedTemplates) = decode . encode $ templatesFromForm
          (newDTs) = zipWith fitDataTemplateToForm forms decodedTemplates
      (newDTs) `shouldBe` templatesFromForm
+
+
 
 
 encodeDecodeDataTemplate :: IO (Either String [DataTemplate],Either String [DataTemplate])
