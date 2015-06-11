@@ -56,7 +56,7 @@ spec = do
      let templatesFromForm = fromFormToDataTemplate <$> (take 500 forms)
          (Just decodedTemplates) = decode . encode $ templatesFromForm
          (newDTs) = zipWith fitDataTemplateToForm forms decodedTemplates
-     (rights newDTs) `shouldBe` templatesFromForm
+     (newDTs) `shouldBe` templatesFromForm
 
 
 encodeDecodeDataTemplate :: IO (Either String [DataTemplate],Either String [DataTemplate])
