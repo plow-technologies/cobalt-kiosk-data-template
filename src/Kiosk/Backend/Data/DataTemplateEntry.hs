@@ -118,6 +118,7 @@ notSignature :: TemplateItem -> Bool
 notSignature (TemplateItem ("Driver_Signature"::Text) (InputTypeText (InputText _))) = False
 notSignature _ = True
 
+notUUID :: TemplateItem -> Bool
 notUUID (TemplateItem ("UUID"::Text) (InputTypeText (InputText _))) = False
 notUUID _ = True
 

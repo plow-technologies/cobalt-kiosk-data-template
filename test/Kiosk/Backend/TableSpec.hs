@@ -61,5 +61,5 @@ generateTimes seedTime delta = take 50 $
 
 -- Time to start tests at 100ks (1.157 days) ago
 startTime :: UTCTime -> UTCTime
-startTime ct = addUTCTime (fromIntegral (-1*1000*100)) ct
+startTime ct = addUTCTime (fromIntegral (-1*1000*100 :: Integer)) ct
 
