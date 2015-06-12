@@ -60,6 +60,7 @@ import qualified Data.Vector                             as V
 import           Prelude                                 hiding (foldl, foldr)
 
 import           Kiosk.Backend.Data.DataTemplate         (DataTemplate (..),
+                                                          InputText (..),
                                                           InputType (..),
                                                           TemplateItem (..),
                                                           fromDataTemplateToCSV,
@@ -114,8 +115,11 @@ sortDataTemplatesWRemoveField dts = dts {templateItems = newDts}
 
 -- | Remove the signature from a CSV file
 notSignature :: TemplateItem -> Bool
-notSignature (TemplateItem _ (InputTypeSignature _ )) = False
+notSignature (TemplateItem ("Driver_Signature"::Text) (InputTypeText (InputText _))) = False
 notSignature _ = True
+
+notUUID (TemplateItem ("UUID"::Text) (InputTypeText (InputText _))) = False
+notUUID _ = True
 
 defaultKeyHeaders :: ByteString
 defaultKeyHeaders = "Date,FormId,TicketId,UUID,"
@@ -153,7 +157,6 @@ sortDataTemplatesEntry dte = dte {_dataTemplateEntryValue =s}
 sortDataTemplates :: DataTemplate -> DataTemplate
 sortDataTemplates dts = dts {templateItems = newDts}
              where newDts = L.sort . filterTemplateItems $ view _templateItems dts
-
 filterTemplateItems :: [TemplateItem] -> [TemplateItem]
 filterTemplateItems = filter notSignature
 
