@@ -33,7 +33,7 @@ import           Data.Aeson                    (FromJSON, ToJSON, Value (..),
 import           Data.Aeson.Types              (Parser)
 import           Data.ByteString.Lazy.Internal (ByteString)
 import           Data.Text                     (Text)
-import qualified Data.Text                     as T
+
 import           Kiosk.Backend.Form            (Address (..), Company (..),
                                                 Form (..), Input (..),
                                                 InputDate (..),
@@ -50,14 +50,14 @@ import           Control.Applicative           ((<$>), (<|>))
 import           Control.Lens                  (folded, folding, makeClassy_,
                                                 makeLenses, makePrisms,
                                                 traverse, (^..))
-import           Data.Monoid                   ((<>))
+
 -- import           Control.Monad                 (mzero)
 import qualified Data.Csv                      as C
 import           Data.Foldable                 (foldl')
 import qualified Data.HashMap.Strict           as HM
 import           Data.Map                      (Map)
 import qualified Data.Map                      as M
-import qualified Data.Traversable              as Traversable
+
 import           Data.Typeable
 import qualified Data.Vector                   as V
 
@@ -197,9 +197,9 @@ fitDataTemplateToForm frm dt = fromLabelMap . fitDT $ dt
   where
     dtMapFromForm :: LabelMap
     dtMapFromForm = toLabelMap.fromFormToDataTemplate $ frm
-    fitDT dt' =  mergeFormDTwithTargetDT dtMapFromForm . toLabelMap $ dt'
+    fitDT  =  mergeFormDTwithTargetDT dtMapFromForm . toLabelMap
     mergeFormDTwithTargetDT :: LabelMap -> LabelMap -> LabelMap
-    mergeFormDTwithTargetDT referenceDTmap lmap = M.mapWithKey (convertTypeIfNeeded referenceDTmap) lmap
+    mergeFormDTwithTargetDT referenceDTmap  = M.mapWithKey (convertTypeIfNeeded referenceDTmap)
     convertTypeIfNeeded :: LabelMap -> Text -> InputType -> InputType
     convertTypeIfNeeded referenceDTMap k targetInput = maybe targetInput
                                                              (flip convertInputIfPossible targetInput )
@@ -207,10 +207,11 @@ fitDataTemplateToForm frm dt = fromLabelMap . fitDT $ dt
 
 
 -- | take two InputTypes and transform one into the other if
-typeMatchAndConvert :: InputType -> InputType -> Either String InputType
-typeMatchAndConvert targetInput referenceInput
- |checkType targetInput referenceInput = Right targetInput
- |otherwise = Left "Error Input Types do not match"
+-- currently this function is deprecated
+-- typeMatchAndConvert :: InputType -> InputType -> Either String InputType
+-- typeMatchAndConvert targetInput referenceInput
+--  |checkType targetInput referenceInput = Right targetInput
+--  |otherwise = Left "Error Input Types do not match"
 
 
 toLabelMap :: DataTemplate -> Map Text InputType

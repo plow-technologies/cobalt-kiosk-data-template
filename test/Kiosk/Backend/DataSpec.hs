@@ -7,7 +7,7 @@ import           Control.Arrow                   ((***))
 import           Data.Aeson                      (Value (..), decode,
                                                   eitherDecode, encode, toJSON)
 import           Data.ByteString.Lazy.Internal   (ByteString)
-import           Data.Either                     (rights)
+
 
 import qualified Data.HashMap.Strict             as HM
 import           Data.List                       (sort)
@@ -25,6 +25,8 @@ import           Language.Haskell.TH
 import           Test.Hspec
 import           Test.QuickCheck
 import           TestImport                      (testJSON)
+
+
 
 main :: IO ()
 main = print "got here" >> hspec spec

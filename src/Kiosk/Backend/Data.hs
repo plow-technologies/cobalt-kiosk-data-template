@@ -14,11 +14,12 @@ module Kiosk.Backend.Data ( DataTemplateEntry (..)
                           , getListOfSortedTemplateItems
                           , fromDataTemplateEntryToCsv
                           , fromDataTemplateEntryToS3Csv
-                          , fromDataTemplateEntryToXlsxWorksheet                            
+                          , fromDataTemplateEntryToXlsxWorksheet
                           ) where
 
 import           Kiosk.Backend.Data.DataTemplate
 import           Kiosk.Backend.Data.DataTemplateEntry
 import           Kiosk.Backend.Data.DataTemplateEntryKey
+
 
 

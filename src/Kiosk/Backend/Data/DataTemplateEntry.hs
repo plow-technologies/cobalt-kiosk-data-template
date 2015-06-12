@@ -164,25 +164,26 @@ type Row         = CellMap
 
 type Header = Text
 
+dataTemplateDefaultHeaders :: [Text]
+dataTemplateDefaultHeaders = ["Date","FormId","TicketId","UUID"]
+
+-- |Excel Related files
+
 fromDataTemplateEntryToXlsxWorksheet :: [DataTemplateEntry] -> Worksheet
 fromDataTemplateEntryToXlsxWorksheet []                  = def
-fromDataTemplateEntryToXlsxWorksheet dataTemplateEntries =
-  fromDataTemplateEntryToXlsx' dataTemplateHeaders sortedDataTemplateEntries
+fromDataTemplateEntryToXlsxWorksheet dataTemplateEntries = fromDataTemplateEntryToXlsxWithHeaders
+                                                                       dataTemplateHeaders
+                                                                       sortedDataTemplateEntries
   where
     sortedDataTemplateEntries = sortDataTemplatesEntries dataTemplateEntries
-
-    dataTemplateItems =
-      head (map (templateItems . _dataTemplateEntryValue) sortedDataTemplateEntries)
+    dataTemplateItems = head (map (templateItems . _dataTemplateEntryValue) sortedDataTemplateEntries)
 
     dataTemplateHeaders = dataTemplateDefaultHeaders ++ dataTemplateCustomHeaders
 
     dataTemplateCustomHeaders = map label dataTemplateItems
 
-dataTemplateDefaultHeaders :: [Text]
-dataTemplateDefaultHeaders = ["Date","FormId","TicketId","UUID"]
-
-fromDataTemplateEntryToXlsx' :: [Text] -> [DataTemplateEntry] -> Worksheet
-fromDataTemplateEntryToXlsx' headers_ data_ = def { _wsCells = headerCells `union` dataCells }
+fromDataTemplateEntryToXlsxWithHeaders :: [Text] -> [DataTemplateEntry] -> Worksheet
+fromDataTemplateEntryToXlsxWithHeaders headers_ data_ = def { _wsCells = headerCells `union` dataCells }
   where
     dataCells  = snd $ foldr (mkCellsFromRecord columnIndexes) (dataCellsStartRow, empty) data_
     headerCells = mkHeaderCells headers_
