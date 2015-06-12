@@ -31,6 +31,7 @@ module Kiosk.Backend.Data.DataTemplateEntry ( DataTemplateEntry(..)
 
 import           Control.Applicative                     ((<$>), (<*>))
 import           Control.Lens                            (makeLenses, view)
+
 import           Data.Aeson                              (FromJSON, ToJSON,
                                                           Value (..), object,
                                                           parseJSON, toJSON,
@@ -59,7 +60,6 @@ import qualified Data.Vector                             as V
 import           Prelude                                 hiding (foldl, foldr)
 
 import           Kiosk.Backend.Data.DataTemplate         (DataTemplate (..),
-                                                          InputText (..),
                                                           InputType (..),
                                                           TemplateItem (..),
                                                           fromDataTemplateToCSV,
@@ -112,12 +112,9 @@ sortDataTemplatesWRemoveField :: DataTemplate -> DataTemplate
 sortDataTemplatesWRemoveField dts = dts {templateItems = newDts}
              where newDts = L.sort . filterTemplateItems $ view _templateItems dts
 
-filterTemplateItems :: [TemplateItem] -> [TemplateItem]
-filterTemplateItems = filter notSignature
-
 -- | Remove the signature from a CSV file
 notSignature :: TemplateItem -> Bool
-notSignature (TemplateItem ("signature"::Text) (InputTypeText (InputText _))) = False
+notSignature (TemplateItem _ (InputTypeSignature _ )) = False
 notSignature _ = True
 
 defaultKeyHeaders :: ByteString
@@ -146,17 +143,19 @@ fromLabelsToHeaders :: [TemplateItem] -> [ByteString]
 fromLabelsToHeaders tis = flip LBS.append "," <$> (LBS.fromStrict . C.toField . label <$> tis)
 
 -- | Ordering
-
-sortDataTemplates :: DataTemplate -> DataTemplate
-sortDataTemplates dts = dts {templateItems = newDts}
-             where newDts = L.sort . filterTemplateItems $ view _templateItems dts
-
 sortDataTemplatesEntries :: [DataTemplateEntry] -> [DataTemplateEntry]
 sortDataTemplatesEntries dtes = sortDataTemplatesEntry <$> dtes
 
 sortDataTemplatesEntry :: DataTemplateEntry -> DataTemplateEntry
 sortDataTemplatesEntry dte = dte {_dataTemplateEntryValue =s}
        where s = sortDataTemplatesWRemoveField $ view dataTemplateEntryValue dte
+
+sortDataTemplates :: DataTemplate -> DataTemplate
+sortDataTemplates dts = dts {templateItems = newDts}
+             where newDts = L.sort . filterTemplateItems $ view _templateItems dts
+
+filterTemplateItems :: [TemplateItem] -> [TemplateItem]
+filterTemplateItems = filter notSignature
 
 type RowIndex    = Int
 type ColumnIndex = Int
@@ -169,17 +168,23 @@ dataTemplateDefaultHeaders = ["Date","FormId","TicketId","UUID"]
 
 -- |Excel Related files
 
+-- Double List can be reduced in a head like operation without exception
+headDoubleList :: [[a]] -> [a]
+headDoubleList (a:_) = a
+headDoubleList  []   = []
+
+
 fromDataTemplateEntryToXlsxWorksheet :: [DataTemplateEntry] -> Worksheet
 fromDataTemplateEntryToXlsxWorksheet []                  = def
 fromDataTemplateEntryToXlsxWorksheet dataTemplateEntries = fromDataTemplateEntryToXlsxWithHeaders
                                                                        dataTemplateHeaders
                                                                        sortedDataTemplateEntries
   where
+    sortedDataTemplateEntries :: [DataTemplateEntry]
     sortedDataTemplateEntries = sortDataTemplatesEntries dataTemplateEntries
-    dataTemplateItems = head (map (templateItems . _dataTemplateEntryValue) sortedDataTemplateEntries)
-
+    dataTemplateItems :: [TemplateItem]
+    dataTemplateItems = headDoubleList (map (templateItems . _dataTemplateEntryValue) sortedDataTemplateEntries)
     dataTemplateHeaders = dataTemplateDefaultHeaders ++ dataTemplateCustomHeaders
-
     dataTemplateCustomHeaders = map label dataTemplateItems
 
 fromDataTemplateEntryToXlsxWithHeaders :: [Text] -> [DataTemplateEntry] -> Worksheet
