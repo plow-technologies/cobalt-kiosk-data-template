@@ -3,30 +3,14 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Kiosk.Backend.Data.Migrations.StandardizationSpec (spec,main) where
 
-
-import           Language.Haskell.TH
-import           Test.Hspec
--- import           Test.HUnit
-
-
-import Data.Text (Text,pack,unpack)                                               
-
 import Kiosk.Backend.Data.Migrations.Standardization
 
-
-
-
-
-
-
-
-
+import Data.Text (Text,pack,unpack)
+import Language.Haskell.TH
 import Regex.Genex
-import Text.Regex.TDFA ((=~))
-import Text.Regex.TDFA.Text ()
+import Test.Hspec
 import Test.QuickCheck
-import Control.Arrow ((***))
-
+import Text.Regex.TDFA.Text ()
 
 main :: IO ()
 main = hspec spec

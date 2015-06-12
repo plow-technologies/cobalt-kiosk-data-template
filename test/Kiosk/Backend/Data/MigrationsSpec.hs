@@ -8,14 +8,7 @@ import           Language.Haskell.TH
 import           Test.Hspec
 -- import           Test.HUnit
 
-import Kiosk.Backend.Data.DataTemplate (TemplateItem(..))
-import Kiosk.Backend.Form
-import Data.UUID
-import           Kiosk.Backend.Data            (DataTemplateEntry (..)
-                                               ,DataTemplate(..)
-                                               
-                                               ,TicketId(..)
-                                               ,DataTemplateEntryKey(..))
+import           Kiosk.Backend.Data            (DataTemplateEntry (..))
 import           Kiosk.Backend.Data.Migrations ( CobaltBaseFormEntry (..),
                                                 FormVersionZeroEntry (..) )
 import Data.Text                                                
