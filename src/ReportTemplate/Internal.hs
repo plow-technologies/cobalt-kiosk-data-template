@@ -183,7 +183,7 @@ renderReport :: ReportTemplate context preIn preOut rowIn rowOut ->
 renderReport reportTemplate context preIn rows = Report reportPreambleOut rowOut
   where
     reportPreambleOut = undefined
-    rowOut = undefined -- ReportTableRowIndex rowTransformLabels  (ReportTableRowStyle rowOutTransformMap)
+    rowOut = ReportTableRowIndex rowTransformLabels . ReportTableRowStyle . transformRows context rowTransformLabels rowOutTransformMap $ rows
     preambleOutTransformMap = preambleTransformMap.reportPreambleTemplate $ reportTemplate
     preambleTransformLabels = reportPreambleLabel.reportPreambleTemplate $ reportTemplate
     rowOutTransformMap = rowTransformMap . reportRowsTemplate $ reportTemplate
@@ -200,8 +200,8 @@ transformRows :: forall rowSource rowOut context.
                        -> [ReportRowLabel]
                        -> ReportRowRetrievalMap context rowSource rowOut
                        -> [rowSource]
-                       -> [Map TableRowIndex rowOut]
-transformRows context rowTransformLabels rowOutTransformMap = zipWith (transformRowin context rowTransformLabels rowOutTransformMap  ) [1 ..]
+                       -> Map TableRowIndex rowOut
+transformRows context rowTransformLabels rowOutTransformMap rows = M.unions $ zipWith (transformRowin context rowTransformLabels rowOutTransformMap  ) [1 ..] rows
 
 transformRowin :: forall rowOut  context rowSource.
                         context -> [ReportRowLabel] -> ReportRowRetrievalMap context rowSource rowOut -> RowNumber -> rowSource -> Map TableRowIndex rowOut
