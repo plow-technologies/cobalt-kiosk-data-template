@@ -45,12 +45,15 @@ module ReportTemplate.Internal (ReportTemplate
                                ,    reportRowLabels
                                ,    rowTransformMap
                                ,    ReportPreamble(..)
-                               ,    ReportRows(..)
+                               ,    ReportTable(..)
                                ,    Report(..)
+                               ,    RowNumber
+                               ,    TableRowIndex
+                               ,    TableColIndex
                                   , reportPreambleLabel
                                   , preambleTransformMap ) where
 
-import           Control.Applicative ((<$>))
+import           Control.Applicative (pure, (<$>), (<*>))
 import           Data.Map.Strict     (Map)
 import qualified Data.Map.Strict     as M
 
@@ -138,15 +141,55 @@ type ReportRowRetrievalMap context rowSource rowSink =
 
 data Report preambleValue rowValue = Report {
           _reportPreamble :: ReportPreamble preambleValue
-        , _reportRows     :: ReportRows rowValue }
+        , _reportRows     :: ReportTable rowValue }
 
 data ReportPreamble preambleValue = ReportPreamble {
         _preambleValue :: [(ReportPreambleLabel, preambleValue)]
   }
 
-type ReportRowIndex = (Integer, ReportRowLabel)
 
-data ReportRows rowValue = ReportRows {
-      reportTableHeaders :: [ReportRowLabel]
-    , reportTable        ::  Map ReportRowIndex rowValue
-      }
+
+-- Map sorts first by row and then by
+
+type RowNumber = Integer
+type TableRowIndex = (RowNumber, ReportRowLabel)
+
+
+{-| even though the whole report here is designed around row data
+    There are many times we need col based data, totals being an obvious one
+    So you can select which way you want the data sorted and switch between them with
+    the transposeReportTableFunction which changes to the other of whichever version you are using
+|-}
+
+data ReportTable rowValue =  ReportTableRowIndex  [ReportRowLabel] (ReportTableRowStyle rowValue)
+                            | ReportTableColIndex  [ReportRowLabel]  (ReportTableColStyle rowValue)
+
+
+data ReportTableRowStyle rowValue = ReportTableRowStyle {
+    _rowMap ::  Map TableRowIndex rowValue
+ }
+
+
+type TableColIndex = (ReportRowLabel,RowNumber)
+
+data ReportTableColStyle rowValue = ReportTableColStyle {
+    _colMap ::  Map TableRowIndex rowValue
+ }
+
+
+renderReport :: ReportTemplate c pi po ri ro ->
+                  context  -> preIn -> [rowIn] ->  Report po ro
+renderReport reportTemplate context preIn rows = Report reportPreambleOut rowOut
+  where
+    reportPreambleOut = undefined
+    rowOut = undefined
+    preambleOutTransformMap = preambleTransformMap.reportPreambleTemplate $ reportTemplate
+    preambleTransformLabels = reportPreambleLabel.reportPreambleTemplate $ reportTemplate
+    rowOutTransformMap = rowTransformMap . reportRowsTemplate $ reportTemplate
+    rowTransformLabels = reportRowLabels . reportRowsTemplate $ reportTemplate
+    transformRowin row mp = foldr (\l lst -> case M.lookup l mp  of
+                                               Nothing -> lst
+                                               (Just f) -> f row )  preambleTransformLabels
+    transformPrein mp = foldr (\l lst -> case M.lookup l mp of
+                                            Nothing -> lst
+                                            (Just f) -> f preIn:lst ) [] preambleTransformLabels
