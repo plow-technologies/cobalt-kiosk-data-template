@@ -16,30 +16,43 @@ data rows.
 
 This is a generic library for transforming data into this form.
 
+The general form is:
+
+
+  <report preface label 1> <label 1 value></report preface label 1>
+  <report preface label 2> <label 2 value></report preface label 2>
+  <report preface label 3> <label 3 value></report preface label 3>
+  <report preface label 4> <label 4 value></report preface label 4>  
+
+<column label 1> <column label 2> <column label 3> ... <column label n>
+<r1c1 data>      <r1c2 data>      <r1c3 data>      ... <r1cn data>       
+.                                                   .
+.                                                   .
+.                                                   .                                                  
+<rnc1 data>     <rnc2 data>       <rnc3 data>      ... <rncn data>
+
 -}
 module ReportTemplate.Internal () where
 
 import           Data.Map.Strict
 
-type ReportHeaderLabel = String
+type ReportPrefaceLabel = String
 type ReportRowLabel  = String
 
-type ReportHeaderRetrievalMap context headerSource headerSink =
-                             Map ReportHeaderLabel (context -> headerSource -> headerSink )
+type ReportRetrievalMap context prefaceSource prefaceSink =
+                       Map ReportPrefaceLabel (context -> prefaceSource -> prefaceSink )
 
 type ReportRowRetrievalMap context rowSource rowSink =
                              Map ReportRowLabel (context -> rowSource -> rowSink)
 
-data ReportTemplate context headerSource headerSink rowSource rowSink = ReportTemplate {
-       reportHeader :: [ReportHeaderTemplate context headerSource headerSink]
+data ReportTemplate context prefaceSource prefaceSink rowSource rowSink = ReportTemplate {
+     reportPreface :: [ReportPrefaceTemplate context prefaceSource prefaceSink]
      , reportRows   :: [ReportRowTemplate context rowSource rowSink]}
 
-data ReportHeaderTemplate context headerSource headerSink = ReportHeaderTemplate {
-     reportHeaderLabel       :: [ReportHeaderLabel ]
-   , valueRetrievalFunctions :: [ReportHeaderRetrievalMap context headerSource headerSink ]
+data ReportPrefaceTemplate context prefaceSource prefaceSink = ReportPrefaceTemplate {
+     reportPrefaceLabel       :: [ReportPrefaceLabel ]
+   , valueRetrievalFunctions :: [ReportPrefaceRetrievalMap context prefaceSource prefaceSink ]
 }
-
-
 
 data ReportRowTemplate context  rowSource rowSink = ReportRowTemplate {
       reportRowLabels             :: [ReportRowLabel]
@@ -48,3 +61,6 @@ data ReportRowTemplate context  rowSource rowSink = ReportRowTemplate {
 
 
 
+
+data RenderedReport prefaceValue rowValue = RenderedReport {
+         reportPreface :: }
