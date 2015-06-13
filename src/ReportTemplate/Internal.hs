@@ -1,3 +1,4 @@
+{-# LANGUAGE RankNTypes #-}
 
 {- |
 Module      :  ReportTemplate.Internal
@@ -178,21 +179,25 @@ data ReportTableColStyle rowValue = ReportTableColStyle {
 
 
 renderReport :: ReportTemplate context preIn preOut rowIn rowOut ->
-                  context  -> preIn -> [rowIn] ->  Report preOut ro
+                  context  -> preIn -> [rowIn] ->  Report preOut rowOut
 renderReport reportTemplate context preIn rows = Report reportPreambleOut rowOut
   where
     reportPreambleOut = undefined
-    rowOut = undefined
+    rowOut = undefined -- ReportTableRowIndex rowTransformLabels  (ReportTableRowStyle rowOutTransformMap)
     preambleOutTransformMap = preambleTransformMap.reportPreambleTemplate $ reportTemplate
     preambleTransformLabels = reportPreambleLabel.reportPreambleTemplate $ reportTemplate
     rowOutTransformMap = rowTransformMap . reportRowsTemplate $ reportTemplate
     rowTransformLabels = reportRowLabels . reportRowsTemplate $ reportTemplate
-    transformRows = zipWith (transformRowin rowOutTransformMap ) [1 ..] rows
-    transformRowin mp i row  = foldr (\l mpTbl -> case M.lookup l mp  of
-                                                       Nothing -> mpTbl
-                                                       (Just f) -> M.insert (i,l) (f context row) mpTbl ) M.empty  preambleTransformLabels
-
-
     transformPrein mp = foldr (\l lst -> case M.lookup l mp of
                                             Nothing -> lst
                                             (Just f) -> (l, f context preIn):lst ) [] preambleTransformLabels
+
+
+
+-- transformRows context rowOutTransformMap rows = M.unions $ zipWith (transformRowin rowOutTransformMap ) [1 ..] rows
+
+transformRowin :: forall rowOut  context rowSource.
+                        context -> [ReportRowLabel] -> ReportRowRetrievalMap context rowSource rowOut -> RowNumber -> rowSource -> Map TableRowIndex rowOut
+transformRowin context rowTransformLabel mp i row  = foldr (\l mpTbl -> case M.lookup l mp  of
+                                                                                 Nothing -> mpTbl
+                                                                                 (Just f) -> M.insert (i,l) (f context row) mpTbl ) M.empty  rowTransformLabel
