@@ -35,6 +35,7 @@ The general form is:
 
 
 -}
+
 module ReportTemplate.Internal (ReportTemplate
                                   , ReportPreambleLabel
                                   , ReportRowLabel
@@ -47,14 +48,18 @@ module ReportTemplate.Internal (ReportTemplate
                                ,    rowTransformMap
                                ,    ReportPreamble(..)
                                ,    ReportTable(..)
+                               ,    ReportTableRowStyle(..)
+                               ,    ReportTableColStyle(..)
                                ,    Report(..)
                                ,    RowNumber
                                ,    TableRowIndex
                                ,    TableColIndex
+                               ,    renderReport
                                   , reportPreambleLabel
                                   , preambleTransformMap ) where
 
-import           Control.Applicative (pure, (<$>), (<*>))
+
+import           Control.Applicative ((<$>))
 import           Data.Map.Strict     (Map)
 import qualified Data.Map.Strict     as M
 
@@ -188,7 +193,6 @@ renderReport reportTemplate context preIn rows = Report reportPreambleOut rowOut
     preambleLabels = reportPreambleLabel.reportPreambleTemplate $ reportTemplate
     rowOutTransformMap = rowTransformMap . reportRowsTemplate $ reportTemplate
     rowTransformLabels = reportRowLabels . reportRowsTemplate $ reportTemplate
-
 
 
 -- |Transform Preamble
