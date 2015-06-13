@@ -37,10 +37,20 @@ The general form is:
 module ReportTemplate.Internal (ReportTemplate
                                   , ReportPreambleLabel
                                   , ReportRowLabel
-                                  , buildReportPreambleTemplate ) where
+                                  , buildReportTemplate
+                                  , buildReportPreambleTemplate
+                                  , buildReportRowTemplate
+                                  , reportPreambleTemplate
+                                  , reportRowsTemplate
+                               ,    reportRowLabels
+                               ,    rowTransformMap
+                               ,    ReportPreamble(..)
+                               ,    ReportRows(..)
+                               ,    Report(..)
+                                  , reportPreambleLabel
+                                  , preambleTransformMap ) where
 
-import           Control.Applicative ((<$>), (<*>))
-import           Data.List           (sort)
+import           Control.Applicative ((<$>))
 import           Data.Map.Strict     (Map)
 import qualified Data.Map.Strict     as M
 
@@ -70,6 +80,16 @@ data ReportTemplate context preambleSource preambleSink rowSource rowSink = Repo
      reportPreambleTemplate :: ReportPreambleTemplate context preambleSource preambleSink
    , reportRowsTemplate     :: ReportRowTemplate context rowSource rowSink }
 
+
+buildReportTemplate
+  :: [(ReportPreambleLabel,
+       context -> preambleSource -> preambleSink)]
+     -> [(ReportRowLabel, context -> rowSource -> rowSink)]
+     -> ReportTemplate
+          context preambleSource preambleSink rowSource rowSink
+buildReportTemplate preambleTransformList rowTransformList = ReportTemplate
+                                                                   (buildReportPreambleTemplate preambleTransformList)
+                                                                   (buildReportRowTemplate rowTransformList)
 
 
 -- | the Preamble Template consists of two parts
@@ -111,7 +131,22 @@ type ReportRowRetrievalMap context rowSource rowSink =
                              Map ReportRowLabel (context -> rowSource -> rowSink)
 
 
--- | The order that
+-- | The order that things happen is often very important so an Integer
+-- is used as the start ord value for both things
 
-data RenderedReport preambleValue rowValue = RenderedReport {
-         reportPreamble :: [preambleValue]}
+
+
+data Report preambleValue rowValue = Report {
+          _reportPreamble :: ReportPreamble preambleValue
+        , _reportRows     :: ReportRows rowValue }
+
+data ReportPreamble preambleValue = ReportPreamble {
+        _preambleValue :: [(ReportPreambleLabel, preambleValue)]
+  }
+
+type ReportRowIndex = (Integer, ReportRowLabel)
+
+data ReportRows rowValue = ReportRows {
+      reportTableHeaders :: [ReportRowLabel]
+    , reportTable        ::  Map ReportRowIndex rowValue
+      }
