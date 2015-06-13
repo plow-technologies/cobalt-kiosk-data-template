@@ -34,12 +34,18 @@ The general form is:
 
 
 -}
-module ReportTemplate.Internal () where
+module ReportTemplate.Internal (ReportTemplate
+                                  , ReportPreambleLabel
+                                  , ReportRowLabel
+                                  , buildReportPreambleTemplate ) where
 
-import           Data.Map.Strict (Map)
-import qualified Data.Map.Strict as M
+import           Control.Applicative ((<$>), (<*>))
+import           Data.List           (sort)
+import           Data.Map.Strict     (Map)
+import qualified Data.Map.Strict     as M
 
 -- Very simple labeling
+
 type ReportPreambleLabel = String
 type ReportRowLabel  = String
 
@@ -61,8 +67,10 @@ type ReportRowLabel  = String
 
 -- | This is the main datatype that you build to generate the Rendered Report datatype
 data ReportTemplate context preambleSource preambleSink rowSource rowSink = ReportTemplate {
-     reportPreambleTemplate :: [ReportPreambleTemplate context preambleSource preambleSink]
-     , reportRowsTemplate   :: [ReportRowTemplate context rowSource rowSink]}
+     reportPreambleTemplate :: ReportPreambleTemplate context preambleSource preambleSink
+   , reportRowsTemplate     :: ReportRowTemplate context rowSource rowSink }
+
+
 
 -- | the Preamble Template consists of two parts
 -- the '[ReportPreambleLabel]' which sets the order and content of the given data
@@ -70,12 +78,18 @@ data ReportTemplate context preambleSource preambleSink rowSource rowSink = Repo
 -- Notice that while each of the given field accessors is exported, the  'ReportPreambleTemplate' is
 -- not.  The smart constructor must be used to build this.
 data ReportPreambleTemplate context preambleSource preambleSink = ReportPreambleTemplate {
-     reportPreambleLabel  :: [ReportPreambleLabel ]
+     reportPreambleLabel  :: [ReportPreambleLabel]
    , preambleTransformMap :: ReportPreambleRetrievalMap context preambleSource preambleSink
 }
 
-buildReportPreambleTemplate labels xformMap
-   |length labels == M.size xformMap = ReportPreambleTemplate labels xformMap
+
+
+buildReportPreambleTemplate :: [( ReportPreambleLabel, context -> rowSource -> rowSink )] ->
+                                     ReportPreambleTemplate context rowSource rowSink
+buildReportPreambleTemplate labelXformList = ReportPreambleTemplate labelList labelMap
+         where
+           labelList = fst <$> labelXformList
+           labelMap  = M.fromList labelXformList
 
 type ReportPreambleRetrievalMap context preambleSource preambleSink =
                        Map ReportPreambleLabel (context -> preambleSource -> preambleSink )
@@ -86,7 +100,12 @@ data ReportRowTemplate context  rowSource rowSink = ReportRowTemplate {
     , rowTransformMap :: ReportRowRetrievalMap context rowSource rowSink
 }
 
-
+buildReportRowTemplate :: [( ReportRowLabel, context -> rowSource -> rowSink )] ->
+                             ReportRowTemplate context rowSource rowSink
+buildReportRowTemplate labelXformList = ReportRowTemplate labelList labelMap
+         where
+           labelList = fst <$> labelXformList
+           labelMap  = M.fromList labelXformList
 
 type ReportRowRetrievalMap context rowSource rowSink =
                              Map ReportRowLabel (context -> rowSource -> rowSink)
