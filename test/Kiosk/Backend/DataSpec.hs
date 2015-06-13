@@ -29,7 +29,7 @@ import           TestImport                      (testJSON)
 
 
 main :: IO ()
-main = print "got here" >> hspec spec
+main =  hspec spec
 
 spec :: Spec
 spec = do

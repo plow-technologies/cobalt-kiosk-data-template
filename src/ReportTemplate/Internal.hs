@@ -39,6 +39,8 @@ The general form is:
 module ReportTemplate.Internal (ReportTemplate
                                   , ReportPreambleLabel
                                   , ReportRowLabel
+                               ,    ReportPreambleTemplate
+                               ,    ReportRowTemplate
                                   , buildReportTemplate
                                   , buildReportPreambleTemplate
                                   , buildReportRowTemplate
