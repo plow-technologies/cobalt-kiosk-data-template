@@ -194,10 +194,17 @@ renderReport reportTemplate context preIn rows = Report reportPreambleOut rowOut
 
 
 
--- transformRows context rowOutTransformMap rows = M.unions $ zipWith (transformRowin rowOutTransformMap ) [1 ..] rows
+-- |Transform rows
+transformRows :: forall rowSource rowOut context.
+                       context
+                       -> [ReportRowLabel]
+                       -> ReportRowRetrievalMap context rowSource rowOut
+                       -> [rowSource]
+                       -> [Map TableRowIndex rowOut]
+transformRows context rowTransformLabels rowOutTransformMap = zipWith (transformRowin context rowTransformLabels rowOutTransformMap  ) [1 ..]
 
 transformRowin :: forall rowOut  context rowSource.
                         context -> [ReportRowLabel] -> ReportRowRetrievalMap context rowSource rowOut -> RowNumber -> rowSource -> Map TableRowIndex rowOut
-transformRowin context rowTransformLabel mp i row  = foldr (\l mpTbl -> case M.lookup l mp  of
-                                                                                 Nothing -> mpTbl
-                                                                                 (Just f) -> M.insert (i,l) (f context row) mpTbl ) M.empty  rowTransformLabel
+transformRowin context rowTransformLabels mp i row  = foldr (\l mpTbl -> case M.lookup l mp  of
+                                                                                  Nothing -> mpTbl
+                                                                                  (Just f) -> M.insert (i,l) (f context row) mpTbl ) M.empty  rowTransformLabels
