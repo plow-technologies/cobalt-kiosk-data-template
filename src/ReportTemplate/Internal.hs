@@ -22,45 +22,77 @@ The general form is:
   <report preface label 1> <label 1 value></report preface label 1>
   <report preface label 2> <label 2 value></report preface label 2>
   <report preface label 3> <label 3 value></report preface label 3>
-  <report preface label 4> <label 4 value></report preface label 4>  
+  <report preface label 4> <label 4 value></report preface label 4>
 
 <column label 1> <column label 2> <column label 3> ... <column label n>
-<r1c1 data>      <r1c2 data>      <r1c3 data>      ... <r1cn data>       
+<r1c1 data>      <r1c2 data>      <r1c3 data>      ... <r1cn data>
 .                                                   .
 .                                                   .
-.                                                   .                                                  
+.                                                   .
 <rnc1 data>     <rnc2 data>       <rnc3 data>      ... <rncn data>
+
+
 
 -}
 module ReportTemplate.Internal () where
 
-import           Data.Map.Strict
+import           Data.Map.Strict (Map)
+import qualified Data.Map.Strict as M
 
-type ReportPrefaceLabel = String
+-- Very simple labeling
+type ReportPreambleLabel = String
 type ReportRowLabel  = String
 
-type ReportRetrievalMap context prefaceSource prefaceSink =
-                       Map ReportPrefaceLabel (context -> prefaceSource -> prefaceSink )
+
+{--|
+# A Description of the typeParameters
+
+* 'context' --> Might be time or some positional value fields that help determine the proper coding
+            whatever it is you only get to choose one thing for a given 'ReportTemplate'
+* 'preambleSource' --> Whatever datatype you intend to use to build the  beginning portion of the report
+                       Which is so often different than the rest of the report
+
+* 'preambleSink' --> Often just a Text value or a JSON one, this is what you end up with after a preambleSource transformation
+
+* 'rowSource' --> The datatype to build each row of the report
+* 'rowSink'   --> the result of transforming the rowSource
+
+|--}
+
+-- | This is the main datatype that you build to generate the Rendered Report datatype
+data ReportTemplate context preambleSource preambleSink rowSource rowSink = ReportTemplate {
+     reportPreambleTemplate :: [ReportPreambleTemplate context preambleSource preambleSink]
+     , reportRowsTemplate   :: [ReportRowTemplate context rowSource rowSink]}
+
+-- | the Preamble Template consists of two parts
+-- the '[ReportPreambleLabel]' which sets the order and content of the given data
+-- the preambleTransformMap which takes a source and context for a given label and returns a sink
+-- Notice that while each of the given field accessors is exported, the  'ReportPreambleTemplate' is
+-- not.  The smart constructor must be used to build this.
+data ReportPreambleTemplate context preambleSource preambleSink = ReportPreambleTemplate {
+     reportPreambleLabel  :: [ReportPreambleLabel ]
+   , preambleTransformMap :: ReportPreambleRetrievalMap context preambleSource preambleSink
+}
+
+buildReportPreambleTemplate labels xformMap
+   |length labels == M.size xformMap = ReportPreambleTemplate labels xformMap
+
+type ReportPreambleRetrievalMap context preambleSource preambleSink =
+                       Map ReportPreambleLabel (context -> preambleSource -> preambleSink )
+
+
+data ReportRowTemplate context  rowSource rowSink = ReportRowTemplate {
+      reportRowLabels :: [ReportRowLabel]
+    , rowTransformMap :: ReportRowRetrievalMap context rowSource rowSink
+}
+
+
 
 type ReportRowRetrievalMap context rowSource rowSink =
                              Map ReportRowLabel (context -> rowSource -> rowSink)
 
-data ReportTemplate context prefaceSource prefaceSink rowSource rowSink = ReportTemplate {
-     reportPreface :: [ReportPrefaceTemplate context prefaceSource prefaceSink]
-     , reportRows   :: [ReportRowTemplate context rowSource rowSink]}
 
-data ReportPrefaceTemplate context prefaceSource prefaceSink = ReportPrefaceTemplate {
-     reportPrefaceLabel       :: [ReportPrefaceLabel ]
-   , valueRetrievalFunctions :: [ReportPrefaceRetrievalMap context prefaceSource prefaceSink ]
-}
+-- | The order that
 
-data ReportRowTemplate context  rowSource rowSink = ReportRowTemplate {
-      reportRowLabels             :: [ReportRowLabel]
-    , reportRowRetrievalFunctions :: ReportRowRetrievalMap context rowSource rowSink
-}
-
-
-
-
-data RenderedReport prefaceValue rowValue = RenderedReport {
-         reportPreface :: }
+data RenderedReport preambleValue rowValue = RenderedReport {
+         reportPreamble :: [preambleValue]}
