@@ -177,8 +177,8 @@ data ReportTableColStyle rowValue = ReportTableColStyle {
  }
 
 
-renderReport :: ReportTemplate c pi po ri ro ->
-                  context  -> preIn -> [rowIn] ->  Report po ro
+renderReport :: ReportTemplate context preIn preOut rowIn rowOut ->
+                  context  -> preIn -> [rowIn] ->  Report preOut ro
 renderReport reportTemplate context preIn rows = Report reportPreambleOut rowOut
   where
     reportPreambleOut = undefined
@@ -187,9 +187,12 @@ renderReport reportTemplate context preIn rows = Report reportPreambleOut rowOut
     preambleTransformLabels = reportPreambleLabel.reportPreambleTemplate $ reportTemplate
     rowOutTransformMap = rowTransformMap . reportRowsTemplate $ reportTemplate
     rowTransformLabels = reportRowLabels . reportRowsTemplate $ reportTemplate
-    transformRowin row mp = foldr (\l lst -> case M.lookup l mp  of
-                                               Nothing -> lst
-                                               (Just f) -> f row )  preambleTransformLabels
+    transformRows = zipWith (transformRowin rowOutTransformMap ) [1 ..] rows
+    transformRowin mp i row  = foldr (\l mpTbl -> case M.lookup l mp  of
+                                                       Nothing -> mpTbl
+                                                       (Just f) -> M.insert (i,l) (f context row) mpTbl ) M.empty  preambleTransformLabels
+
+
     transformPrein mp = foldr (\l lst -> case M.lookup l mp of
                                             Nothing -> lst
-                                            (Just f) -> f preIn:lst ) [] preambleTransformLabels
+                                            (Just f) -> (l, f context preIn):lst ) [] preambleTransformLabels
