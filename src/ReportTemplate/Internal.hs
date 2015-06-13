@@ -182,17 +182,23 @@ renderReport :: ReportTemplate context preIn preOut rowIn rowOut ->
                   context  -> preIn -> [rowIn] ->  Report preOut rowOut
 renderReport reportTemplate context preIn rows = Report reportPreambleOut rowOut
   where
-    reportPreambleOut = undefined
+    reportPreambleOut = ReportPreamble . transformPrein context preIn preambleLabels $ preambleOutTransformMap
     rowOut = ReportTableRowIndex rowTransformLabels . ReportTableRowStyle . transformRows context rowTransformLabels rowOutTransformMap $ rows
     preambleOutTransformMap = preambleTransformMap.reportPreambleTemplate $ reportTemplate
-    preambleTransformLabels = reportPreambleLabel.reportPreambleTemplate $ reportTemplate
+    preambleLabels = reportPreambleLabel.reportPreambleTemplate $ reportTemplate
     rowOutTransformMap = rowTransformMap . reportRowsTemplate $ reportTemplate
     rowTransformLabels = reportRowLabels . reportRowsTemplate $ reportTemplate
-    transformPrein mp = foldr (\l lst -> case M.lookup l mp of
-                                            Nothing -> lst
-                                            (Just f) -> (l, f context preIn):lst ) [] preambleTransformLabels
 
 
+
+-- |Transform Preamble
+-- transformPrein :: ReportPreambleRetrievalMap context preamble
+transformPrein :: context -> preambleSource -> [ReportPreambleLabel] ->
+                  Map ReportPreambleLabel (context -> preambleSource -> preambleSink) ->
+                  [(ReportPreambleLabel, preambleSink)]
+transformPrein context preIn preambleTransformLabels mp = foldr (\l lst -> case M.lookup l mp of
+                                                                                  Nothing -> lst
+                                                                                  (Just f) -> (l, f context preIn):lst ) [] preambleTransformLabels
 
 -- |Transform rows
 transformRows :: forall rowSource rowOut context.
