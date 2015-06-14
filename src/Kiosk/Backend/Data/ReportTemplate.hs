@@ -46,7 +46,7 @@ makeLenses ''InputDouble
 
 -- | Kiosk Specific
 type KioskPreambleTemplateList context preOut= [(ReportPreambleLabel, context -> Form -> preOut)]
-type KioskRowTemplateList context rowOut = [(ReportRowLabel, context -> Form -> rowOut)]
+type KioskRowTemplateList context rowOut = [(ReportRowLabel, context -> DataTemplate -> rowOut)]
 type KioskPreambleTemplate context preOut= ReportPreambleTemplate context Form preOut
 type KioskRowTemplate context rowOut = ReportRowTemplate context DataTemplate rowOut
 
@@ -57,8 +57,8 @@ data XlsxContext = XlsxContext {
                  _xlsxCurrentTime :: UTCTime}
 
 type XlsxReportTemplate = KioskReportTemplate XlsxContext CellMap Cell
-type XlsxPreambleTemplateList = KioskRowTemplate XlsxContext CellMap
-type XlsxRowTemplateList = KioskPreambleTemplate XlsxContext Cell
+type XlsxPreambleTemplateList = KioskPreambleTemplateList XlsxContext CellMap
+type XlsxRowTemplateList = KioskRowTemplateList XlsxContext Cell
 type XlsxReport = Report CellMap Cell
 type XlsxPreamble = ReportPreamble CellMap
 type XlsxTable = ReportTable Cell

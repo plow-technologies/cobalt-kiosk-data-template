@@ -66,34 +66,34 @@ spec = do
    it "Gets an InputText and transfers it to a CellText" $ do
     True `shouldBe` True
 
-
-
+makeCobaltExcelTemplate :: XlsxReportTemplate
 makeCobaltExcelTemplate = buildReportTemplate preambleTemplate rowTemplate
 
-
-
+preambleTemplate :: XlsxPreambleTemplateList
 preambleTemplate = [("Report Prepared For", const $ getCompanyName (1,1))
-                   ,("Prepared On", formatTimestampDate )]
+                   , ("Prepared On", formatTimestampDate )]
  where
     formatTimestampDate context _ = makeCellMapFromUTCTime "%c" (2,2) . _xlsxCurrentTime $ context
-rowTemplate = [("Timestamp",formatTimestampDate)
-              ,("Date",formatDate)
-              ,("Name of Water Hauling Co.", getWaterHauler)
-              ,("Lease Operator Name",getLeaseOperator)
-              ,("Lease Name",getLeaseName)
-              ,("Number of Barrels Produced Water", getProducedWater)
-              ,("Number of Barrels Flowback Water", getFlowbackWater)
-              ,("Truck Number",getTruckNumber)]
 
-  where
-    formatTimestampDate = undefined
-    getLeaseName = undefined
-    formatDate = undefined
-    getWaterHauler = undefined
-    getLeaseOperator = undefined
-    getProducedWater = undefined
-    getFlowbackWater = undefined
-    getTruckNumber   = undefined
+rowTemplate:: XlsxRowTemplateList
+rowTemplate = [("Timestamp",formatTimestampDate)
+                         ,("Date",formatDate)
+                         ,("Name of Water Hauling Co.", getWaterHauler)
+                         ,("Lease Operator Name",getLeaseOperator)
+                         ,("Lease Name",getLeaseName)
+                         ,("Number of Barrels Produced Water", getProducedWater)
+                         ,("Number of Barrels Flowback Water", getFlowbackWater)
+                         ,("Truck Number",getTruckNumber)]
+
+             where
+               formatTimestampDate = undefined
+               getLeaseName = undefined
+               formatDate = undefined
+               getWaterHauler = undefined
+               getLeaseOperator = undefined
+               getProducedWater = undefined
+               getFlowbackWater = undefined
+               getTruckNumber   = undefined
 
 -- | Form Generation (Cobalt Version)
 convertToKioskForm :: CobaltWaterHaulingCompany -> Form
