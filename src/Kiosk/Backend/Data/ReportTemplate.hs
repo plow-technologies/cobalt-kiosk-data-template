@@ -67,19 +67,17 @@ type XlsxTable = ReportTable Cell
 -- Render Xlsx
 
 
-renderReportTemplate xlsxRT xlsxCtx = combineCellMapGenerateWorksheet preambleCellMap
-                                                                        rowCellMap
+renderXlsxReport xlsxRT xlsxCtx form dataTemplates = Report preambleCellMap rowCellMap
   where
-     preambleCellMap = renderReportPreamble (reportPreambleTemplate xlsxRT)                                                                            xlsxCtx
-
-     rowCellMap = renderReportRow (reportRowsTemplate xlsxRT) xlsxCtx
+     preambleCellMap = renderReportPreamble (reportPreambleTemplate xlsxRT) xlsxCtx form
+     rowCellMap = renderReportRows (reportRowsTemplate xlsxRT) xlsxCtx dataTemplates
      combineCellMapGenerateWorksheet = undefined
 
 renderReportPreamble :: XlsxPreambleTemplate -> XlsxContext -> Form -> XlsxPreamble
 renderReportPreamble xlsxPreTemplate = undefined
 
-renderReportRow :: XlsxRowTemplate -> XlsxContext -> DataTemplate -> XlsxTable
-renderReportRow = undefined
+renderReportRows :: XlsxRowTemplate -> XlsxContext -> [DataTemplate] -> XlsxTable
+renderReportRows = undefined
 
 makeCellDoubleFromInputDouble :: Text -> DataTemplate -> Cell
 makeCellDoubleFromInputDouble = makeCellValueFromDataTemplate CellDouble inputDoubleLens
