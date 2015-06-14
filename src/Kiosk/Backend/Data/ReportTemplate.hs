@@ -25,11 +25,12 @@ import qualified Data.Map.Lazy                   as M
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Text                       (Text)
--- import qualified Data.Text                       as T
+import qualified Data.Text                       as T
 import           Data.Time
 import           Kiosk.Backend.Data.DataTemplate
 import           Kiosk.Backend.Form
 import           ReportTemplate.Internal
+import           System.Locale
 type KioskReportTemplate context preOut rowOut= ReportTemplate context Form preOut DataTemplate rowOut
 
 
@@ -81,13 +82,22 @@ makeCellTextFromInputText = makeCellValueFromDataTemplate CellText inputTextLens
 
 -- | Excel Form Rendering Helper Functions
 -- Because the excel preamble is a full cell map
-
 getCompanyName :: (Int,Int) -> Form -> CellMap
-getCompanyName key form = M.insert key outputCell M.empty
+getCompanyName key form = makeCellMapFromText key companyName
   where
-    outputCell :: Cell
-    outputCell = def & cellValue .~ (Just . CellText $ companyName)
     companyName = form ^. getCompany.getCompanyText
+
+makeCellMapFromText :: (Int,Int) -> Text -> CellMap
+makeCellMapFromText key t = M.insert key cellText M.empty
+  where
+    cellText = def & cellValue .~ (Just . CellText $ t)
+
+makeCellMapFromUTCTime ::  String -> (Int, Int) -> UTCTime -> CellMap
+makeCellMapFromUTCTime timeFormatString key  = makeCellMapFromText key .
+                                               T.pack .
+                                               formatTime defaultTimeLocale
+                                                          timeFormatString
+
 
 -- | Row Rendering Helper Functions
 makeCellValueFromDataTemplate ::

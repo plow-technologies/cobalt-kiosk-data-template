@@ -33,20 +33,29 @@ import qualified Data.Text                         as T
 -- import qualified Data.Map.Strict                   as M
 -- import           Data.Maybe                        (catMaybes)
 -- import           Data.Monoid                       ((<>))
--- import           Data.Time
+import           Data.Time
 
 -- import           Kiosk.Backend.Data.DataTemplate
+import           Data.Map.Lazy                     (Map)
+import qualified Data.Map.Lazy                     as M
+import           Data.Text                         (Text)
+import qualified Data.Text                         as T
 import           Kiosk.Backend.Data.ReportTemplate
 import           Kiosk.Backend.Form
 import           Language.Haskell.TH
+
+import           Codec.Xlsx
+
 -- import           Mocks.Primitive.Generators        (GeneratorType (..),
 --                                                     generateInts)
 import           ReportTemplate.Internal
--- import           System.Locale                     (defaultTimeLocale)
+import           System.Locale                     (defaultTimeLocale)
 import           Test.Hspec
 -- import           Test.QuickCheck
+
 main :: IO ()
 main = hspec spec
+
 
 spec :: SpecWith ()
 spec = do
@@ -58,11 +67,33 @@ spec = do
     True `shouldBe` True
 
 
--- makeCobaltExcelTemplate = buildReportTemplate preambleTemplate rowTemplate
+
+makeCobaltExcelTemplate = buildReportTemplate preambleTemplate rowTemplate
 
 
--- preambleTemplate = ["Report Prepared For",getCompanyName]
 
+preambleTemplate = [("Report Prepared For", const $ getCompanyName (1,1))
+                   ,("Prepared On", formatTimestampDate )]
+ where
+    formatTimestampDate context _ = makeCellMapFromUTCTime "%c" (2,2) . _xlsxCurrentTime $ context
+rowTemplate = [("Timestamp",formatTimestampDate)
+              ,("Date",formatDate)
+              ,("Name of Water Hauling Co.", getWaterHauler)
+              ,("Lease Operator Name",getLeaseOperator)
+              ,("Lease Name",getLeaseName)
+              ,("Number of Barrels Produced Water", getProducedWater)
+              ,("Number of Barrels Flowback Water", getFlowbackWater)
+              ,("Truck Number",getTruckNumber)]
+
+  where
+    formatTimestampDate = undefined
+    getLeaseName = undefined
+    formatDate = undefined
+    getWaterHauler = undefined
+    getLeaseOperator = undefined
+    getProducedWater = undefined
+    getFlowbackWater = undefined
+    getTruckNumber   = undefined
 
 -- | Form Generation (Cobalt Version)
 convertToKioskForm :: CobaltWaterHaulingCompany -> Form
