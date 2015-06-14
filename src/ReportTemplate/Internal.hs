@@ -169,8 +169,8 @@ type TableRowIndex = (RowNumber, ReportRowLabel)
     the transposeReportTableFunction which changes to the other of whichever version you are using
 |-}
 
-data ReportTable rowValue =  ReportTableRowIndex  [ReportRowLabel] (ReportTableRowStyle rowValue)
-                            | ReportTableColIndex  [ReportRowLabel]  (ReportTableColStyle rowValue)
+data ReportTable rowValue =  ReportTableRowIndex   ( [ReportRowLabel], ReportTableRowStyle rowValue)
+                            | ReportTableColIndex    ([ReportRowLabel], ReportTableColStyle rowValue)
 
 
 data ReportTableRowStyle rowValue = ReportTableRowStyle {
@@ -190,7 +190,7 @@ renderReport :: ReportTemplate context preIn preOut rowIn rowOut ->
 renderReport reportTemplate context preIn rows = Report reportPreambleOut rowOut
   where
     reportPreambleOut = ReportPreamble . transformPrein context preIn preambleLabels $ preambleOutTransformMap
-    rowOut = ReportTableRowIndex rowTransformLabels . ReportTableRowStyle . transformRows context rowTransformLabels rowOutTransformMap $ rows
+    rowOut = ReportTableRowIndex (rowTransformLabels , ReportTableRowStyle . transformRows context rowTransformLabels rowOutTransformMap $ rows)
     preambleOutTransformMap = preambleTransformMap.reportPreambleTemplate $ reportTemplate
     preambleLabels = reportPreambleLabel.reportPreambleTemplate $ reportTemplate
     rowOutTransformMap = rowTransformMap . reportRowsTemplate $ reportTemplate

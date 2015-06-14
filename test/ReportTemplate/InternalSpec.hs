@@ -17,11 +17,13 @@ Portability :  portable
 -}
 
 module ReportTemplate.InternalSpec (main,spec) where
-
 import           Control.Applicative             ((<$>), (<*>))
 import           Control.Lens
 import           Data.Aeson                      (Value (..), toJSON)
+import           Data.Map.Strict                 (Map)
+import qualified Data.Map.Strict                 as M
 import           Data.Maybe                      (catMaybes)
+import           Data.Monoid                     ((<>))
 import           Data.Text                       (Text)
 import qualified Data.Text                       as T
 import           Data.Time
@@ -36,6 +38,10 @@ import           Test.Hspec
 import           Test.QuickCheck
 
 makeLenses ''Company
+makeLenses ''Report
+makePrisms ''ReportTable
+makeLenses ''ReportTableRowStyle
+makeLenses ''ReportPreamble
 
 main :: IO ()
 main = hspec spec
@@ -48,7 +54,7 @@ spec = do
 
 
 testFormTemplate = take 1 <$> (generate . generateForm $ Static)
-testDataTemplateEntries = take 1 <$> (generate . generateDataTemplate $ Static)
+testDataTemplateEntries i = take i <$> (generate . generateDataTemplate $ Static)
 
 data ReportContext = ReportContext { currentTime :: UTCTime }
 
@@ -57,8 +63,17 @@ type TestPreambleTemplate = [(ReportPreambleLabel, ReportContext -> Form -> Valu
 type TestRowTemplate = [(ReportRowLabel, ReportContext -> DataTemplate -> Value)]
 
 
-buildTestReportTemplate :: TestReportTemplate
-buildTestReportTemplate = buildReportTemplate preambleTemplate rowTemplate
+-- | this is a rendered report
+testReport :: Int -> IO (Report Value Value)
+testReport i = do
+   (oneForm:_) <- testFormTemplate
+   dtes <- testDataTemplateEntries i
+   tm   <- ReportContext <$> getCurrentTime
+   return . renderReport testReportTemplate tm oneForm $ dtes
+
+-- | This is a test Report Template which should constructo a Report
+testReportTemplate :: TestReportTemplate
+testReportTemplate = buildReportTemplate preambleTemplate rowTemplate
 
 preambleTemplate :: TestPreambleTemplate
 preambleTemplate = [("Company Name", const getFormConstant)]
@@ -71,6 +86,7 @@ rowTemplate = [("The First Item ",getItem0Text)
    getItem0Text _ dt = getValFromDataTemplate "item 0" dt
    getItem1Text _ dt = getValFromDataTemplate "item 1" dt
    getItemTime t _ = toJSON.show.currentTime $ t
+
 getFormConstant :: Form -> Value
 getFormConstant form = toJSON $ form ^. getCompany.getCompanyText
 
@@ -83,3 +99,18 @@ getValFromDataTemplate l dt = toJSON . catMaybes.
 getItemMatchingLabel l (TemplateItem lbl inVal)
  |l == lbl = Just inVal
  |otherwise = Nothing
+
+
+testBuildADocument report = "Welcome to another fine report \n" <>
+                            renderPreamble
+                            <> "\n\n\n"
+                            <> renderRowByRow
+  where
+   renderPreamble = T.unwords . fmap renderPreamblePair $ report ^. (reportPreamble.preambleValue)
+   renderPreamblePair (l,v) = (T.pack l)<> ": " <> (T.pack . show $ l)
+   renderRowByRow = M.foldrWithKey renderRowString "" $ report ^. (reportRows .
+                                                                   _ReportTableRowIndex.
+                                                                   rowMap)
+
+
+renderRowString = undefined
