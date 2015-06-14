@@ -199,12 +199,14 @@ renderReport reportTemplate context preIn rows = Report reportPreambleOut rowOut
 
 -- |Transform Preamble
 -- transformPrein :: ReportPreambleRetrievalMap context preamble
+
 transformPrein :: context -> preambleSource -> [ReportPreambleLabel] ->
                   Map ReportPreambleLabel (context -> preambleSource -> preambleSink) ->
                   [(ReportPreambleLabel, preambleSink)]
 transformPrein context preIn preambleTransformLabels mp = foldr (\l lst -> case M.lookup l mp of
                                                                                   Nothing -> lst
                                                                                   (Just f) -> (l, f context preIn):lst ) [] preambleTransformLabels
+
 
 -- |Transform rows
 transformRows :: forall rowSource rowOut context.

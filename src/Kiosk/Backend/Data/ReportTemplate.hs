@@ -20,6 +20,8 @@ module Kiosk.Backend.Data.ReportTemplate where
 import           Codec.Xlsx
 -- import           Control.Applicative             ((<$>), (<*>))
 import           Control.Lens
+
+import qualified Data.Map.Lazy                   as M
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Text                       (Text)
@@ -76,6 +78,16 @@ makeCellTextFromInputText = makeCellValueFromDataTemplate CellText inputTextLens
                                        where
                                           inputTextLens = _InputTypeText.getInputText
 
+
+-- | Excel Form Rendering Helper Functions
+-- Because the excel preamble is a full cell map
+
+getCompanyName :: (Int,Int) -> Form -> CellMap
+getCompanyName key form = M.insert key outputCell M.empty
+  where
+    outputCell :: Cell
+    outputCell = def & cellValue .~ (Just . CellText $ companyName)
+    companyName = form ^. getCompany.getCompanyText
 
 -- | Row Rendering Helper Functions
 makeCellValueFromDataTemplate ::

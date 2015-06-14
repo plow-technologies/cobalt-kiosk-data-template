@@ -18,9 +18,9 @@ it specifically relates to data templates
 
 
 
-module Kiosk.Backend.Data.ReportTemplateSpec (spec,main) where
+module Kiosk.Backend.Data.ReportTemplateSpec (spec,main,convertToKioskForm) where
 
-import           Control.Applicative               ((<$>), (<*>))
+import           Control.Applicative               ((<$>))
 import           Data.String                       (IsString)
 -- import           Control.Lens
 import           Data.Aeson
@@ -34,17 +34,17 @@ import qualified Data.Text                         as T
 -- import           Data.Maybe                        (catMaybes)
 -- import           Data.Monoid                       ((<>))
 -- import           Data.Time
-import           Generators
+
 -- import           Kiosk.Backend.Data.DataTemplate
 import           Kiosk.Backend.Data.ReportTemplate
 import           Kiosk.Backend.Form
 import           Language.Haskell.TH
 -- import           Mocks.Primitive.Generators        (GeneratorType (..),
 --                                                     generateInts)
--- import           ReportTemplate.Internal
+import           ReportTemplate.Internal
 -- import           System.Locale                     (defaultTimeLocale)
 import           Test.Hspec
-import           Test.QuickCheck
+-- import           Test.QuickCheck
 main :: IO ()
 main = hspec spec
 
@@ -58,6 +58,13 @@ spec = do
     True `shouldBe` True
 
 
+-- makeCobaltExcelTemplate = buildReportTemplate preambleTemplate rowTemplate
+
+
+-- preambleTemplate = ["Report Prepared For",getCompanyName]
+
+
+-- | Form Generation (Cobalt Version)
 convertToKioskForm :: CobaltWaterHaulingCompany -> Form
 convertToKioskForm waterHaulingCompany = Form cobaltEnvironmentalSolutions cobaltAddress cobaltLogo defaultPhone [createWaterHauler waterHaulingName] cobaltFormBody
   where
@@ -240,30 +247,76 @@ fullDefaultQualifierInput = Input dit dia
 generateOption :: Text -> Option
 generateOption optionText = Option optionText []
 
-
 data CompanyName = BigStarTrucking
-                     | BulletEnergyServices
-                     | Advantage
-                     | ArkomaTanks
-                     | BasicEnergyServices
-                     | CottonwoodDrilling
-                     | DalesTankService
-                     | FluidServices
-                     | GandCConstruction
-                     | HammandPhillipsService
-                     | HullsOilfieldService
-                     | JNSTrucking
-                     | KleenOilfieldService
-                     | LaurcoEnergies
-                     | MSMEnvironmental
-                     | Nabors
-                     | RHRServices
-                     | SandHTankService
-                     | SandM
-                     | TestCompany
-                     | AandATankTruck
-                     | SonnyTrucking
-                     | TerracoProductionLLC
-                     | BigMacTrucking
+                   | BulletEnergyServices
+                   | CandJTrucking
+                   | BigMacTankTrucks
+                   | BradyWeldingandMachineShop
+                   | KleenOilfieldServices
+                   | BandCBackhoeandTransports
+                   | ForsytheOilfield
+                   | HullsOilfield
+                   | SouthCentralOilfieldServices
+                   | TopOTexas
+                   | MitchellTankTruckServices
+                   | FluidServices
+                   | DavenportOilfieldServices
+                   | TestCompany
+                   | SoonerStar
+                   | NexStream
+                   | HullEnvironmentalServices
+                   | Arkhoma
+                   | ZeroSeven
+                   | HammTankAndTrucking
+          deriving (Eq,Ord)
 
-          deriving (Eq,Ord,Show)
+
+instance Show CompanyName where
+  show (BigStarTrucking) = "Big Star Trucking"
+  show (BulletEnergyServices) = "Bullet Energy Services"
+  show (CandJTrucking) = "C and J Trucking"
+  show (BigMacTankTrucks) = "Big Mac Trucks"
+  show (BradyWeldingandMachineShop) = "Bradly Welding and Machine Shop"
+  show (KleenOilfieldServices) = "Kleen Oilfield Services"
+  show (BandCBackhoeandTransports) = "B and C Backhoe and Transports"
+  show (ForsytheOilfield ) = "Forsythe Oilfield"
+  show (HullsOilfield) = "Hulls Oilfield"
+  show (SouthCentralOilfieldServices) = "South Central Oilfield Services"
+  show (TopOTexas) = "Top-O-Texas"
+  show (MitchellTankTruckServices) = "Mitchell Tank Truck Services"
+  show (FluidServices) = "Fluid Services"
+  show (DavenportOilfieldServices) = "Davenport Oilfield Services"
+  show (TestCompany    ) = "Test Company"
+  show (SoonerStar    ) = "Sooner Star"
+  show (NexStream    ) = "NexStream"
+  show (Arkhoma ) = "Arkhoma"
+  show (HullEnvironmentalServices) = "Hull Environmental Services"
+  show (ZeroSeven) = "07 Energy"
+  show (HammTankAndTrucking) = "Hamm Tank and Trucking Service, LLC"
+
+
+exampleUUID :: UUID
+exampleUUID =   "a2e3609e-154d-4e60-80e0-c77189098617"
+
+currentCobaltForms :: [CobaltWaterHaulingCompany]
+currentCobaltForms = [ CobaltWaterHaulingCompany (Just 0) BigStarTrucking exampleUUID
+                        , CobaltWaterHaulingCompany (Just 1) BulletEnergyServices exampleUUID
+                        , CobaltWaterHaulingCompany (Just 2) CandJTrucking exampleUUID
+                        , CobaltWaterHaulingCompany (Just 3) BigMacTankTrucks exampleUUID
+                        , CobaltWaterHaulingCompany (Just 4) BradyWeldingandMachineShop exampleUUID
+                        , CobaltWaterHaulingCompany (Just 5) KleenOilfieldServices exampleUUID
+                        , CobaltWaterHaulingCompany (Just 6) BandCBackhoeandTransports exampleUUID
+                        , CobaltWaterHaulingCompany (Just 7) ForsytheOilfield exampleUUID
+                        , CobaltWaterHaulingCompany (Just 8) HullsOilfield exampleUUID
+                        , CobaltWaterHaulingCompany (Just 9) SouthCentralOilfieldServices exampleUUID
+                        , CobaltWaterHaulingCompany (Just 10) TopOTexas exampleUUID
+                        , CobaltWaterHaulingCompany (Just 11) MitchellTankTruckServices exampleUUID
+                        , CobaltWaterHaulingCompany (Just 12) FluidServices exampleUUID
+                        , CobaltWaterHaulingCompany (Just 13) DavenportOilfieldServices exampleUUID
+                        , CobaltWaterHaulingCompany (Just 14) TestCompany exampleUUID
+                        , CobaltWaterHaulingCompany (Just 15) SoonerStar exampleUUID
+                        , CobaltWaterHaulingCompany (Just 16) NexStream exampleUUID
+                        , CobaltWaterHaulingCompany (Just 17) Arkhoma exampleUUID
+                        , CobaltWaterHaulingCompany (Just 18) HullEnvironmentalServices exampleUUID
+                        , CobaltWaterHaulingCompany (Just 19) ZeroSeven exampleUUID
+                        , CobaltWaterHaulingCompany (Just 20) HammTankAndTrucking exampleUUID]
