@@ -37,6 +37,7 @@ import           Language.Haskell.TH
 import           Mocks.Primitive.Generators      (GeneratorType (..),
                                                   generateInts)
 import           ReportTemplate.Internal
+import           System.Locale                   (defaultTimeLocale)
 import           Test.Hspec
 import           Test.QuickCheck
 
@@ -101,7 +102,7 @@ rowTemplate = [("The First Item ",getItem0Text)
   where
    getItem0Text _ dt = getValFromDataTemplate "item 0" dt
    getItem1Text _ dt = getValFromDataTemplate "item 1" dt
-   getItemTime t _ = encode.show.currentTime $ t
+   getItemTime t _ = B.pack.formatTime defaultTimeLocale "%c" . currentTime $ t
 
 getFormConstant :: Form -> Value
 getFormConstant form = toJSON $ form ^. getCompany.getCompanyText
