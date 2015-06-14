@@ -18,9 +18,9 @@ Data Templates and Form Helpers for making ReportTemplates
 module Kiosk.Backend.Data.ReportTemplate where
 
 import           Codec.Xlsx
--- import           Control.Applicative             ((<$>), (<*>))
+import           Control.Applicative             ((<$>))
 import           Control.Lens
-
+import           Data.Map                        (Map)
 import qualified Data.Map.Lazy                   as M
 import           Data.Maybe
 import           Data.Monoid
@@ -42,7 +42,7 @@ makeLenses ''ReportPreamble
 makePrisms ''InputType
 makeLenses ''InputText
 makeLenses ''InputDouble
-
+makeLenses ''InputDate
 
 -- | Kiosk Specific
 type KioskPreambleTemplateList context preOut= [(ReportPreambleLabel, context -> Form -> preOut)]
@@ -66,20 +66,6 @@ type XlsxTable = ReportTable Cell
 
 
 
- -- | Retrieve Cell DAta
-
-
-makeCellDoubleFromInputDouble :: Text -> DataTemplate -> Cell
-makeCellDoubleFromInputDouble = makeCellValueFromDataTemplate CellDouble inputDoubleLens
-                               where
-                                  inputDoubleLens = _InputTypeDouble.getInputDouble
-
-makeCellTextFromInputText :: Text -> DataTemplate -> Cell
-makeCellTextFromInputText = makeCellValueFromDataTemplate CellText inputTextLens
-                                       where
-                                          inputTextLens = _InputTypeText.getInputText
-
-
 -- | Excel Form Rendering Helper Functions
 -- Because the excel preamble is a full cell map
 getCompanyName :: (Int,Int) -> Form -> CellMap
@@ -99,19 +85,50 @@ makeCellMapFromUTCTime timeFormatString key  = makeCellMapFromText key .
                                                           timeFormatString
 
 
+
+
 -- | Row Rendering Helper Functions
+
+   -- | Retrieve Cell DAta
+makeCellDoubleFromInputDouble :: Text -> DataTemplate -> Cell
+makeCellDoubleFromInputDouble = makeCellValueFromDataTemplate CellDouble inputDoubleLens
+                               where
+                                  inputDoubleLens = _InputTypeDouble.getInputDouble
+
+makeCellTextFromInputText :: Text -> DataTemplate -> Cell
+makeCellTextFromInputText = makeCellValueFromDataTemplate CellText inputTextLens
+                                       where
+                                          inputTextLens = _InputTypeText.getInputText
+
+makeCellTextFromInputDate :: Text -> DataTemplate -> Cell
+makeCellTextFromInputDate l dt = def & cellValue .~ maybeCellValue
+                           where
+                              maybeInputDate = getInputTypeByLabel inputLens l dt
+                              maybeCellValue = CellText <$> maybeInputDate
+                              inputLens = _InputTypeDate . getInputDate
+
+
 makeCellValueFromDataTemplate ::
   (s -> CellValue)
   -> Getting (First s) InputType s -> Text -> DataTemplate -> Cell
 makeCellValueFromDataTemplate cellConstructor  lensDt l dt  = outputCell
   where
-    singletonInput = catMaybes.
-                    (fmap (getItemMatchingLabel l lensDt)) .
-                    templateItems $ dt
+    maybeCellValue :: Maybe CellValue
+    maybeCellValue = cellConstructor <$> getInputTypeByLabel lensDt l dt
+    outputCell :: Cell
+    outputCell = def  & cellValue .~ maybeCellValue
 
+
+getInputTypeByLabel ::
+  Getting (First a) InputType a -> Text -> DataTemplate -> Maybe a
+getInputTypeByLabel lensDt l dt  = outputCell
+  where
+    singletonInput = catMaybes.
+                    fmap (getItemMatchingLabel l lensDt) .
+                    templateItems $ dt
     outputCell = case singletonInput of
-                   [] -> def
-                   (x:_) -> def  & cellValue .~ (Just . cellConstructor $ x)
+                   [] -> Nothing
+                   (x:_) -> Just  x
 
 getItemMatchingLabel
   :: Text
@@ -132,4 +149,28 @@ buildXlsxReport xlsxReportTemplate xlsxContext form dataTemplates = renderedRepo
   where
      renderedReport = renderReport xlsxReportTemplate xlsxContext form dataTemplates
 
+
+
+
+-- | Create Excel Spreadsheet
+
+
+-- | Render Spreadsheet from report
+renderSpreadsheet :: XlsxReport -> Worksheet
+renderSpreadsheet report = def & wsCells .~ combinedMap
+  where
+   combinedMap :: CellMap
+   combinedMap = M.unions (preambleMapList ++ rowMapList)
+   preambleOffset = 10
+   preambleMapList :: [CellMap]
+   preambleMapList =  toListOf (reportPreamble.preambleValue.folded._2) report
+   labelToIntMap :: Map ReportRowLabel Int
+   labelToIntMap = M.fromList . zip (report ^. (reportRows . _ReportTableRowIndex . _1 )  ) $ [1..]
+   rowMapList  :: [CellMap]
+   rowMapList  = (foldrTableByRowWithIndex transformPositionAndMap M.empty) <$>
+                   (toListOf  (reportRows._ReportTableRowIndex._2) report)
+   transformPositionAndMap :: (Int,String) -> Cell -> CellMap -> CellMap
+   transformPositionAndMap (rowInt,label) rowVal rowMap =  case M.lookup label labelToIntMap of
+          Nothing -> rowMap
+          (Just i) -> M.insert (rowInt + preambleOffset , i)  rowVal rowMap
 

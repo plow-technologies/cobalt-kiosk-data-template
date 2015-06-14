@@ -58,7 +58,8 @@ module ReportTemplate.Internal (ReportTemplate
                                ,    TableColIndex
                                ,    renderReport
                                   , reportPreambleLabel
-                                  , preambleTransformMap ) where
+                                  , preambleTransformMap
+                                  , foldrTableByRowWithIndex ) where
 
 
 import           Control.Applicative ((<$>))
@@ -159,7 +160,7 @@ data ReportPreamble preambleValue = ReportPreamble {
 
 -- Map sorts first by row and then by
 
-type RowNumber = Integer
+type RowNumber = Int
 type TableRowIndex = (RowNumber, ReportRowLabel)
 
 
@@ -222,3 +223,18 @@ transformRowin :: forall rowOut  context rowSource.
 transformRowin context rowTransformLabels mp i row  = foldr (\l mpTbl -> case M.lookup l mp  of
                                                                                   Nothing -> mpTbl
                                                                                   (Just f) -> M.insert (i,l) (f context row) mpTbl ) M.empty  rowTransformLabels
+
+
+
+-- Traversing functions
+-- because we know the form of this map is tabular
+-- the fold can be made a bit more useful and track
+-- both the
+foldrTableByRowWithIndex :: (TableRowIndex ->
+                            a ->
+                            b -> b)
+                            -> b -> ReportTableRowStyle a ->  b
+foldrTableByRowWithIndex f b rowTable = M.foldrWithKey f b $
+                                        _rowMap rowTable
+
+

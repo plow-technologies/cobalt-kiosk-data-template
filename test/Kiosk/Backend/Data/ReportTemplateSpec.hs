@@ -76,24 +76,24 @@ preambleTemplate = [("Report Prepared For", const $ getCompanyName (1,1))
     formatTimestampDate context _ = makeCellMapFromUTCTime "%c" (2,2) . _xlsxCurrentTime $ context
 
 rowTemplate:: XlsxRowTemplateList
-rowTemplate = [("Timestamp",formatTimestampDate)
-                         ,("Date",formatDate)
-                         ,("Name of Water Hauling Co.", getWaterHauler)
-                         ,("Lease Operator Name",getLeaseOperator)
-                         ,("Lease Name",getLeaseName)
-                         ,("Number of Barrels Produced Water", getProducedWater)
-                         ,("Number of Barrels Flowback Water", getFlowbackWater)
-                         ,("Truck Number",getTruckNumber)]
+rowTemplate = [("Timestamp", formatTimestampDate)
+               ,("Date",formatTimestampDate)
+               , ("Name of Water Hauling Co.",getWaterHauler )
+               ,("Lease Operator Name",getLeaseOperator)
+               ,("Lease Name",getLeaseName)
+               ,("Number of Barrels Produced Water", getProducedWater)
+               ,("Number of Barrels Flowback Water", getFlowbackWater)
+               ,("Truck Number",getTruckNumber)]
 
-             where
-               formatTimestampDate = undefined
-               getLeaseName = undefined
-               formatDate = undefined
-               getWaterHauler = undefined
-               getLeaseOperator = undefined
-               getProducedWater = undefined
-               getFlowbackWater = undefined
-               getTruckNumber   = undefined
+   where
+    formatTimestampDate = const $ makeCellTextFromInputDate "Date"
+    getWaterHauler = const $ makeCellTextFromInputText "Water Hauling Company"
+    getLeaseOperator = const $ makeCellTextFromInputText "Name_Of_Lease_Operator"
+    getLeaseName = const $ makeCellTextFromInputText "Name_Of_Lease"
+    getTruckNumber   = const $ makeCellTextFromInputText "Truck_#"
+    getProducedWater = const $ makeCellTextFromInputText "Type_of_Water_Hauled"
+    getFlowbackWater = const $ makeCellTextFromInputText "Type_of_Water_Hauled"
+
 
 -- | Form Generation (Cobalt Version)
 convertToKioskForm :: CobaltWaterHaulingCompany -> Form
