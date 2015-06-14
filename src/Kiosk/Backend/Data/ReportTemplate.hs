@@ -44,40 +44,26 @@ makeLenses ''Cell
 
 
 
-
+-- | Kiosk Specific
 type KioskPreambleTemplateList context preOut= [(ReportPreambleLabel, context -> Form -> preOut)]
-
 type KioskRowTemplateList context rowOut = [(ReportRowLabel, context -> Form -> rowOut)]
+type KioskPreambleTemplate context preOut= ReportPreambleTemplate context Form preOut
+type KioskRowTemplate context rowOut = ReportRowTemplate context DataTemplate rowOut
 
+
+-- | Spreadsheet specific
 
 data XlsxContext = XlsxContext {
                  _xlsxCurrentTime :: UTCTime}
 
-
-type KioskPreambleTemplate context preOut= ReportPreambleTemplate context Form preOut
-type KioskRowTemplate context rowOut = ReportRowTemplate context DataTemplate rowOut
-
 type XlsxReportTemplate = KioskReportTemplate XlsxContext CellMap Cell
-type XlsxPreambleTemplateList = KioskPreambleTemplate XlsxContext CellMap
+type XlsxPreambleTemplateList = KioskRowTemplate XlsxContext CellMap
 type XlsxRowTemplateList = KioskPreambleTemplate XlsxContext Cell
-type XlsxPreambleTemplate = ReportPreambleTemplate XlsxContext Form CellMap
-type XlsxRowTemplate  = ReportRowTemplate XlsxContext DataTemplate Cell
+type XlsxReport = Report CellMap Cell
 type XlsxPreamble = ReportPreamble CellMap
 type XlsxTable = ReportTable Cell
--- Render Xlsx
+-- | Retrieve Cell DAta
 
-
-renderXlsxReport xlsxRT xlsxCtx form dataTemplates = Report preambleCellMap rowCellMap
-  where
-     preambleCellMap = renderReportPreamble (reportPreambleTemplate xlsxRT) xlsxCtx form
-     rowCellMap = renderReportRows (reportRowsTemplate xlsxRT) xlsxCtx dataTemplates
-     combineCellMapGenerateWorksheet = undefined
-
-renderReportPreamble :: XlsxPreambleTemplate -> XlsxContext -> Form -> XlsxPreamble
-renderReportPreamble xlsxPreTemplate = undefined
-
-renderReportRows :: XlsxRowTemplate -> XlsxContext -> [DataTemplate] -> XlsxTable
-renderReportRows = undefined
 
 makeCellDoubleFromInputDouble :: Text -> DataTemplate -> Cell
 makeCellDoubleFromInputDouble = makeCellValueFromDataTemplate CellDouble inputDoubleLens
@@ -112,3 +98,11 @@ getItemMatchingLabel l dtLens (TemplateItem lbl inVal)
  |otherwise = Nothing
 
 
+-- | Build 'Report' from ReportTemplate
+
+buildXlsxReport :: XlsxReportTemplate -> XlsxContext ->
+                   Form ->
+                   [DataTemplate] -> XlsxReport
+buildXlsxReport xlsxReportTemplate xlsxContext form dataTemplates = renderedReport
+  where
+     renderedReport = renderReport xlsxReportTemplate xlsxContext form dataTemplates
