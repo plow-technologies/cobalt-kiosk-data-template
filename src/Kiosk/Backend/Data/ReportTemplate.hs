@@ -42,23 +42,44 @@ makeLenses ''InputText
 makeLenses ''InputDouble
 makeLenses ''Cell
 
-type KioskPreambleTemplate context preOut= [(ReportPreambleLabel, context -> Form -> preOut)]
 
-type KioskRowTemplate context rowOut = [(ReportRowLabel, context -> Form -> rowOut)]
+
+
+type KioskPreambleTemplateList context preOut= [(ReportPreambleLabel, context -> Form -> preOut)]
+
+type KioskRowTemplateList context rowOut = [(ReportRowLabel, context -> Form -> rowOut)]
 
 
 data XlsxContext = XlsxContext {
                  _xlsxCurrentTime :: UTCTime}
 
+
+type KioskPreambleTemplate context preOut= ReportPreambleTemplate context Form preOut
+type KioskRowTemplate context rowOut = ReportRowTemplate context DataTemplate rowOut
+
 type XlsxReportTemplate = KioskReportTemplate XlsxContext CellMap Cell
-type XlsxPreambleTemplate = KioskPreambleTemplate XlsxContext CellMap
-type XlsxRowTemplate = KioskPreambleTemplate XlsxContext Cell
-
-
+type XlsxPreambleTemplateList = KioskPreambleTemplate XlsxContext CellMap
+type XlsxRowTemplateList = KioskPreambleTemplate XlsxContext Cell
+type XlsxPreambleTemplate = ReportPreambleTemplate XlsxContext Form CellMap
+type XlsxRowTemplate  = ReportRowTemplate XlsxContext DataTemplate Cell
+type XlsxPreamble = ReportPreamble CellMap
+type XlsxTable = ReportTable Cell
 -- Render Xlsx
 
-renderReportTemplate :: XlsxReportTemplate -> XlsxContext -> Worksheet
-renderReportTemplate = undefined
+
+renderReportTemplate xlsxRT xlsxCtx = combineCellMapGenerateWorksheet preambleCellMap
+                                                                        rowCellMap
+  where
+     preambleCellMap = renderReportPreamble (reportPreambleTemplate xlsxRT)                                                                            xlsxCtx
+
+     rowCellMap = renderReportRow (reportRowsTemplate xlsxRT) xlsxCtx
+     combineCellMapGenerateWorksheet = undefined
+
+renderReportPreamble :: XlsxPreambleTemplate -> XlsxContext -> Form -> XlsxPreamble
+renderReportPreamble xlsxPreTemplate = undefined
+
+renderReportRow :: XlsxRowTemplate -> XlsxContext -> DataTemplate -> XlsxTable
+renderReportRow = undefined
 
 makeCellDoubleFromInputDouble :: Text -> DataTemplate -> Cell
 makeCellDoubleFromInputDouble = makeCellValueFromDataTemplate CellDouble inputDoubleLens
