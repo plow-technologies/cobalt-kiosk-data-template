@@ -19,13 +19,16 @@ Portability :  portable
 module ReportTemplate.InternalSpec (main,spec) where
 import           Control.Applicative             ((<$>), (<*>))
 import           Control.Lens
-import           Data.Aeson                      (Value (..), toJSON)
+import           Data.Aeson                      (Value (..), encode, toJSON)
+import           Data.Text                       (Text)
+import qualified Data.Text                       as T
+
+import           Data.ByteString.Lazy.Char8      (ByteString)
+import qualified Data.ByteString.Lazy.Char8      as B
 import           Data.Map.Strict                 (Map)
 import qualified Data.Map.Strict                 as M
 import           Data.Maybe                      (catMaybes)
 import           Data.Monoid                     ((<>))
-import           Data.Text                       (Text)
-import qualified Data.Text                       as T
 import           Data.Time
 import           Generators
 import           Kiosk.Backend.Data.DataTemplate
@@ -42,7 +45,8 @@ makeLenses ''Report
 makePrisms ''ReportTable
 makeLenses ''ReportTableRowStyle
 makeLenses ''ReportPreamble
-
+makePrisms ''InputType
+makeLenses ''InputText
 main :: IO ()
 main = hspec spec
 
@@ -50,26 +54,38 @@ spec :: SpecWith ()
 spec = do
   describe (nameBase 'renderReport) $ do
    it "should Build a report from data sources contexts and templates" $ do
-      True `shouldBe` True
+      let i = 7
+      (reportTemplate,report) <- testReport i
+      let mapSize = M.size $ report ^. (reportRows .
+                                              _ReportTableRowIndex._2.
+                                              rowMap)
+          rowTemplateLength = length rowTemplate
 
+      mapSize `shouldBe` (i * rowTemplateLength)
+      (M.size . rowTransformMap.reportRowsTemplate $ reportTemplate ) `shouldBe` rowTemplateLength
 
+testFormTemplate :: IO [Form]
 testFormTemplate = take 1 <$> (generate . generateForm $ Static)
-testDataTemplateEntries i = take i <$> (generate . generateDataTemplate $ Static)
+
+testDataTemplate :: Int -> IO [DataTemplate]
+testDataTemplate i = do
+          lst <- (generate .listOf. generateDataTemplate $ Static)
+          return $ concat . take i $ lst
 
 data ReportContext = ReportContext { currentTime :: UTCTime }
 
-type TestReportTemplate = ReportTemplate ReportContext Form Value DataTemplate Value
+type TestReportTemplate = ReportTemplate ReportContext Form Value DataTemplate ByteString
 type TestPreambleTemplate = [(ReportPreambleLabel, ReportContext -> Form -> Value)]
-type TestRowTemplate = [(ReportRowLabel, ReportContext -> DataTemplate -> Value)]
+type TestRowTemplate = [(ReportRowLabel, ReportContext -> DataTemplate -> ByteString)]
 
 
 -- | this is a rendered report
-testReport :: Int -> IO (Report Value Value)
+testReport :: Int -> IO (TestReportTemplate , Report Value ByteString)
 testReport i = do
    (oneForm:_) <- testFormTemplate
-   dtes <- testDataTemplateEntries i
+   dtes <- testDataTemplate i
    tm   <- ReportContext <$> getCurrentTime
-   return . renderReport testReportTemplate tm oneForm $ dtes
+   return ( testReportTemplate, renderReport testReportTemplate tm oneForm dtes)
 
 -- | This is a test Report Template which should constructo a Report
 testReportTemplate :: TestReportTemplate
@@ -85,19 +101,19 @@ rowTemplate = [("The First Item ",getItem0Text)
   where
    getItem0Text _ dt = getValFromDataTemplate "item 0" dt
    getItem1Text _ dt = getValFromDataTemplate "item 1" dt
-   getItemTime t _ = toJSON.show.currentTime $ t
+   getItemTime t _ = encode.show.currentTime $ t
 
 getFormConstant :: Form -> Value
 getFormConstant form = toJSON $ form ^. getCompany.getCompanyText
 
 getValFromDataTemplate ::
-  Text -> DataTemplate -> Value
-getValFromDataTemplate l dt = toJSON . catMaybes.
+  Text -> DataTemplate -> ByteString
+getValFromDataTemplate l dt = B.unwords . catMaybes.
                               (fmap (getItemMatchingLabel l)) .
                               templateItems $ dt
 
 getItemMatchingLabel l (TemplateItem lbl inVal)
- |l == lbl = Just inVal
+ |l == lbl = B.pack . T.unpack <$> inVal ^? (_InputTypeText.getInputText)
  |otherwise = Nothing
 
 
@@ -106,11 +122,13 @@ testBuildADocument report = "Welcome to another fine report \n" <>
                             <> "\n\n\n"
                             <> renderRowByRow
   where
-   renderPreamble = T.unwords . fmap renderPreamblePair $ report ^. (reportPreamble.preambleValue)
-   renderPreamblePair (l,v) = (T.pack l)<> ": " <> (T.pack . show $ l)
-   renderRowByRow = M.foldrWithKey renderRowString "" $ report ^. (reportRows .
-                                                                   _ReportTableRowIndex.
-                                                                   rowMap)
+   renderPreamble = B.unwords . fmap renderPreamblePair $ report ^. (reportPreamble.preambleValue)
+   renderPreamblePair (l,v) = (B.pack l) <> ": " <> (encode l)
+   renderRowByRow = snd $ M.foldrWithKey renderRowString (1,"") $ report ^. (reportRows .
+                                                                                   _ReportTableRowIndex._2.
+                                                                                   rowMap)
 
-
-renderRowString = undefined
+renderRowString :: (RowNumber,String) -> ByteString ->(RowNumber,ByteString) -> (RowNumber,ByteString)
+renderRowString (idx,lbl) val (itarget,txt)
+  | idx == itarget = (itarget, txt <>  val <> ",")
+  | otherwise = (idx, (B.pack . show $ idx) <> txt <> "\n"  <>  val <> ",")
