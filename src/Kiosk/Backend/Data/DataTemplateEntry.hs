@@ -118,6 +118,8 @@ notSignature :: TemplateItem -> Bool
 notSignature (TemplateItem ("Driver_Signature"::Text) (InputTypeText (InputText _))) = False
 notSignature _ = True
 
+notUUID (TemplateItem ("UUID"::Text) (InputTypeText (InputText _))) = False
+notUUID _ = True
 
 defaultKeyHeaders :: ByteString
 defaultKeyHeaders = "Date,FormId,TicketId,UUID,"

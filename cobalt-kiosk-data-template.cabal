@@ -23,6 +23,7 @@ Library
                         Kiosk.Backend.Data.Migrations.FormVersionZero
                         Kiosk.Backend.Data.Migrations.CobaltBaseForm
                         Kiosk.Backend.Data.DataTemplate
+                        Kiosk.Backend.Data.ReportTemplate
                         Kiosk.Backend.Data.DataTemplateEntryKey
                         ReportTemplate.Internal
 
