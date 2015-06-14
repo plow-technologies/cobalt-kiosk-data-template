@@ -17,8 +17,7 @@ Data Templates and Form Helpers for making ReportTemplates
 
 module Kiosk.Backend.Data.ReportTemplate where
 
-import           Codec.Xlsx                      (Cell (_cellValue), CellMap, CellValue (CellText, CellDouble),
-                                                  Worksheet (_wsCells), def)
+import           Codec.Xlsx
 -- import           Control.Applicative             ((<$>), (<*>))
 import           Control.Lens
 import           Data.Maybe
@@ -40,8 +39,6 @@ makeLenses ''ReportPreamble
 makePrisms ''InputType
 makeLenses ''InputText
 makeLenses ''InputDouble
-makeLenses ''Cell
-
 
 
 -- | Kiosk Specific
@@ -62,7 +59,11 @@ type XlsxRowTemplateList = KioskPreambleTemplate XlsxContext Cell
 type XlsxReport = Report CellMap Cell
 type XlsxPreamble = ReportPreamble CellMap
 type XlsxTable = ReportTable Cell
--- | Retrieve Cell DAta
+
+
+
+
+ -- | Retrieve Cell DAta
 
 
 makeCellDoubleFromInputDouble :: Text -> DataTemplate -> Cell
@@ -75,6 +76,8 @@ makeCellTextFromInputText = makeCellValueFromDataTemplate CellText inputTextLens
                                        where
                                           inputTextLens = _InputTypeText.getInputText
 
+
+-- | Row Rendering Helper Functions
 makeCellValueFromDataTemplate ::
   (s -> CellValue)
   -> Getting (First s) InputType s -> Text -> DataTemplate -> Cell
@@ -98,7 +101,7 @@ getItemMatchingLabel l dtLens (TemplateItem lbl inVal)
  |otherwise = Nothing
 
 
--- | Build 'Report' from ReportTemplate
+-- | Build 'Report' from 'ReportTemplate'
 
 buildXlsxReport :: XlsxReportTemplate -> XlsxContext ->
                    Form ->
@@ -106,3 +109,5 @@ buildXlsxReport :: XlsxReportTemplate -> XlsxContext ->
 buildXlsxReport xlsxReportTemplate xlsxContext form dataTemplates = renderedReport
   where
      renderedReport = renderReport xlsxReportTemplate xlsxContext form dataTemplates
+
+
