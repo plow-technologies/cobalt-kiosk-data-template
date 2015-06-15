@@ -50,6 +50,7 @@ import           Codec.Xlsx
 
 -- import           Mocks.Primitive.Generators        (GeneratorType (..),
 --                                                     generateInts)
+import           Data.Monoid                       ((<>))
 import           ReportTemplate.Internal
 import           System.Locale                     (defaultTimeLocale)
 import           System.Time
@@ -80,16 +81,24 @@ preambleTemplate = [("Report Prepared For", const $ getCompanyName (1,1))
 rowTemplate:: XlsxRowTemplateList
 rowTemplate = [ ("Water Hauling Number",getWaterHauler )
                ,("Lease Name",getLeaseName)
+               ,("Description", getDescription)
                ,("Truck Number",getTruckNumber)
                ,("Customer Ticket Number", getCustomerTicketNumber)
                ]
 
    where
+    getDescription = const $ makeCellTextWithCellTemplate descriptionTemplate descriptionList
+    descriptionList = ["Truck #", "Name of Lease", "Water Hauling Permit #"]
     getWaterHauler = const $ makeCellTextFromInputText "Water Hauling Permit #"
     getLeaseName = const $ makeCellTextFromInputText "Name of Lease"
     getTruckNumber   = const $ makeCellTextFromInputText "Truck #"
     getCustomerTicketNumber = const $ makeCellTextFromInputText "Customer Ticket #"
 
+
+descriptionTemplate [field1, field2, field3] = "Field1 Is: " <> field1 <>
+                                                  "Field 2 is:" <> field2 <>
+                                                  "Field 3 is:" <> field3
+descriptionTemplate _ = "Wrong Number of arguments"
 
 -- | Report Inspection
 

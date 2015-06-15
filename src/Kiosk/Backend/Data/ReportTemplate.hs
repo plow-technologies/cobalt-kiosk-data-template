@@ -1,4 +1,5 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 
 {- |
@@ -18,7 +19,7 @@ Data Templates and Form Helpers for making ReportTemplates
 module Kiosk.Backend.Data.ReportTemplate where
 
 import           Codec.Xlsx
-import           Control.Applicative             ((<$>))
+import           Control.Applicative             ((<$>), (<*>))
 import           Control.Lens
 import           Data.Map                        (Map)
 import qualified Data.Map.Lazy                   as M
@@ -95,6 +96,18 @@ makeCellDoubleFromInputDouble = makeCellValueFromDataTemplate CellDouble inputDo
                                where
                                   inputDoubleLens = _InputTypeDouble.getInputDouble
 
+
+makeCellTextWithCellTemplate :: ([Text] -> Text )
+                                -> [Text] -> DataTemplate -> Cell
+makeCellTextWithCellTemplate templateFcn txts dte = def & cellValue ?~ cellVal
+ where
+    cellVal = CellText . templateFcn $ targetTextList
+    inputTextLens = _InputTypeText.getInputText
+    targetTextList :: [Text]
+    targetTextList = fromMaybe "" <$> (getInputTypeByLabel inputTextLens
+                                       <$> txts
+                                       <*> [dte])
+
 makeCellTextFromInputText :: Text -> DataTemplate -> Cell
 makeCellTextFromInputText = makeCellValueFromDataTemplate CellText inputTextLens
                                        where
@@ -106,6 +119,7 @@ makeCellTextFromInputDate l dt = def & cellValue .~ maybeCellValue
                               maybeInputDate = getInputTypeByLabel inputLens l dt
                               maybeCellValue = CellText <$> maybeInputDate
                               inputLens = _InputTypeDate . getInputDate
+
 
 
 makeCellValueFromDataTemplate ::
