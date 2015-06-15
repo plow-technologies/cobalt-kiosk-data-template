@@ -1,4 +1,5 @@
-
+# Version 1.6.0
+* Added a new Templating system for writing templates on the data
 # Version 1.5.9
 Fixing signature not signature thing (I hope)
 # Version 1.5.7

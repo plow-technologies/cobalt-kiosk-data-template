@@ -23,17 +23,11 @@ module Kiosk.Backend.Data.ReportTemplateSpec (spec,main,convertToKioskForm) wher
 import           Control.Applicative               ((<$>))
 import           Data.String                       (IsString)
 -- import           Control.Lens
+import           Control.Lens
 import           Data.Aeson
 import qualified Data.ByteString.Lazy              as L
 import           Data.Text                         (Text)
 import qualified Data.Text                         as T
--- import           Data.ByteString.Lazy.Char8        (ByteString)
--- import qualified Data.ByteString.Lazy.Char8        as B
--- import           Data.Map.Strict                   (Map)
--- import qualified Data.Map.Strict                   as M
--- import           Data.Maybe                        (catMaybes)
--- import           Data.Monoid                       ((<>))
-import           Control.Lens
 import           Data.Time
 
 -- import           Kiosk.Backend.Data.DataTemplate
@@ -103,12 +97,11 @@ descriptionTemplate [field1, field2, field3] = "Field1 Is: " <> field1 <>
 descriptionTemplate _ = "Wrong Number of arguments"
 
 
--- To Herem
 
 -- | Report Inspection
 
 dispayReportValues = do
-  report <-generateReport
+  report <- generateReport
   sequence $ (foldrTableByRowWithIndex printAndMoveOn (return ())) <$>
              (toListOf  (reportRows._ReportTableRowIndex._2) report)
    where
