@@ -69,6 +69,8 @@ spec = do
    it "Gets an InputText and transfers it to a CellText" $ do
     True `shouldBe` True
 
+
+-- a template is described from here:
 makeCobaltExcelTemplate :: XlsxReportTemplate
 makeCobaltExcelTemplate = buildReportTemplate preambleTemplate rowTemplate
 
@@ -99,6 +101,9 @@ descriptionTemplate [field1, field2, field3] = "Field1 Is: " <> field1 <>
                                                   "Field 2 is:" <> field2 <>
                                                   "Field 3 is:" <> field3
 descriptionTemplate _ = "Wrong Number of arguments"
+
+
+-- To Here
 
 -- | Report Inspection
 
