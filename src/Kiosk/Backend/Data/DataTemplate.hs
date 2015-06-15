@@ -10,6 +10,8 @@ module Kiosk.Backend.Data.DataTemplate ( fromFormToDataTemplate
                                         ,InputText (..)
                                         ,DataTemplate(..)
                                        , _templateItems
+                                       , _templateValue
+                                       , _label
                                        , checkCompanyType
                                        , getCompany
                                        , row
@@ -92,7 +94,7 @@ makeLenses ''Input
 makeLenses ''Label
 makePrisms ''ItemType
 makeClassy_ ''DataTemplate
-
+makeClassy_ ''TemplateItem
 
 -- JSON Instances
 -- | encode a list of items as a flat single object instead of as an array of objects
@@ -217,8 +219,8 @@ fitDataTemplateToForm frm dt = fromLabelMap . fitDT $ dt
 toLabelMap :: DataTemplate -> Map Text InputType
 toLabelMap dt' = foldr createLabelMap M.empty (templateItems dt')
   where
-     createLabelMap templateItem  = M.insert (label templateItem)
-                (templateValue templateItem)
+     createLabelMap templateItem'  = M.insert (label templateItem')
+                (templateValue templateItem')
 
 fromLabelMap :: Map Text InputType -> DataTemplate
 fromLabelMap lmap = DataTemplate convertedMap

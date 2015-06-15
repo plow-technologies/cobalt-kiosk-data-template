@@ -160,8 +160,9 @@ renderSpreadsheet :: XlsxReport -> Worksheet
 renderSpreadsheet report = def & wsCells .~ combinedMap
   where
    combinedMap :: CellMap
-   combinedMap = M.unions (preambleMapList ++ rowMapList)
+   combinedMap = M.unions (preambleMapList ++ [labelCellMap] ++ rowMapList)
    preambleOffset = 10
+
    preambleMapList :: [CellMap]
    preambleMapList =  toListOf (reportPreamble.preambleValue.folded._2) report
    labelToIntMap :: Map ReportRowLabel Int
@@ -174,3 +175,7 @@ renderSpreadsheet report = def & wsCells .~ combinedMap
           Nothing -> rowMap
           (Just i) -> M.insert (rowInt + preambleOffset , i)  rowVal rowMap
 
+   labelCellMap = M.foldrWithKey (\label idx m -> M.insert (preambleOffset,idx) (convertText label) m )
+                                 M.empty
+                                 labelToIntMap
+   convertText label = def & cellValue .~ (Just . CellText . T.pack $ label)

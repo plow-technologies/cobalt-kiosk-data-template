@@ -24,15 +24,16 @@ import           Control.Applicative               ((<$>))
 import           Data.String                       (IsString)
 -- import           Control.Lens
 import           Data.Aeson
+import qualified Data.ByteString.Lazy              as L
 import           Data.Text                         (Text)
 import qualified Data.Text                         as T
-
 -- import           Data.ByteString.Lazy.Char8        (ByteString)
 -- import qualified Data.ByteString.Lazy.Char8        as B
 -- import           Data.Map.Strict                   (Map)
 -- import qualified Data.Map.Strict                   as M
 -- import           Data.Maybe                        (catMaybes)
 -- import           Data.Monoid                       ((<>))
+import           Control.Lens
 import           Data.Time
 
 -- import           Kiosk.Backend.Data.DataTemplate
@@ -40,6 +41,7 @@ import           Data.Map.Lazy                     (Map)
 import qualified Data.Map.Lazy                     as M
 import           Data.Text                         (Text)
 import qualified Data.Text                         as T
+import           Kiosk.Backend.Data.DataTemplate
 import           Kiosk.Backend.Data.ReportTemplate
 import           Kiosk.Backend.Form
 import           Language.Haskell.TH
@@ -50,9 +52,9 @@ import           Codec.Xlsx
 --                                                     generateInts)
 import           ReportTemplate.Internal
 import           System.Locale                     (defaultTimeLocale)
+import           System.Time
 import           Test.Hspec
--- import           Test.QuickCheck
-
+import           Test.QuickCheck
 main :: IO ()
 main = hspec spec
 
@@ -76,24 +78,65 @@ preambleTemplate = [("Report Prepared For", const $ getCompanyName (1,1))
     formatTimestampDate context _ = makeCellMapFromUTCTime "%c" (2,2) . _xlsxCurrentTime $ context
 
 rowTemplate:: XlsxRowTemplateList
-rowTemplate = [("Timestamp", formatTimestampDate)
-               ,("Date",formatTimestampDate)
-               , ("Name of Water Hauling Co.",getWaterHauler )
-               ,("Lease Operator Name",getLeaseOperator)
+rowTemplate = [ ("Water Hauling Number",getWaterHauler )
                ,("Lease Name",getLeaseName)
-               ,("Number of Barrels Produced Water", getProducedWater)
-               ,("Number of Barrels Flowback Water", getFlowbackWater)
-               ,("Truck Number",getTruckNumber)]
+               ,("Truck Number",getTruckNumber)
+               ,("Customer Ticket Number", getCustomerTicketNumber)
+               ]
 
    where
-    formatTimestampDate = const $ makeCellTextFromInputDate "Date"
-    getWaterHauler = const $ makeCellTextFromInputText "Water Hauling Company"
-    getLeaseOperator = const $ makeCellTextFromInputText "Name_Of_Lease_Operator"
-    getLeaseName = const $ makeCellTextFromInputText "Name_Of_Lease"
-    getTruckNumber   = const $ makeCellTextFromInputText "Truck_#"
-    getProducedWater = const $ makeCellTextFromInputText "Type_of_Water_Hauled"
-    getFlowbackWater = const $ makeCellTextFromInputText "Type_of_Water_Hauled"
+    getWaterHauler = const $ makeCellTextFromInputText "Water Hauling Permit #"
+    getLeaseName = const $ makeCellTextFromInputText "Name of Lease"
+    getTruckNumber   = const $ makeCellTextFromInputText "Truck #"
+    getCustomerTicketNumber = const $ makeCellTextFromInputText "Customer Ticket #"
 
+
+-- | Report Inspection
+
+dispayReportValues = do
+  report <-generateReport
+  sequence $ (foldrTableByRowWithIndex printAndMoveOn (return ())) <$>
+             (toListOf  (reportRows._ReportTableRowIndex._2) report)
+   where
+    printAndMoveOn k rowVal m = do
+                             m
+                             print k
+                             print rowVal
+-- | Generate report
+
+makeXlsxFile = do
+      ct <- getClockTime
+      xl <- generateReportXlsx
+      L.writeFile "example.xlsx" $ fromXlsx ct xl
+
+generateReportXlsx = do
+    sheet <- generateReportSheet
+    return $  def & atSheet "ex"  ?~ sheet
+
+
+generateReportXlsx :: IO Xlsx
+generateReportSheet = renderSpreadsheet <$> generateReport
+
+generateReport :: IO XlsxReport
+generateReport = do
+     ct <- getCurrentTime
+     dtes <- generate generateDataTemplatesWithData
+     let forms@(oneForm:_) = convertToKioskForm <$> currentCobaltForms
+         reportTemplate = makeCobaltExcelTemplate
+         report = buildXlsxReport reportTemplate (XlsxContext ct) oneForm dtes
+     return report
+
+
+generateDataTemplatesWithData = do
+  txt <- T.pack <$> arbitrary
+  let targetDataTemplates = (fromFormToDataTemplate.convertToKioskForm <$> currentCobaltForms )
+      transformedDataTemplates = targetDataTemplates & (traverse .
+                                                       _templateItems .
+                                                       traverse .
+                                                       _templateValue .
+                                                       _InputTypeText .
+                                                       getInputText) .~ "an arbitrary thign"
+  return transformedDataTemplates
 
 -- | Form Generation (Cobalt Version)
 convertToKioskForm :: CobaltWaterHaulingCompany -> Form
