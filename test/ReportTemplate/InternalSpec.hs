@@ -34,6 +34,7 @@ import           Generators
 import           Kiosk.Backend.Data.DataTemplate
 import           Kiosk.Backend.Form
 import           Language.Haskell.TH
+
 import           Mocks.Primitive.Generators      (GeneratorType (..),
                                                   generateInts)
 import           ReportTemplate.Internal
@@ -48,6 +49,7 @@ makeLenses ''ReportTableRowStyle
 makeLenses ''ReportPreamble
 makePrisms ''InputType
 makeLenses ''InputText
+
 main :: IO ()
 main = hspec spec
 

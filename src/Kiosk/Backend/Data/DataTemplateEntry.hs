@@ -57,8 +57,6 @@ import           Codec.Xlsx                              (Cell (_cellValue),
 import           Data.Map                                (empty, insert, union)
 import           Data.Monoid                             (mempty)
 import qualified Data.Vector                             as V
-import           Prelude                                 hiding (foldl, foldr)
-
 import           Kiosk.Backend.Data.DataTemplate         (DataTemplate (..),
                                                           InputText (..),
                                                           InputType (..),
@@ -66,6 +64,8 @@ import           Kiosk.Backend.Data.DataTemplate         (DataTemplate (..),
                                                           fromDataTemplateToCSV,
                                                           _templateItems)
 import           Kiosk.Backend.Data.DataTemplateEntryKey
+
+import           Prelude                                 hiding (foldl, foldr)
 
 
 -- |Data Template Entry defines a return value of a form
