@@ -90,7 +90,7 @@ makeCellMapFromUTCTime timeFormatString key  = makeCellMapFromText key .
 
 -- | Row Rendering Helper Functions
 
-   -- | Retrieve Cell DAta
+-- | Retrieve Cell Data
 makeCellDoubleFromInputDouble :: Text -> DataTemplate -> Cell
 makeCellDoubleFromInputDouble = makeCellValueFromDataTemplate CellDouble inputDoubleLens
                                where
