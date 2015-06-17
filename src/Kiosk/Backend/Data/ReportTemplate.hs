@@ -110,6 +110,18 @@ makeCellTextWithCellTemplate templateFcn txts dte = def & cellValue ?~ cellVal
                                        <$> txts
                                        <*> [dte])
 
+
+makeCellDoubleWithCellTemplate :: ([Text] -> Either Text Double )
+                                  -> [Text] -> DataTemplate -> Cell
+makeCellDoubleWithCellTemplate templateFcn txts dte = def & cellValue ?~ cellVal
+ where
+    cellVal = either CellText CellDouble  $ templateFcn $ targetTextList
+    inputTextLens = _InputTypeText.getInputText
+    targetTextList :: [Text]
+    targetTextList = fromMaybe "" <$> (getInputTypeByLabel inputTextLens
+                                       <$> txts
+                                       <*> [dte])
+
 makeCellTextFromInputText :: Text -> DataTemplate -> Cell
 makeCellTextFromInputText = makeCellValueFromDataTemplate CellText inputTextLens
                                        where
