@@ -70,9 +70,10 @@ makeCobaltExcelTemplate = buildReportTemplate preambleTemplate rowTemplate
 
 preambleTemplate :: XlsxPreambleTemplateList
 preambleTemplate = [("Report Prepared For", const $ getCompanyName (1,1))
-                   , ("Prepared On", formatTimestampDate )]
+                    ]
  where
-    formatTimestampDate context _ = makeCellMapFromUTCTime "%c" (2,2) . _xlsxCurrentTime $ context
+      formatTimestampDate context _ = def & cellValue ?~ CellText "Current Time not active"
+--    formatTimestampDate context _ = makeCellMapFromUTCTime "%c" (2,2) . _xlsxCurrentTime $ context
 
 rowTemplate:: XlsxRowTemplateList
 rowTemplate = [ ("Water Hauling Number",getWaterHauler )
@@ -130,7 +131,7 @@ generateReport = do
      dtes <- generate generateDataTemplatesWithData
      let forms@(oneForm:_) = convertToKioskForm <$> currentCobaltForms
          reportTemplate = makeCobaltExcelTemplate
-         report = buildXlsxReport reportTemplate (XlsxContext ct) oneForm dtes
+         report = buildXlsxReport reportTemplate (XlsxContext "") oneForm dtes
      return report
 
 
