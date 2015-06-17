@@ -1,3 +1,5 @@
+# Version 1.6.2
+* Added Xlsx Report functions to work with the templating system
 # Version 1.6.0
 * Added a new Templating system for writing templates on the data
 # Version 1.5.9
