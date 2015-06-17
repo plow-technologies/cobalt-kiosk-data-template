@@ -19,16 +19,17 @@ Data Templates and Form Helpers for making ReportTemplates
 module Kiosk.Backend.Data.ReportTemplate where
 
 import           Codec.Xlsx
-import           Control.Applicative             ((<$>), (<*>))
+import           Control.Applicative                  ((<$>), (<*>))
 import           Control.Lens
-import           Data.Map                        (Map)
-import qualified Data.Map.Lazy                   as M
+import           Data.Map                             (Map)
+import qualified Data.Map.Lazy                        as M
 import           Data.Maybe
 import           Data.Monoid
-import           Data.Text                       (Text)
-import qualified Data.Text                       as T
+import           Data.Text                            (Text)
+import qualified Data.Text                            as T
 import           Data.Time
 import           Kiosk.Backend.Data.DataTemplate
+import           Kiosk.Backend.Data.DataTemplateEntry
 import           Kiosk.Backend.Form
 import           ReportTemplate.Internal
 import           System.Locale
@@ -55,7 +56,7 @@ type KioskRowTemplate context rowOut = ReportRowTemplate context DataTemplate ro
 -- | Spreadsheet specific
 
 data XlsxContext = XlsxContext {
-                 _xlsxCurrentTime :: UTCTime}
+                 _xlsxCurrentTime :: String}
 
 type XlsxReportTemplate = KioskReportTemplate XlsxContext CellMap Cell
 type XlsxPreambleTemplateList = KioskPreambleTemplateList XlsxContext CellMap
@@ -108,15 +109,27 @@ makeCellTextWithCellTemplate templateFcn txts dte = def & cellValue ?~ cellVal
                                        <$> txts
                                        <*> [dte])
 
+
+makeCellDoubleWithCellTemplate :: ([Text] -> Either Text Double )
+                                  -> [Text] -> DataTemplate -> Cell
+makeCellDoubleWithCellTemplate templateFcn txts dte = def & cellValue ?~ cellVal
+ where
+    cellVal = either CellText CellDouble  $ templateFcn $ targetTextList
+    inputTextLens = _InputTypeText.getInputText
+    targetTextList :: [Text]
+    targetTextList = fromMaybe "" <$> (getInputTypeByLabel inputTextLens
+                                       <$> txts
+                                       <*> [dte])
+
 makeCellTextFromInputText :: Text -> DataTemplate -> Cell
 makeCellTextFromInputText = makeCellValueFromDataTemplate CellText inputTextLens
                                        where
                                           inputTextLens = _InputTypeText.getInputText
 
 makeCellTextFromInputDate :: Text -> DataTemplate -> Cell
-makeCellTextFromInputDate l dt = def & cellValue .~ maybeCellValue
+makeCellTextFromInputDate l dte = def & cellValue .~ maybeCellValue
                            where
-                              maybeInputDate = getInputTypeByLabel inputLens l dt
+                              maybeInputDate = getInputTypeByLabel inputLens l$ dte
                               maybeCellValue = CellText <$> maybeInputDate
                               inputLens = _InputTypeDate . getInputDate
 
@@ -128,7 +141,7 @@ makeCellValueFromDataTemplate ::
 makeCellValueFromDataTemplate cellConstructor  lensDt l dt  = outputCell
   where
     maybeCellValue :: Maybe CellValue
-    maybeCellValue = cellConstructor <$> getInputTypeByLabel lensDt l dt
+    maybeCellValue = cellConstructor <$> (getInputTypeByLabel lensDt l $  dt)
     outputCell :: Cell
     outputCell = def  & cellValue .~ maybeCellValue
 
@@ -163,11 +176,7 @@ buildXlsxReport xlsxReportTemplate xlsxContext form dataTemplates = renderedRepo
   where
      renderedReport = renderReport xlsxReportTemplate xlsxContext form dataTemplates
 
-
-
-
 -- | Create Excel Spreadsheet
-
 
 -- | Render Spreadsheet from report
 renderSpreadsheet :: XlsxReport -> Worksheet
@@ -183,7 +192,7 @@ renderSpreadsheet report = def & wsCells .~ combinedMap
    labelToIntMap = M.fromList . zip (report ^. (reportRows . _ReportTableRowIndex . _1 )  ) $ [1..]
    rowMapList  :: [CellMap]
    rowMapList  = (foldrTableByRowWithIndex transformPositionAndMap M.empty) <$>
-                   (toListOf  (reportRows._ReportTableRowIndex._2) report)
+                  (toListOf  (reportRows._ReportTableRowIndex._2) report)
    transformPositionAndMap :: (Int,String) -> Cell -> CellMap -> CellMap
    transformPositionAndMap (rowInt,label) rowVal rowMap =  case M.lookup label labelToIntMap of
           Nothing -> rowMap
