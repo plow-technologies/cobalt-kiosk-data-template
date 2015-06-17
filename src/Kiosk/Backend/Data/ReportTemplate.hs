@@ -19,17 +19,17 @@ Data Templates and Form Helpers for making ReportTemplates
 module Kiosk.Backend.Data.ReportTemplate where
 
 import           Codec.Xlsx
-import           Control.Applicative                  ((<$>), (<*>))
+import           Control.Applicative             ((<$>), (<*>))
 import           Control.Lens
-import           Data.Map                             (Map)
-import qualified Data.Map.Lazy                        as M
+import           Data.Map                        (Map)
+import qualified Data.Map.Lazy                   as M
 import           Data.Maybe
 import           Data.Monoid
-import           Data.Text                            (Text)
-import qualified Data.Text                            as T
+import           Data.Text                       (Text)
+import qualified Data.Text                       as T
 import           Data.Time
 import           Kiosk.Backend.Data.DataTemplate
-import           Kiosk.Backend.Data.DataTemplateEntry
+-- import           Kiosk.Backend.Data.DataTemplateEntry
 import           Kiosk.Backend.Form
 import           ReportTemplate.Internal
 import           System.Locale
@@ -70,6 +70,7 @@ type XlsxTable = ReportTable Cell
 
 -- | Excel Form Rendering Helper Functions
 -- Because the excel preamble is a full cell map
+
 getCompanyName :: (Int,Int) -> Form -> CellMap
 getCompanyName key form = makeCellMapFromText key companyName
   where
@@ -86,9 +87,6 @@ makeCellMapFromUTCTime timeFormatString key  = makeCellMapFromText key .
                                                formatTime defaultTimeLocale
                                                           timeFormatString
 
-
-
-
 -- | Row Rendering Helper Functions
 
 -- | Retrieve Cell Data
@@ -96,7 +94,6 @@ makeCellDoubleFromInputDouble :: Text -> DataTemplate -> Cell
 makeCellDoubleFromInputDouble = makeCellValueFromDataTemplate CellDouble inputDoubleLens
                                where
                                   inputDoubleLens = _InputTypeDouble.getInputDouble
-
 
 makeCellTextWithCellTemplate :: ([Text] -> Text )
                                 -> [Text] -> DataTemplate -> Cell
@@ -191,14 +188,14 @@ renderSpreadsheet report = def & wsCells .~ combinedMap
    labelToIntMap :: Map ReportRowLabel Int
    labelToIntMap = M.fromList . zip (report ^. (reportRows . _ReportTableRowIndex . _1 )  ) $ [1..]
    rowMapList  :: [CellMap]
-   rowMapList  = (foldrTableByRowWithIndex transformPositionAndMap M.empty) <$>
+   rowMapList  = foldrTableByRowWithIndex transformPositionAndMap M.empty <$>
                   (toListOf  (reportRows._ReportTableRowIndex._2) report)
    transformPositionAndMap :: (Int,String) -> Cell -> CellMap -> CellMap
-   transformPositionAndMap (rowInt,label) rowVal rowMap =  case M.lookup label labelToIntMap of
-          Nothing -> rowMap
-          (Just i) -> M.insert (rowInt + preambleOffset , i)  rowVal rowMap
+   transformPositionAndMap (rowInt,label') rowVal rowMap' =  case M.lookup label' labelToIntMap of
+          Nothing -> rowMap'
+          (Just i) -> M.insert (rowInt + preambleOffset , i)  rowVal rowMap'
 
-   labelCellMap = M.foldrWithKey (\label idx m -> M.insert (preambleOffset,idx) (convertText label) m )
+   labelCellMap = M.foldrWithKey (\label' idx m -> M.insert (preambleOffset,idx) (convertText label') m )
                                  M.empty
                                  labelToIntMap
-   convertText label = def & cellValue .~ (Just . CellText . T.pack $ label)
+   convertText label' = def & cellValue .~ (Just . CellText . T.pack $ label')
