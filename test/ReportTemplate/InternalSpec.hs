@@ -55,18 +55,28 @@ main = hspec spec
 
 spec :: SpecWith ()
 spec = do
-  describe (nameBase 'renderReport) $ do
-   it "should Build a report from data sources contexts and templates" $ do
-      let i = 7
-      (reportTemplate,report) <- testReport i
-      let mapSize = M.size $ report ^. (reportRows .
-                                              _ReportTableRowIndex._2.
-                                              rowMap)
-          rowTemplateLength = length rowTemplate
+  describe (nameBase 'renderReport) $
+    it "should Build a report from data sources contexts and templates" $ buildReport
+  describe (nameBase 'buildInvoice) $  
+    it "should build a quickbooks invoice from contexts and templates"  $ buildInvoice
 
-      mapSize `shouldBe` (i * rowTemplateLength)
-      (M.size . rowTransformMap.reportRowsTemplate $ reportTemplate ) `shouldBe` rowTemplateLength
+buildReport = do
+  let i = 7
+  (reportTemplate,report) <- testReport i
+  let mapSize = M.size $ report ^. (reportRows .
+                                    _ReportTableRowIndex._2.
+                                    rowMap)
+      rowTemplateLength = length rowTemplate                      
+  mapSize `shouldBe` (i * rowTemplateLength)
+  (M.size . rowTransformMap.reportRowsTemplate $ reportTemplate ) `shouldBe` rowTemplateLength
 
+buildInvoice :: Expectation
+buildInvoice = do
+  let i = 7
+  dataTemplate <- testDataTemplate i
+  invoice <- exportToQuickBooksInvoice dataTemplate
+  True `shouldBe` True
+         
 testFormTemplate :: IO [Form]
 testFormTemplate = take 1 <$> (generate . generateForm $ Static)
 
