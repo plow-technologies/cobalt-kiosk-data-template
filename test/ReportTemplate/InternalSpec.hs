@@ -32,7 +32,7 @@ import           Data.Monoid                     ((<>))
 import           Data.Time
 import           Generators
 import           Kiosk.Backend.Data.DataTemplate
-import           Kiosk.Backend.Data.InvoiceTemplate (exportToQuickBooksInvoice)
+import           Kiosk.Backend.Data.InvoiceTemplate
 import           Kiosk.Backend.Form
 import           Language.Haskell.TH
 
@@ -75,7 +75,7 @@ buildInvoice :: Expectation
 buildInvoice = do
   let i = 7
   dataTemplates <- testDataTemplate i
-  let invoice = exportToQuickBooksInvoice dataTemplates
+  let invoice = renderQuickBooksReport undefined
   True `shouldBe` True
 
 testFormTemplate :: IO [Form]
