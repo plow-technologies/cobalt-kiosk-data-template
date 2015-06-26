@@ -32,6 +32,7 @@ import           Data.Monoid                     ((<>))
 import           Data.Time
 import           Generators
 import           Kiosk.Backend.Data.DataTemplate
+import           Kiosk.Backend.Data.InvoiceTemplate (exportToQuickBooksInvoice)
 import           Kiosk.Backend.Form
 import           Language.Haskell.TH
 
@@ -73,10 +74,10 @@ buildReport = do
 buildInvoice :: Expectation
 buildInvoice = do
   let i = 7
-  dataTemplate <- testDataTemplate i
-  invoice <- exportToQuickBooksInvoice dataTemplate
+  dataTemplates <- testDataTemplate i
+  let invoice = exportToQuickBooksInvoice dataTemplates
   True `shouldBe` True
-         
+
 testFormTemplate :: IO [Form]
 testFormTemplate = take 1 <$> (generate . generateForm $ Static)
 

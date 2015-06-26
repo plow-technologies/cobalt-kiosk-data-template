@@ -23,6 +23,7 @@ Library
                         Kiosk.Backend.Data.Migrations.FormVersionZero
                         Kiosk.Backend.Data.Migrations.CobaltBaseForm
                         Kiosk.Backend.Data.DataTemplate
+                        Kiosk.Backend.Data.InvoiceTemplate
                         Kiosk.Backend.Data.ReportTemplate
                         Kiosk.Backend.Data.DataTemplateEntryKey
                         ReportTemplate.Internal
@@ -41,6 +42,7 @@ Library
                       , lens         >= 4.4
                       , old-locale >= 1.0.0.6
                       , plow-extras-time  >= 0.1.1
+                      , quickbooks >= 0.1.0.3
                       , regex-tdfa >= 1.2.0
                       , regex-tdfa-text >= 1.0.0.2
                       , text >= 1.1
@@ -80,6 +82,7 @@ Test-Suite spec
                       , parsers
                       , plow-extras-time
                       , primitive-generator-mocks
+                      , quickbooks
                       , regex-genex
                       , regex-tdfa
                       , regex-tdfa-text
