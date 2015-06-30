@@ -75,7 +75,7 @@ buildInvoice :: Expectation
 buildInvoice = do
   let i = 7
   dataTemplates <- testDataTemplate i
-  let invoice = renderQuickBooksReport undefined
+  let invoice = renderInvoice undefined
   True `shouldBe` True
 
 testFormTemplate :: IO [Form]
