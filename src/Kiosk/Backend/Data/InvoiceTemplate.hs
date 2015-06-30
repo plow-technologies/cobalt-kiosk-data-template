@@ -1,3 +1,4 @@
+{-# LANGUAGE NamedFieldPuns    #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Kiosk.Backend.Data.InvoiceTemplate where
@@ -82,3 +83,34 @@ dataTemplateToLine dataTemplate =
 
     itemRef :: Reference
     itemRef = undefined
+
+-- |
+
+dataTemplateToLines
+  :: DataTemplate
+  -> [Line]
+
+dataTemplateToLines DataTemplate{templateItems} =
+  fmap templateItemToLine templateItems
+
+
+-- |
+
+templateItemToLine
+  :: TemplateItem
+  -> Line
+
+templateItemToLine (TemplateItem label (InputTypeDouble sd)) =
+  (salesItemLine amount detail)
+    { lineDescription = Just label }
+  where
+    amount :: Double
+    amount = _getInputDouble sd
+
+    detail :: SalesItemLineDetail
+    detail = salesItemLineDetail itemRef
+
+    itemRef :: ItemRef
+    itemRef = reference "21"
+
+templateItemToLine _ = undefined
