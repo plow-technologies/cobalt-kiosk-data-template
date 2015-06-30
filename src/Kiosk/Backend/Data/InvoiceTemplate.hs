@@ -27,7 +27,7 @@ import ReportTemplate.Internal
 
 import Control.Applicative ((<*>))
 import Control.Applicative (pure)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (catMaybes,fromMaybe)
 import Data.Text (Text)
 import Data.Time (UTCTime)
 
@@ -42,24 +42,17 @@ type InvoiceReport =
   Report Invoice Line
 
 
--- | A QuickBooks invoice report context.
-
-data InvoiceReportContext = QuickBooksReportContext
-  { invoiceReportContextTime :: UTCTime
-  }
-
-
 -- | A QuickBooks invoice report template.
 
 type InvoiceReportTemplate =
-  ReportTemplate InvoiceReportContext Form Invoice DataTemplate Line
+  ReportTemplate InvoiceContext Form Invoice DataTemplate Line
 
 
 -- |
 
 buildInvoiceReport
   :: InvoiceReportTemplate
-  -> InvoiceReportContext
+  -> InvoiceContext
   -> Form
   -> [DataTemplate]
   -> InvoiceReport
@@ -74,8 +67,69 @@ renderInvoice
   :: InvoiceReport
   -> Invoice
 
-renderInvoice =
+renderInvoice _ =
   undefined
+
+
+--------------------------------------------------------------------------------
+--
+--------------------------------------------------------------------------------
+
+-- | A QuickBooks invoice report context.
+
+data InvoiceContext = InvoiceContext
+  { invoiceReportContextTime :: UTCTime
+  , invoiceTemplate          :: InvoiceTemplate
+  , invoiceLineTemplate      :: InvoiceLineTemplate
+  }
+
+
+data InvoiceTemplate = InvoiceTemplate
+  { dataTemplateToInvoiceCustomField1 :: Maybe (Form -> CustomField)
+  , dataTemplateToInvoiceCustomField2 :: Maybe (Form -> CustomField)
+  , dataTemplateToInvoiceCustomField3 :: Maybe (Form -> CustomField)
+  }
+
+
+defaultInvoiceTemplate :: InvoiceTemplate
+defaultInvoiceTemplate =
+  InvoiceTemplate
+    { dataTemplateToInvoiceCustomField1 = Nothing
+    , dataTemplateToInvoiceCustomField2 = Nothing
+    , dataTemplateToInvoiceCustomField3 = Nothing
+    }
+
+
+data InvoiceLineTemplate = InvoiceLineTemplate
+  { dataTemplateToLineCustomField1 :: Maybe (DataTemplate -> CustomField)
+  , dataTemplateToLineCustomField2 :: Maybe (DataTemplate -> CustomField)
+  , dataTemplateToLineCustomField3 :: Maybe (DataTemplate -> CustomField)
+  , dataTemplateToLineDescription  :: Maybe (DataTemplate -> Text)
+  , invoiceLineDetailTemplate      :: InvoiceLineDetailTemplate
+  }
+
+
+defaultInvoiceLineTemplate :: InvoiceLineTemplate
+defaultInvoiceLineTemplate =
+  InvoiceLineTemplate
+    { dataTemplateToLineCustomField1 = Nothing
+    , dataTemplateToLineCustomField2 = Nothing
+    , dataTemplateToLineCustomField3 = Nothing
+    , dataTemplateToLineDescription  = Nothing
+    , invoiceLineDetailTemplate      = defaultInvoiceLineDetailTemplate
+    }
+
+
+data InvoiceLineDetailTemplate = InvoiceLineDetailTemplate
+  { dataTemplateToQuantity :: DataTemplate -> Maybe Double
+  }
+
+
+defaultInvoiceLineDetailTemplate :: InvoiceLineDetailTemplate
+defaultInvoiceLineDetailTemplate =
+  InvoiceLineDetailTemplate
+    { dataTemplateToQuantity = defaultDataTemplateToQuantity
+    }
 
 
 --------------------------------------------------------------------------------
@@ -99,57 +153,84 @@ defaultDataTemplateToQuantity dataTemplate =
 
 
 --------------------------------------------------------------------------------
---
+-- *
 --------------------------------------------------------------------------------
+
+-- **
 
 -- |
 
 formAndDataTemplatesToInvoice
-  :: Form
+  :: InvoiceContext
+  -> Form
   -> [DataTemplate]
   -> Invoice
 
-formAndDataTemplatesToInvoice form dataTemplates =
+formAndDataTemplatesToInvoice InvoiceContext{..} form dataTemplates =
   invoice { invoiceLine = invoiceLines }
   where
     invoice :: Invoice
     invoice =
-      formToInvoice form
+      formToInvoice invoiceTemplate form
 
     invoiceLines =
-      dataTemplatesToLines dataTemplates
+      dataTemplatesToLines invoiceLineTemplate dataTemplates
 
+
+-- **
 
 -- |
 
 formToInvoice
-  :: Form
+  :: InvoiceTemplate
+  -> Form
   -> Invoice
 
-formToInvoice _ =
+formToInvoice InvoiceTemplate{..} form =
   (defaultInvoice [] customerRef)
-    { invoiceCustomField = Nothing -- Maybe [CustomField]
+    { invoiceCustomField = maybeCustomFields
     }
   where
     customerRef :: CustomerRef
     customerRef =
-      undefined
+      (reference customerValue) { referenceName = customerName }
+      where
+        customerName :: Maybe Text
+        customerName = Nothing
 
+        customerValue :: Text
+        customerValue = ""
+
+    maybeCustomFields :: Maybe [CustomField]
+    maybeCustomFields =
+      if null customFields then Nothing else Just customFields
+      where
+        customFields =
+          catMaybes
+            [ dataTemplateToInvoiceCustomField1 <*> Just form
+            , dataTemplateToInvoiceCustomField2 <*> Just form
+            , dataTemplateToInvoiceCustomField3 <*> Just form
+            ]
+
+
+-- **
 
 -- |
 
 dataTemplatesToLines
-  :: [DataTemplate]
+  :: InvoiceLineTemplate
+  -> [DataTemplate]
   -> [Line]
 
-dataTemplatesToLines =
-  fmap dataTemplateToLine
+dataTemplatesToLines invoiceLineTemplate =
+  fmap (dataTemplateToLine invoiceLineTemplate)
 
 
 -- |
 
 dataTemplateToLine
-  :: DataTemplate
+  :: InvoiceLineTemplate
+  -> DataTemplate
   -> Line
 
 dataTemplateToLine =
@@ -159,10 +240,11 @@ dataTemplateToLine =
 -- |
 
 dataTemplateToSalesItemLine
-  :: DataTemplate
+  :: InvoiceLineTemplate
+  -> DataTemplate
   -> Line
 
-dataTemplateToSalesItemLine dataTemplate =
+dataTemplateToSalesItemLine InvoiceLineTemplate{..} dataTemplate =
   (salesItemLine amount detail)
     { lineCustomField = maybeCustomFields
     , lineDescription = maybeDescription
@@ -179,27 +261,32 @@ dataTemplateToSalesItemLine dataTemplate =
 
     detail :: SalesItemLineDetail
     detail =
-      undefined
-      -- dataTemplateToSalesItemLineDetail invoiceLineDetailTemplate dataTemplate
+      dataTemplateToSalesItemLineDetail invoiceLineDetailTemplate dataTemplate
 
     maybeCustomFields :: Maybe [CustomField]
     maybeCustomFields =
-      undefined
-      -- dataTemplateToCustomFields <*> Just dataTemplate
+      if null customFields then Nothing else Just customFields
+      where
+        customFields =
+          catMaybes
+          [dataTemplateToLineCustomField1 <*> Just dataTemplate
+          ,dataTemplateToLineCustomField2 <*> Just dataTemplate
+          ,dataTemplateToLineCustomField3 <*> Just dataTemplate
+          ]
 
     maybeDescription :: Maybe Text
     maybeDescription =
-      undefined
-      -- dataTemplateToLineDescription <*> Just dataTemplate
+      dataTemplateToLineDescription <*> Just dataTemplate
 
 
 -- |
 
 dataTemplateToSalesItemLineDetail
-  :: DataTemplate
+  :: InvoiceLineDetailTemplate
+  -> DataTemplate
   -> SalesItemLineDetail
 
-dataTemplateToSalesItemLineDetail dataTemplate =
+dataTemplateToSalesItemLineDetail InvoiceLineDetailTemplate{..} dataTemplate =
   (salesItemLineDetail itemRef)
     { salesItemLineDetailClassRef        = undefined -- :: !(Maybe ClassRef)
     , salesItemLineDetailUnitPrice       = undefined -- :: Maybe Double
@@ -216,8 +303,7 @@ dataTemplateToSalesItemLineDetail dataTemplate =
 
     maybeQuantity :: Maybe Double
     maybeQuantity =
-      undefined
-      -- dataTemplateToQuantity dataTemplate
+      dataTemplateToQuantity dataTemplate
 
 
 --------------------------------------------------------------------------------
