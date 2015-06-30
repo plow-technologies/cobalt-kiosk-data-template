@@ -1,69 +1,149 @@
 {-# LANGUAGE NamedFieldPuns    #-}
+{-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE OverloadedStrings #-}
 
+--------------------------------------------------------------------------------
+-- |
+--
+-- Module      : Kiosk.Backend.Data.InvoiceTemplate
+-- Description :
+-- Copyright   :
+-- License     :
+-- Maintainer  :
+-- Stability   :
+-- Portability :
+--
+--
+--
+--------------------------------------------------------------------------------
+
 module Kiosk.Backend.Data.InvoiceTemplate where
+
 
 import Kiosk.Backend.Data
 import Kiosk.Backend.Form
 import QuickBooks
 import ReportTemplate.Internal
 
+import Control.Applicative ((<*>))
+import Control.Applicative (pure)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Time (UTCTime)
 
--- | A QuickBooks report.
 
-type QuickBooksReport =
+--------------------------------------------------------------------------------
+--
+--------------------------------------------------------------------------------
+
+-- | A QuickBooks invoice report.
+
+type InvoiceReport =
   Report Invoice Line
+
+
+-- | A QuickBooks invoice report context.
+
+data InvoiceReportContext = QuickBooksReportContext
+  { invoiceReportContextTime :: UTCTime
+  }
+
+
+-- | A QuickBooks invoice report template.
+
+type InvoiceReportTemplate =
+  ReportTemplate InvoiceReportContext Form Invoice DataTemplate Line
 
 
 -- |
 
-data QuickBooksReportContext = QuickBooksReportContext
-  { quickBooksReportContextCurrentTime :: UTCTime
-  }
+buildInvoiceReport
+  :: InvoiceReportTemplate
+  -> InvoiceReportContext
+  -> Form
+  -> [DataTemplate]
+  -> InvoiceReport
+
+buildInvoiceReport  =
+  renderReport
 
 
--- | A QuickBooks report template.
+-- |
 
-type QuickBooksReportTemplate =
-  ReportTemplate QuickBooksReportContext Form Invoice DataTemplate Line
+renderInvoice
+  :: InvoiceReport
+  -> Invoice
+
+renderInvoice =
+  undefined
 
 
--- | Generate a QuickBooks invoice given a report.
+--------------------------------------------------------------------------------
+--
+--------------------------------------------------------------------------------
 
-renderQuickBooksReport
-  :: QuickBooksReport   -- ^
-  -> Invoice            -- ^
+defaultDataTemplateToQuantity
+  :: DataTemplate
+  -> Maybe Double
 
-renderQuickBooksReport quickBooksReport =
-  defaultInvoice lines customerRef
+defaultDataTemplateToQuantity dataTemplate =
+  case defaultDataTemplateToInputType dataTemplate "Amount" of
+    Just (InputTypeDouble quantity) ->
+      Just (_getInputDouble quantity)
+
+    Just (InputTypeInt quantity) ->
+      Just (fromIntegral (_getInputInt quantity))
+
+    _ ->
+      Nothing
+
+
+--------------------------------------------------------------------------------
+--
+--------------------------------------------------------------------------------
+
+-- |
+
+formAndDataTemplatesToInvoice
+  :: Form
+  -> [DataTemplate]
+  -> Invoice
+
+formAndDataTemplatesToInvoice form dataTemplates =
+  invoice { invoiceLine = invoiceLines }
+  where
+    invoice :: Invoice
+    invoice =
+      formToInvoice form
+
+    invoiceLines =
+      dataTemplatesToLines dataTemplates
+
+
+-- |
+
+formToInvoice
+  :: Form
+  -> Invoice
+
+formToInvoice _ =
+  (defaultInvoice [] customerRef)
+    { invoiceCustomField = Nothing -- Maybe [CustomField]
+    }
   where
     customerRef :: CustomerRef
-    customerRef = undefined
---      (reference referenceValue) {referenceName = Just referenceName}
-
-    referenceValue :: Text
-    referenceValue = ""
-
-    referenceName :: Text
-    referenceName = ""
-
-    lines :: [Line]
-    lines = quickBooksReportToLines quickBooksReport
+    customerRef =
+      undefined
 
 
--- | Generate QuickBooks lines given a report.
+-- |
 
-quickBooksReportToLines
-  :: QuickBooksReport
+dataTemplatesToLines
+  :: [DataTemplate]
   -> [Line]
 
-quickBooksReportToLines quickBooksReport =
-  fmap dataTemplateToLine dataTemplates
-  where
-    dataTemplates :: [DataTemplate]
-    dataTemplates = undefined
+dataTemplatesToLines =
+  fmap dataTemplateToLine
 
 
 -- |
@@ -72,45 +152,94 @@ dataTemplateToLine
   :: DataTemplate
   -> Line
 
-dataTemplateToLine dataTemplate =
-  salesItemLine amount detail
-  where
-    amount :: Double
-    amount = undefined
+dataTemplateToLine =
+  dataTemplateToSalesItemLine
 
-    detail :: SalesItemLineDetail
-    detail = salesItemLineDetail itemRef
-
-    itemRef :: Reference
-    itemRef = undefined
 
 -- |
 
-dataTemplateToLines
+dataTemplateToSalesItemLine
   :: DataTemplate
-  -> [Line]
-
-dataTemplateToLines DataTemplate{templateItems} =
-  fmap templateItemToLine templateItems
-
-
--- |
-
-templateItemToLine
-  :: TemplateItem
   -> Line
 
-templateItemToLine (TemplateItem label (InputTypeDouble sd)) =
+dataTemplateToSalesItemLine dataTemplate =
   (salesItemLine amount detail)
-    { lineDescription = Just label }
+    { lineCustomField = maybeCustomFields
+    , lineDescription = maybeDescription
+    }
   where
     amount :: Double
-    amount = _getInputDouble sd
+    amount =
+      fromMaybe 0.0 maybeAmount
+
+    maybeAmount :: Maybe Double
+    maybeAmount =
+      pure (*) <*> salesItemLineDetailUnitPrice detail
+               <*> salesItemLineDetailQty detail
 
     detail :: SalesItemLineDetail
-    detail = salesItemLineDetail itemRef
+    detail =
+      undefined
+      -- dataTemplateToSalesItemLineDetail invoiceLineDetailTemplate dataTemplate
 
+    maybeCustomFields :: Maybe [CustomField]
+    maybeCustomFields =
+      undefined
+      -- dataTemplateToCustomFields <*> Just dataTemplate
+
+    maybeDescription :: Maybe Text
+    maybeDescription =
+      undefined
+      -- dataTemplateToLineDescription <*> Just dataTemplate
+
+
+-- |
+
+dataTemplateToSalesItemLineDetail
+  :: DataTemplate
+  -> SalesItemLineDetail
+
+dataTemplateToSalesItemLineDetail dataTemplate =
+  (salesItemLineDetail itemRef)
+    { salesItemLineDetailClassRef        = undefined -- :: !(Maybe ClassRef)
+    , salesItemLineDetailUnitPrice       = undefined -- :: Maybe Double
+    , salesItemLineDetailRatePercent     = undefined -- :: !(Maybe Double)
+    , salesItemLineDetailPriceLevelRef   = undefined -- :: !(Maybe PriceLevelRef)
+    , salesItemLineDetailQty             = maybeQuantity
+    , salesItemLineDetailTaxCodeRef      = undefined -- :: !(Maybe TaxCodeRef)
+    , salesItemLineDetailServiceData     = undefined -- :: !(Maybe Text)
+    , salesItemLineDetailTaxInclusiveAmt = undefined -- :: !(Maybe Double)
+    }
+  where
     itemRef :: ItemRef
-    itemRef = reference "21"
+    itemRef = undefined
 
-templateItemToLine _ = undefined
+    maybeQuantity :: Maybe Double
+    maybeQuantity =
+      undefined
+      -- dataTemplateToQuantity dataTemplate
+
+
+--------------------------------------------------------------------------------
+--
+--------------------------------------------------------------------------------
+
+-- |
+
+dataTemplateItems
+  :: DataTemplate
+  -> [(Text,InputType)]
+
+dataTemplateItems DataTemplate{templateItems} =
+  fmap (\TemplateItem{..} -> (label,templateValue)) templateItems
+
+
+-- |
+
+defaultDataTemplateToInputType
+  :: DataTemplate
+  -> Text
+  -> Maybe InputType
+
+defaultDataTemplateToInputType dataTemplate =
+  flip lookup (dataTemplateItems dataTemplate)
