@@ -122,7 +122,8 @@ data InvoiceTemplate = InvoiceTemplate
   , dataTemplateToInvoiceCustomField1 :: Maybe (Form -> CustomField)
   , dataTemplateToInvoiceCustomField2 :: Maybe (Form -> CustomField)
   , dataTemplateToInvoiceCustomField3 :: Maybe (Form -> CustomField)
-  , txnDate                           :: Maybe Text
+  , maybeInvoiceDate                  :: Maybe Text
+  , maybeInvoiceDueDate               :: Maybe Text
   }
 
 
@@ -136,9 +137,11 @@ data InvoiceLineTemplate = InvoiceLineTemplate
 
 
 data InvoiceLineDetailTemplate = InvoiceLineDetailTemplate
-  { dataTemplateToItemRef  :: DataTemplate -> ItemRef
-  , dataTemplateToQuantity :: DataTemplate -> Maybe Double
-  , unitPrice              :: Double
+  { maybeItemName  :: Maybe Text
+  , itemValue      :: Text
+  , itemUnitPrice  :: Double
+  , quantityLabel  :: Text
+  , unitPriceLabel :: Text
   }
 
 
@@ -179,6 +182,8 @@ formToInvoice
 formToInvoice InvoiceTemplate{..} form =
   (defaultInvoice [] customerRef)
     { invoiceCustomField = maybeCustomFields
+    , invoiceTxnDate     = maybeInvoiceDate
+    , invoiceDueDate     = maybeInvoiceDueDate
     }
   where
     customerRef :: CustomerRef
@@ -274,24 +279,24 @@ dataTemplateToSalesItemLineDetail InvoiceLineDetailTemplate{..} dataTemplate =
   (salesItemLineDetail itemRef)
     { salesItemLineDetailUnitPrice   = maybeUnitPrice
     , salesItemLineDetailQty         = maybeQuantity
-    , salesItemLineDetailServiceData = maybeServiceDate
     }
   where
     itemRef :: ItemRef
     itemRef =
-      dataTemplateToItemRef dataTemplate
+      (reference itemValue) { referenceName = maybeItemName }
 
     maybeQuantity :: Maybe Double
     maybeQuantity =
-      dataTemplateToQuantity dataTemplate
-
-    maybeServiceDate :: Maybe Text
-    maybeServiceDate =
-      undefined
+      defaultLookupDoubleInDataTemplate dataTemplate quantityLabel
 
     maybeUnitPrice :: Maybe Double
     maybeUnitPrice =
-      Just unitPrice
+      case defaultLookupDoubleInDataTemplate dataTemplate unitPriceLabel of
+        Nothing ->
+          Just itemUnitPrice
+
+        otherItemUnitPrice ->
+          otherItemUnitPrice
 
 
 --------------------------------------------------------------------------------
@@ -321,47 +326,17 @@ defaultLookupInDataTemplate dataTemplate =
 
 -- |
 
-defaultLookupDateInDataTemplate
-  :: DataTemplate
-  -> Text
-  -> Maybe Text
-
-defaultLookupDateInDataTemplate dataTemplate label =
-  case defaultLookupInDataTemplate dataTemplate label of
-    Just (InputTypeDate dateValue) ->
-      Just (_getInputDate dateValue)
-    _ ->
-      Nothing
-
-
--- |
-
 defaultLookupDoubleInDataTemplate
   :: DataTemplate
   -> Text
   -> Maybe Double
 
 defaultLookupDoubleInDataTemplate dataTemplate label =
-  case defaultLookupInDataTemplate dataTemplate label of
-    Just (InputTypeDouble doubleValue) ->
-      Just (_getInputDouble doubleValue)
-    _ ->
-      Nothing
-
-
--- |
-
-defaultLookupIntInDataTemplate
-  :: DataTemplate
-  -> Text
-  -> Maybe Int
-
-defaultLookupIntInDataTemplate dataTemplate label =
-  case defaultLookupInDataTemplate dataTemplate label of
-    Just (InputTypeInt doubleInt) ->
-      Just (_getInputInt doubleInt)
-    _ ->
-      Nothing
+  let
+    maybeTextValue =
+      defaultLookupTextInDataTemplate dataTemplate label
+  in
+    fmap Text.unpack maybeTextValue >>= readMaybe
 
 
 -- |
@@ -379,21 +354,6 @@ defaultLookupTextInDataTemplate dataTemplate label =
       Nothing
 
 
--- |
-
-defaultLookupTimeInDataTemplate
-  :: DataTemplate
-  -> Text
-  -> Maybe Text
-
-defaultLookupTimeInDataTemplate dataTemplate label =
-  case defaultLookupInDataTemplate dataTemplate label of
-    Just (InputTypeTime timeValue) ->
-      Just (_getInputTime timeValue)
-    _ ->
-      Nothing
-
-
 --------------------------------------------------------------------------------
 -- * Example
 --------------------------------------------------------------------------------
@@ -405,7 +365,7 @@ defaultInvoiceContext time =
   InvoiceContext
     { invoiceContextTime  = time
     , invoiceTemplate     = defaultInvoiceTemplate ""
-    , invoiceLineTemplate = defaultInvoiceLineTemplate
+    , invoiceLineTemplate = defaultInvoiceLineTemplate undefined undefined
     }
 
 
@@ -419,20 +379,22 @@ defaultInvoiceTemplate customerValue =
     , dataTemplateToInvoiceCustomField1 = Nothing
     , dataTemplateToInvoiceCustomField2 = Nothing
     , dataTemplateToInvoiceCustomField3 = Nothing
-    , txnDate                           = Nothing
+    , maybeInvoiceDate                  = Nothing
+    , maybeInvoiceDueDate               = Nothing
     }
 
 
 -- |
 
-defaultInvoiceLineTemplate :: InvoiceLineTemplate
-defaultInvoiceLineTemplate =
+defaultInvoiceLineTemplate :: Text -> Double -> InvoiceLineTemplate
+defaultInvoiceLineTemplate itemValue itemUnitPrice =
   InvoiceLineTemplate
     { dataTemplateToLineCustomField1 = Nothing
     , dataTemplateToLineCustomField2 = Nothing
     , dataTemplateToLineCustomField3 = Nothing
     , dataTemplateToLineDescription  = Just defaultDataTemplateToLineDescription
-    , invoiceLineDetailTemplate      = defaultInvoiceLineDetailTemplate 2.0
+    , invoiceLineDetailTemplate      =
+        defaultInvoiceLineDetailTemplate itemValue itemUnitPrice
     }
 
 
@@ -479,37 +441,12 @@ defaultDataTemplateToLineDescription dataTemplate =
 
 -- |
 
-defaultInvoiceLineDetailTemplate :: Double -> InvoiceLineDetailTemplate
-defaultInvoiceLineDetailTemplate unitPrice =
+defaultInvoiceLineDetailTemplate :: Text -> Double -> InvoiceLineDetailTemplate
+defaultInvoiceLineDetailTemplate itemValue itemUnitPrice =
   InvoiceLineDetailTemplate
-    { dataTemplateToItemRef  = defaultDataTemplateToItemRef
-    , dataTemplateToQuantity = defaultDataTemplateToQuantity
-    , unitPrice              = unitPrice
+    { maybeItemName          = Nothing
+    , itemValue              = itemValue
+    , itemUnitPrice          = itemUnitPrice
+    , quantityLabel          = "Amount"
+    , unitPriceLabel         = "Rate"
     }
-
-
--- |
-
-defaultDataTemplateToItemRef :: DataTemplate -> ItemRef
-defaultDataTemplateToItemRef _ =
-  (reference itemValue) { referenceName = maybeItemName }
-  where
-    itemValue :: Text
-    itemValue = ""
-
-    maybeItemName :: Maybe Text
-    maybeItemName = Just ""
-
-
--- |
---
--- >>> defaultDataTemplateToQuantity dataTemplate
--- Just 50.0
-
-defaultDataTemplateToQuantity :: DataTemplate -> Maybe Double
-defaultDataTemplateToQuantity dataTemplate =
-  fmap Text.unpack maybeQuantity >>= readMaybe
-  where
-    maybeQuantity :: Maybe Text
-    maybeQuantity =
-      defaultLookupTextInDataTemplate dataTemplate "Amount"
