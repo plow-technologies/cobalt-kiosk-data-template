@@ -72,7 +72,7 @@ renderInvoice _ =
 
 
 --------------------------------------------------------------------------------
---
+-- *
 --------------------------------------------------------------------------------
 
 -- | A QuickBooks invoice report context.
@@ -85,7 +85,8 @@ data InvoiceContext = InvoiceContext
 
 
 data InvoiceTemplate = InvoiceTemplate
-  { dataTemplateToInvoiceCustomField1 :: Maybe (Form -> CustomField)
+  { formToCustomerRef                 :: Form -> CustomerRef
+  , dataTemplateToInvoiceCustomField1 :: Maybe (Form -> CustomField)
   , dataTemplateToInvoiceCustomField2 :: Maybe (Form -> CustomField)
   , dataTemplateToInvoiceCustomField3 :: Maybe (Form -> CustomField)
   }
@@ -94,7 +95,8 @@ data InvoiceTemplate = InvoiceTemplate
 defaultInvoiceTemplate :: InvoiceTemplate
 defaultInvoiceTemplate =
   InvoiceTemplate
-    { dataTemplateToInvoiceCustomField1 = Nothing
+    { formToCustomerRef                 = undefined
+    , dataTemplateToInvoiceCustomField1 = Nothing
     , dataTemplateToInvoiceCustomField2 = Nothing
     , dataTemplateToInvoiceCustomField3 = Nothing
     }
@@ -121,27 +123,43 @@ defaultInvoiceLineTemplate =
 
 
 data InvoiceLineDetailTemplate = InvoiceLineDetailTemplate
-  { dataTemplateToQuantity :: DataTemplate -> Maybe Double
+  { dataTemplateToItemRef :: DataTemplate -> ItemRef
+  , dataTemplateToQuantity :: DataTemplate -> Maybe Double
+  , unitPrice :: Double
   }
 
 
 defaultInvoiceLineDetailTemplate :: InvoiceLineDetailTemplate
 defaultInvoiceLineDetailTemplate =
   InvoiceLineDetailTemplate
-    { dataTemplateToQuantity = defaultDataTemplateToQuantity
+    { dataTemplateToItemRef  = defaultDataTemplateToItemRef
+    , dataTemplateToQuantity = defaultDataTemplateToQuantity
+    , unitPrice = undefined
     }
 
 
 --------------------------------------------------------------------------------
---
+-- *
 --------------------------------------------------------------------------------
+
+-- |
+
+defaultDataTemplateToItemRef
+  :: DataTemplate
+  -> ItemRef
+
+defaultDataTemplateToItemRef _ =
+  undefined
+
+
+-- |
 
 defaultDataTemplateToQuantity
   :: DataTemplate
   -> Maybe Double
 
 defaultDataTemplateToQuantity dataTemplate =
-  case defaultDataTemplateToInputType dataTemplate "Amount" of
+  case defaultLookupInDataTemplate dataTemplate "Amount" of
     Just (InputTypeDouble quantity) ->
       Just (_getInputDouble quantity)
 
@@ -193,13 +211,7 @@ formToInvoice InvoiceTemplate{..} form =
   where
     customerRef :: CustomerRef
     customerRef =
-      (reference customerValue) { referenceName = customerName }
-      where
-        customerName :: Maybe Text
-        customerName = Nothing
-
-        customerValue :: Text
-        customerValue = ""
+      formToCustomerRef form
 
     maybeCustomFields :: Maybe [CustomField]
     maybeCustomFields =
@@ -269,9 +281,9 @@ dataTemplateToSalesItemLine InvoiceLineTemplate{..} dataTemplate =
       where
         customFields =
           catMaybes
-          [dataTemplateToLineCustomField1 <*> Just dataTemplate
-          ,dataTemplateToLineCustomField2 <*> Just dataTemplate
-          ,dataTemplateToLineCustomField3 <*> Just dataTemplate
+          [ dataTemplateToLineCustomField1 <*> Just dataTemplate
+          , dataTemplateToLineCustomField2 <*> Just dataTemplate
+          , dataTemplateToLineCustomField3 <*> Just dataTemplate
           ]
 
     maybeDescription :: Maybe Text
@@ -288,22 +300,26 @@ dataTemplateToSalesItemLineDetail
 
 dataTemplateToSalesItemLineDetail InvoiceLineDetailTemplate{..} dataTemplate =
   (salesItemLineDetail itemRef)
-    { salesItemLineDetailClassRef        = undefined -- :: !(Maybe ClassRef)
-    , salesItemLineDetailUnitPrice       = undefined -- :: Maybe Double
-    , salesItemLineDetailRatePercent     = undefined -- :: !(Maybe Double)
-    , salesItemLineDetailPriceLevelRef   = undefined -- :: !(Maybe PriceLevelRef)
-    , salesItemLineDetailQty             = maybeQuantity
-    , salesItemLineDetailTaxCodeRef      = undefined -- :: !(Maybe TaxCodeRef)
-    , salesItemLineDetailServiceData     = undefined -- :: !(Maybe Text)
-    , salesItemLineDetailTaxInclusiveAmt = undefined -- :: !(Maybe Double)
+    { salesItemLineDetailUnitPrice   = maybeUnitPrice
+    , salesItemLineDetailQty         = maybeQuantity
+    , salesItemLineDetailServiceData = maybeServiceDate
     }
   where
     itemRef :: ItemRef
-    itemRef = undefined
+    itemRef =
+      dataTemplateToItemRef dataTemplate
 
     maybeQuantity :: Maybe Double
     maybeQuantity =
       dataTemplateToQuantity dataTemplate
+
+    maybeServiceDate :: Maybe Text
+    maybeServiceDate =
+      undefined
+
+    maybeUnitPrice :: Maybe Double
+    maybeUnitPrice =
+      Just unitPrice
 
 
 --------------------------------------------------------------------------------
@@ -322,10 +338,85 @@ dataTemplateItems DataTemplate{templateItems} =
 
 -- |
 
-defaultDataTemplateToInputType
+defaultLookupInDataTemplate
   :: DataTemplate
   -> Text
   -> Maybe InputType
 
-defaultDataTemplateToInputType dataTemplate =
+defaultLookupInDataTemplate dataTemplate =
   flip lookup (dataTemplateItems dataTemplate)
+
+
+-- |
+
+defaultLookupDateInDataTemplate
+  :: DataTemplate
+  -> Text
+  -> Maybe Text
+
+defaultLookupDateInDataTemplate dataTemplate label =
+  case defaultLookupInDataTemplate dataTemplate label of
+    Just (InputTypeDate dateValue) ->
+      Just (_getInputDate dateValue)
+    _ ->
+      Nothing
+
+
+-- |
+
+defaultLookupDoubleInDataTemplate
+  :: DataTemplate
+  -> Text
+  -> Maybe Double
+
+defaultLookupDoubleInDataTemplate dataTemplate label =
+  case defaultLookupInDataTemplate dataTemplate label of
+    Just (InputTypeDouble doubleValue) ->
+      Just (_getInputDouble doubleValue)
+    _ ->
+      Nothing
+
+
+-- |
+
+defaultLookupIntInDataTemplate
+  :: DataTemplate
+  -> Text
+  -> Maybe Int
+
+defaultLookupIntInDataTemplate dataTemplate label =
+  case defaultLookupInDataTemplate dataTemplate label of
+    Just (InputTypeInt doubleInt) ->
+      Just (_getInputInt doubleInt)
+    _ ->
+      Nothing
+
+
+-- |
+
+defaultLookupTextInDataTemplate
+  :: DataTemplate
+  -> Text
+  -> Maybe Text
+
+defaultLookupTextInDataTemplate dataTemplate label =
+  case defaultLookupInDataTemplate dataTemplate label of
+    Just (InputTypeText textValue) ->
+      Just (_getInputText textValue)
+    _ ->
+      Nothing
+
+
+-- |
+
+defaultLookupTimeInDataTemplate
+  :: DataTemplate
+  -> Text
+  -> Maybe Text
+
+defaultLookupTimeInDataTemplate dataTemplate label =
+  case defaultLookupInDataTemplate dataTemplate label of
+    Just (InputTypeTime timeValue) ->
+      Just (_getInputTime timeValue)
+    _ ->
+      Nothing
