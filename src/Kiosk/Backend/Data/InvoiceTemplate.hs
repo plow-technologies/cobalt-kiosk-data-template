@@ -1,6 +1,6 @@
 {-# LANGUAGE NamedFieldPuns    #-}
-{-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -31,10 +31,41 @@ import Data.Maybe (catMaybes,fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text as Text
 import Data.Time (UTCTime)
+import Text.Read (readMaybe)
 
 
 --------------------------------------------------------------------------------
+-- $setup
 --
+-- >>> :set -XOverloadedStrings
+--
+-- >>> import qualified Data.Aeson as Aeson
+-- >>> import qualified Data.ByteString.Lazy as ByteString
+-- >>> import qualified Data.Maybe as Maybe
+--
+-- >>> :{
+--   let dataTemplateObject =
+--         ByteString.intercalate
+--           ","
+--           ["{\"Amount\":\"50\""
+--           , "\"Truck_#\":\"2\""
+--           , "\"Type_of_Water_Hauled\":\"Fresh Water\""
+--           , "\"Name_of_Lease\":\"Harrell\""
+--           , "\"Customer_Ticket_#\":\"A-1183\""
+--           , "\"Water_Hauling_Permit_#\":\"\""
+--           , "\"Date\":\"02/03/2015\""
+--           , "\"Name_of_Lease_Operator\":\"3R Oil Corporation\""
+--           , "\"Water Hauling Company\":\"Mitchell Tank Truck Services\""
+--           , "\"Driver_Signature\":\"\""
+--           , "\"Time_In\":\"1:33 PM\"}"
+--           ]
+-- :}
+--
+-- >>> let dataTemplate = Maybe.fromJust (Aeson.decode dataTemplateObject)
+
+
+--------------------------------------------------------------------------------
+-- QuickBooks invoice report
 --------------------------------------------------------------------------------
 
 -- | A QuickBooks invoice report.
@@ -73,7 +104,7 @@ renderInvoice _ =
 
 
 --------------------------------------------------------------------------------
--- *
+-- * QuickBooks invoice report context
 --------------------------------------------------------------------------------
 
 -- | A QuickBooks invoice report context.
@@ -95,18 +126,6 @@ data InvoiceTemplate = InvoiceTemplate
   }
 
 
-defaultInvoiceTemplate :: InvoiceTemplate
-defaultInvoiceTemplate =
-  InvoiceTemplate
-    { maybeCustomerName                 = Nothing
-    , customerValue                     = ""
-    , dataTemplateToInvoiceCustomField1 = Nothing
-    , dataTemplateToInvoiceCustomField2 = Nothing
-    , dataTemplateToInvoiceCustomField3 = Nothing
-    , txnDate                           = Nothing
-    }
-
-
 data InvoiceLineTemplate = InvoiceLineTemplate
   { dataTemplateToLineCustomField1 :: Maybe (DataTemplate -> CustomField)
   , dataTemplateToLineCustomField2 :: Maybe (DataTemplate -> CustomField)
@@ -116,17 +135,6 @@ data InvoiceLineTemplate = InvoiceLineTemplate
   }
 
 
-defaultInvoiceLineTemplate :: InvoiceLineTemplate
-defaultInvoiceLineTemplate =
-  InvoiceLineTemplate
-    { dataTemplateToLineCustomField1 = Nothing
-    , dataTemplateToLineCustomField2 = Nothing
-    , dataTemplateToLineCustomField3 = Nothing
-    , dataTemplateToLineDescription  = Nothing
-    , invoiceLineDetailTemplate      = defaultInvoiceLineDetailTemplate
-    }
-
-
 data InvoiceLineDetailTemplate = InvoiceLineDetailTemplate
   { dataTemplateToItemRef  :: DataTemplate -> ItemRef
   , dataTemplateToQuantity :: DataTemplate -> Maybe Double
@@ -134,59 +142,8 @@ data InvoiceLineDetailTemplate = InvoiceLineDetailTemplate
   }
 
 
-defaultInvoiceLineDetailTemplate :: InvoiceLineDetailTemplate
-defaultInvoiceLineDetailTemplate =
-  InvoiceLineDetailTemplate
-    { dataTemplateToItemRef  = defaultDataTemplateToItemRef
-    , dataTemplateToQuantity = defaultDataTemplateToQuantity
-    , unitPrice = undefined
-    }
-
-
 --------------------------------------------------------------------------------
--- *
---------------------------------------------------------------------------------
-
--- |
-
-defaultDataTemplateToItemRef
-  :: DataTemplate
-  -> ItemRef
-
-defaultDataTemplateToItemRef _ =
-  undefined
-
-
--- |
-
-defaultDataTemplateToLineDescription
-  :: DataTemplate
-  -> Text
-
-defaultDataTemplateToLineDescription _ =
-  "No description"
-
-
--- |
-
-defaultDataTemplateToQuantity
-  :: DataTemplate
-  -> Maybe Double
-
-defaultDataTemplateToQuantity dataTemplate =
-  case defaultLookupInDataTemplate dataTemplate "Amount" of
-    Just (InputTypeDouble quantity) ->
-      Just (_getInputDouble quantity)
-
-    Just (InputTypeInt quantity) ->
-      Just (fromIntegral (_getInputInt quantity))
-
-    _ ->
-      Nothing
-
-
---------------------------------------------------------------------------------
--- * Create an invoice
+-- * Create a QuickBooks invoice
 --------------------------------------------------------------------------------
 
 -- ** Create an invoice given a form and data templates
@@ -441,17 +398,21 @@ defaultLookupTimeInDataTemplate dataTemplate label =
 -- * Example
 --------------------------------------------------------------------------------
 
-sdInvoiceContext :: UTCTime -> InvoiceContext
-sdInvoiceContext time =
+-- |
+
+defaultInvoiceContext :: UTCTime -> InvoiceContext
+defaultInvoiceContext time =
   InvoiceContext
     { invoiceContextTime  = time
-    , invoiceTemplate     = sdInvoiceTemplate ""
-    , invoiceLineTemplate = sdInvoiceLineTemplate
+    , invoiceTemplate     = defaultInvoiceTemplate ""
+    , invoiceLineTemplate = defaultInvoiceLineTemplate
     }
 
 
-sdInvoiceTemplate :: Text -> InvoiceTemplate
-sdInvoiceTemplate customerValue =
+-- |
+
+defaultInvoiceTemplate :: Text -> InvoiceTemplate
+defaultInvoiceTemplate customerValue =
   InvoiceTemplate
     { maybeCustomerName                 = Nothing
     , customerValue                     = customerValue
@@ -462,36 +423,75 @@ sdInvoiceTemplate customerValue =
     }
 
 
-sdInvoiceLineTemplate :: InvoiceLineTemplate
-sdInvoiceLineTemplate =
+-- |
+
+defaultInvoiceLineTemplate :: InvoiceLineTemplate
+defaultInvoiceLineTemplate =
   InvoiceLineTemplate
     { dataTemplateToLineCustomField1 = Nothing
     , dataTemplateToLineCustomField2 = Nothing
     , dataTemplateToLineCustomField3 = Nothing
-    , dataTemplateToLineDescription  = Just sdDataTemplateToLineDescription
-    , invoiceLineDetailTemplate      = sdInvoiceLineDetailTemplate 2.0
+    , dataTemplateToLineDescription  = Just defaultDataTemplateToLineDescription
+    , invoiceLineDetailTemplate      = defaultInvoiceLineDetailTemplate 2.0
     }
 
-sdDataTemplateToLineDescription :: DataTemplate -> Text
-sdDataTemplateToLineDescription dataTemplate =
-  Text.concat [ticketId]
+
+-- |
+--
+-- >>> defaultDataTemplateToLineDescription dataTemplate
+-- "02/03/2015 Barrels of fresh water disposed of. Ticket #A-1183"
+
+defaultDataTemplateToLineDescription :: DataTemplate -> Text
+defaultDataTemplateToLineDescription dataTemplate =
+  Text.intercalate
+    " "
+    [ dateDescription
+    , waterDescription
+    , ticketDescription
+    ]
   where
-    ticketId :: Text
-    ticketId =
-      fromMaybe "" (defaultLookupTextInDataTemplate dataTemplate "TicketId")
+    dateDescription :: Text
+    dateDescription =
+      fromMaybe
+        ""
+        (defaultLookupTextInDataTemplate dataTemplate "Date")
+
+    ticketDescription :: Text
+    ticketDescription =
+      Text.append "Ticket #" ticketNumber
+
+    ticketNumber :: Text
+    ticketNumber =
+      fromMaybe
+        ""
+        (defaultLookupTextInDataTemplate dataTemplate "Customer_Ticket_#")
+
+    water :: Text
+    water =
+      fromMaybe
+        ""
+        (defaultLookupTextInDataTemplate dataTemplate "Type_of_Water_Hauled")
+
+    waterDescription :: Text
+    waterDescription =
+      Text.concat ["Barrels of ", Text.toLower water, " disposed of."]
 
 
-sdInvoiceLineDetailTemplate :: Double -> InvoiceLineDetailTemplate
-sdInvoiceLineDetailTemplate unitPrice =
+-- |
+
+defaultInvoiceLineDetailTemplate :: Double -> InvoiceLineDetailTemplate
+defaultInvoiceLineDetailTemplate unitPrice =
   InvoiceLineDetailTemplate
-    { dataTemplateToItemRef  = sdDataTemplateToItemRef
-    , dataTemplateToQuantity = sdDataTemplateToQuantity
+    { dataTemplateToItemRef  = defaultDataTemplateToItemRef
+    , dataTemplateToQuantity = defaultDataTemplateToQuantity
     , unitPrice              = unitPrice
     }
 
 
-sdDataTemplateToItemRef :: DataTemplate -> ItemRef
-sdDataTemplateToItemRef _ =
+-- |
+
+defaultDataTemplateToItemRef :: DataTemplate -> ItemRef
+defaultDataTemplateToItemRef _ =
   (reference itemValue) { referenceName = maybeItemName }
   where
     itemValue :: Text
@@ -501,16 +501,15 @@ sdDataTemplateToItemRef _ =
     maybeItemName = Just ""
 
 
--- Amount: Produced Water : 150
+-- |
+--
+-- >>> defaultDataTemplateToQuantity dataTemplate
+-- Just 50.0
 
-sdDataTemplateToQuantity :: DataTemplate -> Maybe Double
-sdDataTemplateToQuantity dataTemplate =
-  case defaultLookupInDataTemplate dataTemplate "Amount" of
-    Just (InputTypeDouble quantity) ->
-      Just (_getInputDouble quantity)
-
-    Just (InputTypeInt quantity) ->
-      Just (fromIntegral (_getInputInt quantity))
-
-    _ ->
-      Nothing
+defaultDataTemplateToQuantity :: DataTemplate -> Maybe Double
+defaultDataTemplateToQuantity dataTemplate =
+  fmap Text.unpack maybeQuantity >>= readMaybe
+  where
+    maybeQuantity :: Maybe Text
+    maybeQuantity =
+      defaultLookupTextInDataTemplate dataTemplate "Amount"
