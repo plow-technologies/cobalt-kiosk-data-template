@@ -29,6 +29,7 @@ import Control.Applicative ((<*>))
 import Control.Applicative (pure)
 import Data.Maybe (catMaybes,fromMaybe)
 import Data.Text (Text)
+import qualified Data.Text as Text
 import Data.Time (UTCTime)
 
 
@@ -78,27 +79,31 @@ renderInvoice _ =
 -- | A QuickBooks invoice report context.
 
 data InvoiceContext = InvoiceContext
-  { invoiceReportContextTime :: UTCTime
-  , invoiceTemplate          :: InvoiceTemplate
-  , invoiceLineTemplate      :: InvoiceLineTemplate
+  { invoiceContextTime  :: UTCTime
+  , invoiceTemplate     :: InvoiceTemplate
+  , invoiceLineTemplate :: InvoiceLineTemplate
   }
 
 
 data InvoiceTemplate = InvoiceTemplate
-  { formToCustomerRef                 :: Form -> CustomerRef
+  { maybeCustomerName                 :: Maybe Text
+  , customerValue                     :: Text
   , dataTemplateToInvoiceCustomField1 :: Maybe (Form -> CustomField)
   , dataTemplateToInvoiceCustomField2 :: Maybe (Form -> CustomField)
   , dataTemplateToInvoiceCustomField3 :: Maybe (Form -> CustomField)
+  , txnDate                           :: Maybe Text
   }
 
 
 defaultInvoiceTemplate :: InvoiceTemplate
 defaultInvoiceTemplate =
   InvoiceTemplate
-    { formToCustomerRef                 = undefined
+    { maybeCustomerName                 = Nothing
+    , customerValue                     = ""
     , dataTemplateToInvoiceCustomField1 = Nothing
     , dataTemplateToInvoiceCustomField2 = Nothing
     , dataTemplateToInvoiceCustomField3 = Nothing
+    , txnDate                           = Nothing
     }
 
 
@@ -123,9 +128,9 @@ defaultInvoiceLineTemplate =
 
 
 data InvoiceLineDetailTemplate = InvoiceLineDetailTemplate
-  { dataTemplateToItemRef :: DataTemplate -> ItemRef
+  { dataTemplateToItemRef  :: DataTemplate -> ItemRef
   , dataTemplateToQuantity :: DataTemplate -> Maybe Double
-  , unitPrice :: Double
+  , unitPrice              :: Double
   }
 
 
@@ -154,6 +159,16 @@ defaultDataTemplateToItemRef _ =
 
 -- |
 
+defaultDataTemplateToLineDescription
+  :: DataTemplate
+  -> Text
+
+defaultDataTemplateToLineDescription _ =
+  "No description"
+
+
+-- |
+
 defaultDataTemplateToQuantity
   :: DataTemplate
   -> Maybe Double
@@ -171,10 +186,10 @@ defaultDataTemplateToQuantity dataTemplate =
 
 
 --------------------------------------------------------------------------------
--- *
+-- * Create an invoice
 --------------------------------------------------------------------------------
 
--- **
+-- ** Create an invoice given a form and data templates
 
 -- |
 
@@ -195,7 +210,7 @@ formAndDataTemplatesToInvoice InvoiceContext{..} form dataTemplates =
       dataTemplatesToLines invoiceLineTemplate dataTemplates
 
 
--- **
+-- ** Create an invoice given a form
 
 -- |
 
@@ -211,7 +226,7 @@ formToInvoice InvoiceTemplate{..} form =
   where
     customerRef :: CustomerRef
     customerRef =
-      formToCustomerRef form
+      (reference customerValue) { referenceName = maybeCustomerName }
 
     maybeCustomFields :: Maybe [CustomField]
     maybeCustomFields =
@@ -225,7 +240,7 @@ formToInvoice InvoiceTemplate{..} form =
             ]
 
 
--- **
+-- ** Create a line given a data template
 
 -- |
 
@@ -323,7 +338,7 @@ dataTemplateToSalesItemLineDetail InvoiceLineDetailTemplate{..} dataTemplate =
 
 
 --------------------------------------------------------------------------------
---
+-- * Utility functions
 --------------------------------------------------------------------------------
 
 -- |
@@ -418,5 +433,84 @@ defaultLookupTimeInDataTemplate dataTemplate label =
   case defaultLookupInDataTemplate dataTemplate label of
     Just (InputTypeTime timeValue) ->
       Just (_getInputTime timeValue)
+    _ ->
+      Nothing
+
+
+--------------------------------------------------------------------------------
+-- * Example
+--------------------------------------------------------------------------------
+
+sdInvoiceContext :: UTCTime -> InvoiceContext
+sdInvoiceContext time =
+  InvoiceContext
+    { invoiceContextTime  = time
+    , invoiceTemplate     = sdInvoiceTemplate ""
+    , invoiceLineTemplate = sdInvoiceLineTemplate
+    }
+
+
+sdInvoiceTemplate :: Text -> InvoiceTemplate
+sdInvoiceTemplate customerValue =
+  InvoiceTemplate
+    { maybeCustomerName                 = Nothing
+    , customerValue                     = customerValue
+    , dataTemplateToInvoiceCustomField1 = Nothing
+    , dataTemplateToInvoiceCustomField2 = Nothing
+    , dataTemplateToInvoiceCustomField3 = Nothing
+    , txnDate                           = Nothing
+    }
+
+
+sdInvoiceLineTemplate :: InvoiceLineTemplate
+sdInvoiceLineTemplate =
+  InvoiceLineTemplate
+    { dataTemplateToLineCustomField1 = Nothing
+    , dataTemplateToLineCustomField2 = Nothing
+    , dataTemplateToLineCustomField3 = Nothing
+    , dataTemplateToLineDescription  = Just sdDataTemplateToLineDescription
+    , invoiceLineDetailTemplate      = sdInvoiceLineDetailTemplate 2.0
+    }
+
+sdDataTemplateToLineDescription :: DataTemplate -> Text
+sdDataTemplateToLineDescription dataTemplate =
+  Text.concat [ticketId]
+  where
+    ticketId :: Text
+    ticketId =
+      fromMaybe "" (defaultLookupTextInDataTemplate dataTemplate "TicketId")
+
+
+sdInvoiceLineDetailTemplate :: Double -> InvoiceLineDetailTemplate
+sdInvoiceLineDetailTemplate unitPrice =
+  InvoiceLineDetailTemplate
+    { dataTemplateToItemRef  = sdDataTemplateToItemRef
+    , dataTemplateToQuantity = sdDataTemplateToQuantity
+    , unitPrice              = unitPrice
+    }
+
+
+sdDataTemplateToItemRef :: DataTemplate -> ItemRef
+sdDataTemplateToItemRef _ =
+  (reference itemValue) { referenceName = maybeItemName }
+  where
+    itemValue :: Text
+    itemValue = ""
+
+    maybeItemName :: Maybe Text
+    maybeItemName = Just ""
+
+
+-- Amount: Produced Water : 150
+
+sdDataTemplateToQuantity :: DataTemplate -> Maybe Double
+sdDataTemplateToQuantity dataTemplate =
+  case defaultLookupInDataTemplate dataTemplate "Amount" of
+    Just (InputTypeDouble quantity) ->
+      Just (_getInputDouble quantity)
+
+    Just (InputTypeInt quantity) ->
+      Just (fromIntegral (_getInputInt quantity))
+
     _ ->
       Nothing
