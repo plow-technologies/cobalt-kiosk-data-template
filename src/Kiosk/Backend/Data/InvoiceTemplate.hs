@@ -1,6 +1,7 @@
 {-# LANGUAGE NamedFieldPuns    #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -20,17 +21,17 @@
 module Kiosk.Backend.Data.InvoiceTemplate where
 
 
-import           Kiosk.Backend.Data
-import           Kiosk.Backend.Form
-import           QuickBooks
-import           ReportTemplate.Internal
-
-import           Control.Applicative     ((<*>))
+import           Control.Applicative     ((<$>), (<*>))
 import           Control.Applicative     (pure)
+import           Control.Lens
 import           Data.Maybe              (catMaybes, fromMaybe)
 import           Data.Text               (Text)
 import qualified Data.Text               as Text
 import           Data.Time               (UTCTime)
+import           Kiosk.Backend.Data
+import           Kiosk.Backend.Form
+import           QuickBooks
+import           ReportTemplate.Internal
 import           Text.Read               (readMaybe)
 
 
@@ -70,13 +71,14 @@ import           Text.Read               (readMaybe)
 
 -- | Sum type to build various pieces of a Quickbooks
 data LineElement = LineElementId LineId
-                           | LineElementNum Double
-                           | LineElementDescription Text
-                           | LineElementAmount Double
-                           | LineElementLinkedTxn [LinkedTxn]
-                           | LineElementCustomField CustomField
-                           | LineElementType LineDetailType
+                  | LineElementNum Double
+                  | LineElementDescription Text
+                  | LineElementAmount Double
+                  | LineElementLinkedTxn [LinkedTxn]
+                  | LineElementCustomField CustomField
+                  | LineElementType LineDetailType
   deriving (Eq,Show)
+
 
 
 data LineDetailType = LineDetailTypeDescriptionLineDetail DescriptionLineDetail
@@ -97,21 +99,67 @@ data SalesItemLineDetailElement = SalesItemLineDetailElementItemRef ItemRef
                                 | SalesItemLineDetailElementTaxInclusiveAmt Double
   deriving (Eq,Show)
 
+makePrisms ''LineElement
+makePrisms ''LineDetailType
+makePrisms ''SalesItemLineDetailElement
+
+
+
+assembleSalesLineFromList :: [LineElement] -> Either Text Line
+assembleSalesLineFromList elementList = makeSureRequiredFieldsArePresent =<<
+                                           (splitSalesLineDetailAndConstruct elementList <$>
+                                            constructMinLine elementList)
+  where
+    initialSalesItemLine :: Line
+    initialSalesItemLine = Line Nothing Nothing Nothing 0.0 Nothing "" Nothing Nothing Nothing Nothing Nothing
+
+    makeSureRequiredFieldsArePresent  :: Line -> Either Text Line
+    makeSureRequiredFieldsArePresent  = undefined
+
+    splitSalesLineDetailAndConstruct :: [LineElement] -> Line -> Line
+    splitSalesLineDetailAndConstruct elementList' initialLineElement = foldr foldrOverFilteredList initialLineElement elementList'
+
+    constructMinLine :: [LineElement] -> Either Text Line
+    constructMinLine elementList' = (\salesLineList customFieldList -> initialSalesItemLine {lineSalesItemLineDetail = Just salesLineList
+                                                                                            , lineCustomField = Just customFieldList}) <$>
+                                    (assembleSalesItemLineDetailFromList .
+                                     toListOf (folded._LineElementType._LineDetailTypeSalesItemLineDetail.folded) $ elementList') <*>
+                                    (Right . toListOf (folded._LineElementCustomField) $ elementList' )
+
+    foldrOverFilteredList  (LineElementId e) line = line {lineId = Just e}
+    foldrOverFilteredList  (LineElementNum e)  line = line {lineLineNum = Just e}
+    foldrOverFilteredList  (LineElementDescription e) line = line {lineDescription = Just e}
+    foldrOverFilteredList  (LineElementAmount _) lineReturnedThisHasToBeCalculated = lineReturnedThisHasToBeCalculated
+    foldrOverFilteredList  (LineElementLinkedTxn e) line = line {lineLinkedTxn = Just e}
+    foldrOverFilteredList  (LineElementCustomField _) lineNotUsedBecauseCustomFieldsAreFilledElsewhere = lineNotUsedBecauseCustomFieldsAreFilledElsewhere
+    foldrOverFilteredList  (LineElementType _) lineWhichShouldntBeCalled = lineWhichShouldntBeCalled -- This is dealt with elsewhere
+
+
+
+
+
+
+
+
+
+
 -- | None of the fields are marked as required in a sales Item line detail soooo the easiest fold element is an empty one
+-- ItemRef is actually requered by the standard however so its existence is checked at the last step
+-- Items later in the list have precedence over items earlier in it.
 assembleSalesItemLineDetailFromList :: [SalesItemLineDetailElement] -> Either Text SalesItemLineDetail
 assembleSalesItemLineDetailFromList salesItemLineDetailElementList  = makeSureItemRefExists .
                                                                       foldrSalesItemLineDetail $ salesItemLineDetailElementList
   where
      makeSureItemRefExists :: SalesItemLineDetail -> Either Text SalesItemLineDetail
-     makeSureItemRefExists  = maybe  errNoItemRef (const $ Right salesItemLineDetail) .
-                                                  salesItemLineDetailItemRef
+     makeSureItemRefExists  salesItemLineDetail' = maybe  errNoItemRef (const $ Right salesItemLineDetail') .
+                                                                       salesItemLineDetailItemRef $ salesItemLineDetail'
      errNoItemRef = Left "Missing 'LineDetailItemRef' in SalesItemLineDetail"
      initialSalesItemLineDetail :: SalesItemLineDetail
      initialSalesItemLineDetail = SalesItemLineDetail Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
      foldrSalesItemLineDetail :: [SalesItemLineDetailElement] -> SalesItemLineDetail
      foldrSalesItemLineDetail = foldr constructSalesItemLineDetailInFoldr initialSalesItemLineDetail
 
-
+-- | Pattern Matcher for
 constructSalesItemLineDetailInFoldr :: SalesItemLineDetailElement -> SalesItemLineDetail -> SalesItemLineDetail
 constructSalesItemLineDetailInFoldr (SalesItemLineDetailElementItemRef e)          sild = sild{salesItemLineDetailItemRef = Just e}
 constructSalesItemLineDetailInFoldr (SalesItemLineDetailElementClassRef e)         sild = sild{salesItemLineDetailClassRef = Just e}
@@ -123,13 +171,6 @@ constructSalesItemLineDetailInFoldr (SalesItemLineDetailElementQty e)           
 constructSalesItemLineDetailInFoldr (SalesItemLineDetailElementTaxCodeRef e)       sild = sild{salesItemLineDetailTaxCodeRef = Just e}
 constructSalesItemLineDetailInFoldr (SalesItemLineDetailElementServiceData e)      sild = sild{salesItemLineDetailServiceData = Just e}
 constructSalesItemLineDetailInFoldr (SalesItemLineDetailElementTaxInclusiveAmt e)  sild = sild{salesItemLineDetailTaxInclusiveAmt = Just e}
-
-
-
-
-
-
-
 
 
 
