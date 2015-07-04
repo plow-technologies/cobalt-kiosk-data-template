@@ -20,18 +20,18 @@
 module Kiosk.Backend.Data.InvoiceTemplate where
 
 
-import Kiosk.Backend.Data
-import Kiosk.Backend.Form
-import QuickBooks
-import ReportTemplate.Internal
+import           Kiosk.Backend.Data
+import           Kiosk.Backend.Form
+import           QuickBooks
+import           ReportTemplate.Internal
 
-import Control.Applicative ((<*>))
-import Control.Applicative (pure)
-import Data.Maybe (catMaybes,fromMaybe)
-import Data.Text (Text)
-import qualified Data.Text as Text
-import Data.Time (UTCTime)
-import Text.Read (readMaybe)
+import           Control.Applicative     ((<*>))
+import           Control.Applicative     (pure)
+import           Data.Maybe              (catMaybes, fromMaybe)
+import           Data.Text               (Text)
+import qualified Data.Text               as Text
+import           Data.Time               (UTCTime)
+import           Text.Read               (readMaybe)
 
 
 --------------------------------------------------------------------------------
@@ -68,8 +68,75 @@ import Text.Read (readMaybe)
 -- QuickBooks invoice report
 --------------------------------------------------------------------------------
 
--- | A QuickBooks invoice report.
+-- | Sum type to build various pieces of a Quickbooks
+data LineElement = LineElementId LineId
+                           | LineElementNum Double
+                           | LineElementDescription Text
+                           | LineElementAmount Double
+                           | LineElementLinkedTxn [LinkedTxn]
+                           | LineElementCustomField CustomField
+                           | LineElementType LineDetailType
+  deriving (Eq,Show)
 
+
+data LineDetailType = LineDetailTypeDescriptionLineDetail DescriptionLineDetail
+                    | LineDetailTypeDiscountLineDetail DiscountLineDetail
+                    | LineDetailTypeSalesItemLineDetail [SalesItemLineDetailElement]
+                    | LineDetailTypeSubTotalLineDetail SubTotalLineDetail
+  deriving (Eq,Show)
+
+data SalesItemLineDetailElement = SalesItemLineDetailElementItemRef ItemRef
+                                | SalesItemLineDetailElementClassRef ClassRef
+                                | SalesItemLineDetailElementUnitPrice Double
+                                | SalesItemLineDetailElementRatePercent Double
+                                | SalesItemLineDetailElementPriceLevelRef PriceLevelRef
+                                | SalesItemLineDetailElementMarkupInfo Text
+                                | SalesItemLineDetailElementQty Double
+                                | SalesItemLineDetailElementTaxCodeRef TaxCodeRef
+                                | SalesItemLineDetailElementServiceData Text
+                                | SalesItemLineDetailElementTaxInclusiveAmt Double
+  deriving (Eq,Show)
+
+-- | None of the fields are marked as required in a sales Item line detail soooo the easiest fold element is an empty one
+assembleSalesItemLineDetailFromList :: [SalesItemLineDetailElement] -> Either Text SalesItemLineDetail
+assembleSalesItemLineDetailFromList salesItemLineDetailElementList  = makeSureItemRefExists .
+                                                                      foldrSalesItemLineDetail $ salesItemLineDetailElementList
+  where
+     makeSureItemRefExists :: SalesItemLineDetail -> Either Text SalesItemLineDetail
+     makeSureItemRefExists  = maybe  errNoItemRef (const $ Right salesItemLineDetail) .
+                                                  salesItemLineDetailItemRef
+     errNoItemRef = Left "Missing 'LineDetailItemRef' in SalesItemLineDetail"
+     initialSalesItemLineDetail :: SalesItemLineDetail
+     initialSalesItemLineDetail = SalesItemLineDetail Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+     foldrSalesItemLineDetail :: [SalesItemLineDetailElement] -> SalesItemLineDetail
+     foldrSalesItemLineDetail = foldr constructSalesItemLineDetailInFoldr initialSalesItemLineDetail
+
+
+constructSalesItemLineDetailInFoldr :: SalesItemLineDetailElement -> SalesItemLineDetail -> SalesItemLineDetail
+constructSalesItemLineDetailInFoldr (SalesItemLineDetailElementItemRef e)          sild = sild{salesItemLineDetailItemRef = Just e}
+constructSalesItemLineDetailInFoldr (SalesItemLineDetailElementClassRef e)         sild = sild{salesItemLineDetailClassRef = Just e}
+constructSalesItemLineDetailInFoldr (SalesItemLineDetailElementUnitPrice e)        sild = sild{salesItemLineDetailUnitPrice = Just e}
+constructSalesItemLineDetailInFoldr (SalesItemLineDetailElementRatePercent e)      sild = sild{salesItemLineDetailRatePercent = Just e}
+constructSalesItemLineDetailInFoldr (SalesItemLineDetailElementPriceLevelRef e)    sild = sild{salesItemLineDetailPriceLevelRef = Just e}
+constructSalesItemLineDetailInFoldr (SalesItemLineDetailElementMarkupInfo e)       sild = sild{salesItemLineDetailMarkupInfo = Just e}
+constructSalesItemLineDetailInFoldr (SalesItemLineDetailElementQty e)               sild = sild{salesItemLineDetailQty = Just e}
+constructSalesItemLineDetailInFoldr (SalesItemLineDetailElementTaxCodeRef e)       sild = sild{salesItemLineDetailTaxCodeRef = Just e}
+constructSalesItemLineDetailInFoldr (SalesItemLineDetailElementServiceData e)      sild = sild{salesItemLineDetailServiceData = Just e}
+constructSalesItemLineDetailInFoldr (SalesItemLineDetailElementTaxInclusiveAmt e)  sild = sild{salesItemLineDetailTaxInclusiveAmt = Just e}
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- | A QuickBooks invoice report.
 type InvoiceReport =
   Report Invoice Line
 
