@@ -1,5 +1,6 @@
 {-# LANGUAGE NamedFieldPuns    #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TemplateHaskell   #-}
 
@@ -21,18 +22,19 @@
 module Kiosk.Backend.Data.InvoiceTemplate where
 
 
-import           Control.Applicative     ((<$>), (<*>))
-import           Control.Applicative     (pure)
+import           Control.Applicative               ((<$>), (<*>))
+import           Control.Applicative               (pure)
 import           Control.Lens
-import           Data.Maybe              (catMaybes, fromMaybe)
-import           Data.Text               (Text)
-import qualified Data.Text               as Text
-import           Data.Time               (UTCTime)
+import           Data.Maybe                        (catMaybes, fromMaybe)
+import           Data.Text                         (Text)
+import qualified Data.Text                         as Text
+import           Data.Time                         (UTCTime)
 import           Kiosk.Backend.Data
+import           Kiosk.Backend.Data.ReportTemplate
 import           Kiosk.Backend.Form
 import           QuickBooks
 import           ReportTemplate.Internal
-import           Text.Read               (readMaybe)
+import           Text.Read                         (readMaybe)
 
 
 --------------------------------------------------------------------------------
@@ -103,6 +105,25 @@ makePrisms ''LineElement
 makePrisms ''LineDetailType
 makePrisms ''SalesItemLineDetailElement
 
+
+
+
+-- \ generic element constructor
+-- | The Labels given in the [Text] list are
+-- used to retrieve Text
+-- Then two connection functions are ran to complete the transform
+-- from a List of Retrieved Text to a final type
+-- >>> let someSpecificRetriever labels = genericDataTemplateRetrieval  template construct  labels
+-- >>>     template = Text.concat
+-- >>>     construct = LineElementDescription
+genericDataTemplateRetrieval :: forall intermediate final.
+                                      ([Text] -> intermediate) -> (intermediate -> final )-> [Text] -> DataTemplate -> final
+genericDataTemplateRetrieval templateFcn ouputConstructor  txts dte = ouputConstructor . templateFcn $ targetTextList
+  where
+     inputTextLens = _InputTypeText.getInputText
+     targetTextList :: [Text]
+     targetTextList = fromMaybe "" <$> (getInputTypeByLabel inputTextLens <$>
+                                        txts <*> [dte])
 
 
 assembleSalesLineFromList :: [LineElement] -> Either Text Line
@@ -185,30 +206,10 @@ type InvoiceReport =
 -- | A QuickBooks invoice report template.
 
 type InvoiceReportTemplate =
-  ReportTemplate InvoiceContext Form Invoice DataTemplate Line
+  ReportTemplate InvoiceContext Form Invoice DataTemplate LineElement
 
 
--- |
 
-buildInvoiceReport
-  :: InvoiceReportTemplate
-  -> InvoiceContext
-  -> Form
-  -> [DataTemplate]
-  -> InvoiceReport
-
-buildInvoiceReport  =
-  renderReport
-
-
--- |
-
-renderInvoice
-  :: InvoiceReport
-  -> Invoice
-
-renderInvoice _ =
-  undefined
 
 
 --------------------------------------------------------------------------------
