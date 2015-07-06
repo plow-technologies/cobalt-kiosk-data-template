@@ -17,18 +17,18 @@ Portability :  portable
 -}
 
 module ReportTemplate.InternalSpec (main,spec) where
-import           Control.Applicative             ((<$>), (<*>))
+import           Control.Applicative                ((<$>))
 import           Control.Lens
-import           Data.Aeson                      (Value (..), encode, toJSON)
-import           Data.Text                       (Text)
-import qualified Data.Text                       as T
+import           Data.Aeson                         (Value (..), encode, toJSON)
+import           Data.Text                          (Text)
+import qualified Data.Text                          as T
 
-import           Data.ByteString.Lazy.Char8      (ByteString)
-import qualified Data.ByteString.Lazy.Char8      as B
-import           Data.Map.Strict                 (Map)
-import qualified Data.Map.Strict                 as M
-import           Data.Maybe                      (catMaybes)
-import           Data.Monoid                     ((<>))
+import           Data.ByteString.Lazy.Char8         (ByteString)
+import qualified Data.ByteString.Lazy.Char8         as B
+
+import qualified Data.Map.Strict                    as M
+import           Data.Maybe                         (catMaybes)
+import           Data.Monoid                        ((<>))
 import           Data.Time
 import           Generators
 import           Kiosk.Backend.Data.DataTemplate
@@ -36,10 +36,11 @@ import           Kiosk.Backend.Data.InvoiceTemplate
 import           Kiosk.Backend.Form
 import           Language.Haskell.TH
 
-import           Mocks.Primitive.Generators      (GeneratorType (..),
-                                                  generateInts)
+import           Mocks.Primitive.Generators         (GeneratorType (..),
+                                                     generateInts)
+import           QuickBooks
 import           ReportTemplate.Internal
-import           System.Locale                   (defaultTimeLocale)
+import           System.Locale                      (defaultTimeLocale)
 import           Test.Hspec
 import           Test.QuickCheck
 
@@ -58,7 +59,7 @@ spec :: SpecWith ()
 spec = do
   describe (nameBase 'renderReport) $
     it "should Build a report from data sources contexts and templates" $ buildReport
-  describe (nameBase 'buildInvoice) $  
+  describe (nameBase 'buildInvoice) $
     it "should build a quickbooks invoice from contexts and templates"  $ buildInvoice
 
 buildReport = do
@@ -67,7 +68,7 @@ buildReport = do
   let mapSize = M.size $ report ^. (reportRows .
                                     _ReportTableRowIndex._2.
                                     rowMap)
-      rowTemplateLength = length rowTemplate                      
+      rowTemplateLength = length rowTemplate
   mapSize `shouldBe` (i * rowTemplateLength)
   (M.size . rowTransformMap.reportRowsTemplate $ reportTemplate ) `shouldBe` rowTemplateLength
 
@@ -75,7 +76,7 @@ buildInvoice :: Expectation
 buildInvoice = do
   let i = 7
   dataTemplates <- testDataTemplate i
-  let invoice = renderInvoice undefined
+--  let invoice = renderInvoice undefined
   True `shouldBe` True
 
 testFormTemplate :: IO [Form]
@@ -92,6 +93,12 @@ type TestReportTemplate = ReportTemplate ReportContext Form Value DataTemplate B
 type TestPreambleTemplate = [(ReportPreambleLabel, ReportContext -> Form -> Value)]
 type TestRowTemplate = [(ReportRowLabel, ReportContext -> DataTemplate -> ByteString)]
 
+testInvoiceReport :: Int -> IO (InvoiceReportTemplate, InvoiceReport)
+testInvoiceReport i = do
+  (oneForm:_) <- testFormTemplate
+  dtes <- testDataTemplate i
+  tm <- InvoiceContext <$> getCurrentTime
+  return (testInvoiceTemplate, renderReport testInvoiceTemplate tm oneForm dtes)
 
 -- | this is a rendered report
 testReport :: Int -> IO (TestReportTemplate , Report Value ByteString)
@@ -142,7 +149,8 @@ testBuildADocument report = "Welcome to another fine report \n" <>
                                                                                    _ReportTableRowIndex._2.
                                                                                    rowMap)
 
-renderRowString :: (RowNumber,String) -> ByteString ->(RowNumber,ByteString) -> (RowNumber,ByteString)
+renderRowString :: (RowNumber,String) -> ByteString
+                     -> (RowNumber,ByteString) -> (RowNumber,ByteString)
 renderRowString (idx,lbl) val (itarget,txt)
   | idx == itarget = (itarget, txt <>  val <> ",")
   | otherwise = (idx, (B.pack . show $ idx) <> txt <> "\n"  <>  val <> ",")

@@ -20,10 +20,7 @@
 --------------------------------------------------------------------------------
 
 module Kiosk.Backend.Data.InvoiceTemplate where
-
-
-import           Control.Applicative               ((<$>), (<*>))
-import           Control.Applicative               (pure)
+import           Control.Applicative               (pure, (<$>), (<*>))
 import           Control.Lens
 import           Data.Maybe                        (catMaybes, fromMaybe)
 import           Data.Text                         (Text)
@@ -35,7 +32,6 @@ import           Kiosk.Backend.Form
 import           QuickBooks
 import           ReportTemplate.Internal
 import           Text.Read                         (readMaybe)
-
 
 --------------------------------------------------------------------------------
 -- $setup
@@ -106,8 +102,6 @@ makePrisms ''LineDetailType
 makePrisms ''SalesItemLineDetailElement
 
 
-
-
 -- \ generic element constructor
 -- | The Labels given in the [Text] list are
 -- used to retrieve Text
@@ -128,8 +122,8 @@ genericDataTemplateRetrieval templateFcn ouputConstructor  txts dte = ouputConst
 
 assembleSalesLineFromList :: [LineElement] -> Either Text Line
 assembleSalesLineFromList elementList = makeSureRequiredFieldsArePresent =<<
-                                           (splitSalesLineDetailAndConstruct elementList <$>
-                                            constructMinLine elementList)
+                                    (splitSalesLineDetailAndConstruct elementList <$>
+                                     constructMinLine elementList)
   where
     initialSalesItemLine :: Line
     initialSalesItemLine = Line Nothing Nothing Nothing 0.0 Nothing "" Nothing Nothing Nothing Nothing Nothing
@@ -154,13 +148,6 @@ assembleSalesLineFromList elementList = makeSureRequiredFieldsArePresent =<<
     foldrOverFilteredList  (LineElementLinkedTxn e) line = line {lineLinkedTxn = Just e}
     foldrOverFilteredList  (LineElementCustomField _) lineNotUsedBecauseCustomFieldsAreFilledElsewhere = lineNotUsedBecauseCustomFieldsAreFilledElsewhere
     foldrOverFilteredList  (LineElementType _) lineWhichShouldntBeCalled = lineWhichShouldntBeCalled -- This is dealt with elsewhere
-
-
-
-
-
-
-
 
 
 
@@ -219,9 +206,9 @@ type InvoiceReportTemplate =
 -- | A QuickBooks invoice report context.
 
 data InvoiceContext = InvoiceContext
-  { invoiceContextTime  :: UTCTime
-  , invoiceTemplate     :: InvoiceTemplate
-  , invoiceLineTemplate :: InvoiceLineTemplate
+  { invoiceContextTime :: UTCTime
+--  , invoiceTemplate     :: InvoiceTemplate
+--  , invoiceLineTemplate :: InvoiceLineTemplate
   }
 
 
@@ -262,21 +249,21 @@ data InvoiceLineDetailTemplate = InvoiceLineDetailTemplate
 
 -- |
 
-formAndDataTemplatesToInvoice
-  :: InvoiceContext
-  -> Form
-  -> [DataTemplate]
-  -> Invoice
+-- formAndDataTemplatesToInvoice
+--   :: InvoiceContext
+--   -> Form
+--   -> [DataTemplate]
+--   -> Invoice
 
-formAndDataTemplatesToInvoice InvoiceContext{..} form dataTemplates =
-  invoice { invoiceLine = invoiceLines }
-  where
-    invoice :: Invoice
-    invoice =
-      formToInvoice invoiceTemplate form
+-- formAndDataTemplatesToInvoice InvoiceContext{..} form dataTemplates =
+--   invoice { invoiceLine = invoiceLines }
+--   where
+--     invoice :: Invoice
+--     invoice =
+--       formToInvoice invoiceTemplate form
 
-    invoiceLines =
-      dataTemplatesToLines invoiceLineTemplate dataTemplates
+--     invoiceLines =
+--       dataTemplatesToLines invoiceLineTemplate dataTemplates
 
 
 -- ** Create an invoice given a form
@@ -296,8 +283,7 @@ formToInvoice InvoiceTemplate{..} form =
     }
   where
     customerRef :: CustomerRef
-    customerRef =
-      (reference customerValue) { referenceName = maybeCustomerName }
+    customerRef = (reference customerValue) { referenceName = maybeCustomerName }
 
     maybeCustomFields :: Maybe [CustomField]
     maybeCustomFields =
@@ -315,13 +301,13 @@ formToInvoice InvoiceTemplate{..} form =
 
 -- |
 
-dataTemplatesToLines
-  :: InvoiceLineTemplate
-  -> [DataTemplate]
-  -> [Line]
+-- dataTemplatesToLines
+--   :: InvoiceLineTemplate
+--   -> [DataTemplate]
+--   -> [Line]
 
-dataTemplatesToLines invoiceLineTemplate =
-  fmap (dataTemplateToLine invoiceLineTemplate)
+-- dataTemplatesToLines invoiceLineTemplate =
+--   fmap (dataTemplateToLine invoiceLineTemplate)
 
 
 -- |
@@ -469,13 +455,13 @@ defaultLookupTextInDataTemplate dataTemplate label =
 
 -- |
 
-defaultInvoiceContext :: UTCTime -> InvoiceContext
-defaultInvoiceContext time =
-  InvoiceContext
-    { invoiceContextTime  = time
-    , invoiceTemplate     = defaultInvoiceTemplate ""
-    , invoiceLineTemplate = defaultInvoiceLineTemplate undefined undefined
-    }
+-- defaultInvoiceContext :: UTCTime -> InvoiceContext
+-- defaultInvoiceContext time =
+--   InvoiceContext
+--     { invoiceContextTime  = time
+--     , invoiceTemplate     = defaultInvoiceTemplate ""
+--     , invoiceLineTemplate = defaultInvoiceLineTemplate undefined undefined
+--     }
 
 
 -- |
