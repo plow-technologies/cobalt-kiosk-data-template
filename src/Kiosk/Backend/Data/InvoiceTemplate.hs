@@ -221,8 +221,25 @@ data InvoiceContext = InvoiceContext
 -- create Lines and Invoices from the Report
 --------------------------------------------------------------------------------
 
--- |1. the errors in lines 2. the Values that are correct
+-- There are lots of errors from which I want to recover.  For this reason, I wanted to return partial errors up the chain.
+-- That is why the type ends up being kind of crazy at the top.  It might be simpler but it isn't now so oh well
 
+
+reportToInvoice ::
+  Report Invoice LineElement -> (Text, Maybe Invoice)
+reportToInvoice r = maybe (topLevelErrorMessage, Nothing) (\invoice'-> (errorsFromReport, Just invoice')) $
+                    (\invoiceFromReport -> invoiceFromReport {invoiceLine=linesFromReport}) <$>
+                                                                     maybeInvoiceFromReport
+ where
+   topLevelErrorMessage = "unableToretrieveInvoice, line errors: " <> errorsFromReport
+   maybeInvoiceFromReport :: Maybe Invoice
+   maybeInvoiceFromReport = r ^? reportPreamble.preambleValue.folded._2
+   lineElementsFromReport :: Maybe (ReportTableRowStyle LineElement)
+   lineElementsFromReport = r ^? (reportRows. _ReportTableRowIndex._2)
+   (errorsFromReport,linesFromReport) = fromMaybe ("Missing Report Rows", []) $  makeReportLines <$> lineElementsFromReport
+
+
+-- |1. the errors in lines 2. the Values that are correct
 makeReportLines :: ReportTableRowStyle LineElement
                 -> (Text,[Line])
 makeReportLines = convertLineElementMapToLineMap . reportRowLineFoldr
