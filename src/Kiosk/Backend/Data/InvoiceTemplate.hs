@@ -20,9 +20,12 @@
 --------------------------------------------------------------------------------
 
 module Kiosk.Backend.Data.InvoiceTemplate where
-import           Control.Applicative               (pure, (<$>), (<*>))
+import           Control.Applicative               ((<$>), (<*>))
 import           Control.Lens
-import           Data.Maybe                        (catMaybes, fromMaybe)
+import qualified Data.Map                          as M
+import           Data.Map.Lazy                     (Map)
+import           Data.Maybe                        (fromMaybe)
+import           Data.Monoid
 import           Data.Text                         (Text)
 import qualified Data.Text                         as Text
 import           Data.Time                         (UTCTime)
@@ -68,16 +71,15 @@ import           Text.Read                         (readMaybe)
 --------------------------------------------------------------------------------
 
 -- | Sum type to build various pieces of a Quickbooks
-data LineElement = LineElementId LineId
+data LineElement =  LineElementId LineId
                   | LineElementNum Double
                   | LineElementDescription Text
                   | LineElementAmount Double
                   | LineElementLinkedTxn [LinkedTxn]
                   | LineElementCustomField CustomField
                   | LineElementType LineDetailType
-  deriving (Eq,Show)
-
-
+                  | LineElementError Text
+       deriving (Eq,Show)
 
 data LineDetailType = LineDetailTypeDescriptionLineDetail DescriptionLineDetail
                     | LineDetailTypeDiscountLineDetail DiscountLineDetail
@@ -110,8 +112,10 @@ makePrisms ''SalesItemLineDetailElement
 -- >>> let someSpecificRetriever labels = genericDataTemplateRetrieval  template construct  labels
 -- >>>     template = Text.concat
 -- >>>     construct = LineElementDescription
+
 genericDataTemplateRetrieval :: forall intermediate final.
-                                      ([Text] -> intermediate) -> (intermediate -> final )-> [Text] -> DataTemplate -> final
+                                      ([Text] -> intermediate) ->
+                                      (intermediate -> final )-> [Text] -> DataTemplate -> final
 genericDataTemplateRetrieval templateFcn ouputConstructor  txts dte = ouputConstructor . templateFcn $ targetTextList
   where
      inputTextLens = _InputTypeText.getInputText
@@ -122,17 +126,17 @@ genericDataTemplateRetrieval templateFcn ouputConstructor  txts dte = ouputConst
 
 assembleSalesLineFromList :: [LineElement] -> Either Text Line
 assembleSalesLineFromList elementList = makeSureRequiredFieldsArePresent =<<
-                                    (splitSalesLineDetailAndConstruct elementList <$>
-                                     constructMinLine elementList)
+                                        splitSalesLineDetailAndConstruct elementList =<<
+                                        constructMinLine elementList
   where
     initialSalesItemLine :: Line
     initialSalesItemLine = Line Nothing Nothing Nothing 0.0 Nothing "" Nothing Nothing Nothing Nothing Nothing
 
     makeSureRequiredFieldsArePresent  :: Line -> Either Text Line
-    makeSureRequiredFieldsArePresent  = undefined
+    makeSureRequiredFieldsArePresent notSureWhatToPutHere = Right notSureWhatToPutHere
 
-    splitSalesLineDetailAndConstruct :: [LineElement] -> Line -> Line
-    splitSalesLineDetailAndConstruct elementList' initialLineElement = foldr foldrOverFilteredList initialLineElement elementList'
+    splitSalesLineDetailAndConstruct :: [LineElement] -> Line -> Either Text Line
+    splitSalesLineDetailAndConstruct elementList' initialLineElement = foldr foldrOverFilteredList (Right initialLineElement) elementList'
 
     constructMinLine :: [LineElement] -> Either Text Line
     constructMinLine elementList' = (\salesLineList customFieldList -> initialSalesItemLine {lineSalesItemLineDetail = Just salesLineList
@@ -140,16 +144,17 @@ assembleSalesLineFromList elementList = makeSureRequiredFieldsArePresent =<<
                                     (assembleSalesItemLineDetailFromList .
                                      toListOf (folded._LineElementType._LineDetailTypeSalesItemLineDetail.folded) $ elementList') <*>
                                     (Right . toListOf (folded._LineElementCustomField) $ elementList' )
-
-    foldrOverFilteredList  (LineElementId e) line = line {lineId = Just e}
-    foldrOverFilteredList  (LineElementNum e)  line = line {lineLineNum = Just e}
-    foldrOverFilteredList  (LineElementDescription e) line = line {lineDescription = Just e}
+    foldrOverFilteredList  :: LineElement -> Either Text Line -> Either Text Line
+    foldrOverFilteredList  (LineElementId e) eitherLine = (\line -> line {lineId = Just e}) <$> eitherLine
+    foldrOverFilteredList  (LineElementNum e)  eitherLine = (\line -> line {lineLineNum = Just e}) <$> eitherLine
+    foldrOverFilteredList  (LineElementDescription e) eitherLine = (\line ->line {lineDescription = Just e}) <$> eitherLine
     foldrOverFilteredList  (LineElementAmount _) lineReturnedThisHasToBeCalculated = lineReturnedThisHasToBeCalculated
-    foldrOverFilteredList  (LineElementLinkedTxn e) line = line {lineLinkedTxn = Just e}
-    foldrOverFilteredList  (LineElementCustomField _) lineNotUsedBecauseCustomFieldsAreFilledElsewhere = lineNotUsedBecauseCustomFieldsAreFilledElsewhere
-    foldrOverFilteredList  (LineElementType _) lineWhichShouldntBeCalled = lineWhichShouldntBeCalled -- This is dealt with elsewhere
-
-
+    foldrOverFilteredList  (LineElementLinkedTxn e) eitherLine = (\line -> line {lineLinkedTxn = Just e}) <$> eitherLine
+    foldrOverFilteredList  (LineElementCustomField _) lineNotUsedBecauseCustomFieldsAreFilledElsewhere =
+                                                      lineNotUsedBecauseCustomFieldsAreFilledElsewhere
+    foldrOverFilteredList  (LineElementType _) lineWhichShouldntBeCalled =
+                                               lineWhichShouldntBeCalled -- This is dealt with elsewhere
+    foldrOverFilteredList  (LineElementError t) _ = Left t
 
 -- | None of the fields are marked as required in a sales Item line detail soooo the easiest fold element is an empty one
 -- ItemRef is actually requered by the standard however so its existence is checked at the last step
@@ -183,15 +188,13 @@ constructSalesItemLineDetailInFoldr (SalesItemLineDetailElementTaxInclusiveAmt e
 
 
 
-
-
 -- | A QuickBooks invoice report.
 type InvoiceReport =
-  Report Invoice Line
+  Report Invoice LineElement
+
 
 
 -- | A QuickBooks invoice report template.
-
 type InvoiceReportTemplate =
   ReportTemplate InvoiceContext Form Invoice DataTemplate LineElement
 
@@ -212,187 +215,26 @@ data InvoiceContext = InvoiceContext
   }
 
 
-data InvoiceTemplate = InvoiceTemplate
-  { maybeCustomerName                 :: Maybe Text
-  , customerValue                     :: Text
-  , dataTemplateToInvoiceCustomField1 :: Maybe (Form -> CustomField)
-  , dataTemplateToInvoiceCustomField2 :: Maybe (Form -> CustomField)
-  , dataTemplateToInvoiceCustomField3 :: Maybe (Form -> CustomField)
-  , maybeInvoiceDate                  :: Maybe Text
-  , maybeInvoiceDueDate               :: Maybe Text
-  }
-
-
-data InvoiceLineTemplate = InvoiceLineTemplate
-  { dataTemplateToLineCustomField1 :: Maybe (DataTemplate -> CustomField)
-  , dataTemplateToLineCustomField2 :: Maybe (DataTemplate -> CustomField)
-  , dataTemplateToLineCustomField3 :: Maybe (DataTemplate -> CustomField)
-  , dataTemplateToLineDescription  :: Maybe (DataTemplate -> Text)
-  , invoiceLineDetailTemplate      :: InvoiceLineDetailTemplate
-  }
-
-
-data InvoiceLineDetailTemplate = InvoiceLineDetailTemplate
-  { maybeItemName  :: Maybe Text
-  , itemValue      :: Text
-  , itemUnitPrice  :: Double
-  , quantityLabel  :: Text
-  , unitPriceLabel :: Text
-  }
-
 
 --------------------------------------------------------------------------------
 -- * Create a QuickBooks invoice
+-- create Lines and Invoices from the Report
 --------------------------------------------------------------------------------
 
--- ** Create an invoice given a form and data templates
+-- |1. the errors in lines 2. the Values that are correct
 
--- |
-
--- formAndDataTemplatesToInvoice
---   :: InvoiceContext
---   -> Form
---   -> [DataTemplate]
---   -> Invoice
-
--- formAndDataTemplatesToInvoice InvoiceContext{..} form dataTemplates =
---   invoice { invoiceLine = invoiceLines }
---   where
---     invoice :: Invoice
---     invoice =
---       formToInvoice invoiceTemplate form
-
---     invoiceLines =
---       dataTemplatesToLines invoiceLineTemplate dataTemplates
-
-
--- ** Create an invoice given a form
-
--- |
-
-formToInvoice
-  :: InvoiceTemplate
-  -> Form
-  -> Invoice
-
-formToInvoice InvoiceTemplate{..} form =
-  (defaultInvoice [] customerRef)
-    { invoiceCustomField = maybeCustomFields
-    , invoiceTxnDate     = maybeInvoiceDate
-    , invoiceDueDate     = maybeInvoiceDueDate
-    }
+makeReportLines :: ReportTableRowStyle LineElement
+                -> (Text,[Line])
+makeReportLines = convertLineElementMapToLineMap . reportRowLineFoldr
   where
-    customerRef :: CustomerRef
-    customerRef = (reference customerValue) { referenceName = maybeCustomerName }
-
-    maybeCustomFields :: Maybe [CustomField]
-    maybeCustomFields =
-      if null customFields then Nothing else Just customFields
-      where
-        customFields =
-          catMaybes
-            [ dataTemplateToInvoiceCustomField1 <*> Just form
-            , dataTemplateToInvoiceCustomField2 <*> Just form
-            , dataTemplateToInvoiceCustomField3 <*> Just form
-            ]
-
-
--- ** Create a line given a data template
-
--- |
-
--- dataTemplatesToLines
---   :: InvoiceLineTemplate
---   -> [DataTemplate]
---   -> [Line]
-
--- dataTemplatesToLines invoiceLineTemplate =
---   fmap (dataTemplateToLine invoiceLineTemplate)
-
-
--- |
-
-dataTemplateToLine
-  :: InvoiceLineTemplate
-  -> DataTemplate
-  -> Line
-
-dataTemplateToLine =
-  dataTemplateToSalesItemLine
-
-
--- |
-
-dataTemplateToSalesItemLine
-  :: InvoiceLineTemplate
-  -> DataTemplate
-  -> Line
-
-dataTemplateToSalesItemLine InvoiceLineTemplate{..} dataTemplate =
-  (salesItemLine amount detail)
-    { lineCustomField = maybeCustomFields
-    , lineDescription = maybeDescription
-    }
-  where
-    amount :: Double
-    amount =
-      fromMaybe 0.0 maybeAmount
-
-    maybeAmount :: Maybe Double
-    maybeAmount =
-      pure (*) <*> salesItemLineDetailUnitPrice detail
-               <*> salesItemLineDetailQty detail
-
-    detail :: SalesItemLineDetail
-    detail =
-      dataTemplateToSalesItemLineDetail invoiceLineDetailTemplate dataTemplate
-
-    maybeCustomFields :: Maybe [CustomField]
-    maybeCustomFields =
-      if null customFields then Nothing else Just customFields
-      where
-        customFields =
-          catMaybes
-          [ dataTemplateToLineCustomField1 <*> Just dataTemplate
-          , dataTemplateToLineCustomField2 <*> Just dataTemplate
-          , dataTemplateToLineCustomField3 <*> Just dataTemplate
-          ]
-
-    maybeDescription :: Maybe Text
-    maybeDescription =
-      dataTemplateToLineDescription <*> Just dataTemplate
-
-
--- |
-
-dataTemplateToSalesItemLineDetail
-  :: InvoiceLineDetailTemplate
-  -> DataTemplate
-  -> SalesItemLineDetail
-
-dataTemplateToSalesItemLineDetail InvoiceLineDetailTemplate{..} dataTemplate =
-  (salesItemLineDetail itemRef)
-    { salesItemLineDetailUnitPrice   = maybeUnitPrice
-    , salesItemLineDetailQty         = maybeQuantity
-    }
-  where
-    itemRef :: ItemRef
-    itemRef =
-      (reference itemValue) { referenceName = maybeItemName }
-
-    maybeQuantity :: Maybe Double
-    maybeQuantity =
-      defaultLookupDoubleInDataTemplate dataTemplate quantityLabel
-
-    maybeUnitPrice :: Maybe Double
-    maybeUnitPrice =
-      case defaultLookupDoubleInDataTemplate dataTemplate unitPriceLabel of
-        Nothing ->
-          Just itemUnitPrice
-
-        otherItemUnitPrice ->
-          otherItemUnitPrice
-
+    groupErrorsAssembleLines :: [LineElement] -> (Text,[Line]) -> (Text,[Line])
+    groupErrorsAssembleLines leLst (errs,vals)  = either (\err -> (err<> " " <>  " " <>errs, vals))
+                                                         (\val -> (errs,val:vals)) . assembleSalesLineFromList $ leLst
+    convertLineElementMapToLineMap :: Map RowNumber [LineElement] -> (Text, [Line])
+    convertLineElementMapToLineMap = M.foldr groupErrorsAssembleLines ("",[])
+    reportRowLineFoldr :: ReportTableRowStyle LineElement -> Map RowNumber [LineElement]
+    reportRowLineFoldr = foldrTableByRowWithIndex lineListMapConstructor M.empty
+    lineListMapConstructor (r,_) i map'  = M.insertWith (\nv ov -> nv ++ ov) r [i] map'
 
 --------------------------------------------------------------------------------
 -- * Utility functions
@@ -449,48 +291,7 @@ defaultLookupTextInDataTemplate dataTemplate label =
       Nothing
 
 
---------------------------------------------------------------------------------
--- * Example
---------------------------------------------------------------------------------
 
--- |
-
--- defaultInvoiceContext :: UTCTime -> InvoiceContext
--- defaultInvoiceContext time =
---   InvoiceContext
---     { invoiceContextTime  = time
---     , invoiceTemplate     = defaultInvoiceTemplate ""
---     , invoiceLineTemplate = defaultInvoiceLineTemplate undefined undefined
---     }
-
-
--- |
-
-defaultInvoiceTemplate :: Text -> InvoiceTemplate
-defaultInvoiceTemplate customerValue =
-  InvoiceTemplate
-    { maybeCustomerName                 = Nothing
-    , customerValue                     = customerValue
-    , dataTemplateToInvoiceCustomField1 = Nothing
-    , dataTemplateToInvoiceCustomField2 = Nothing
-    , dataTemplateToInvoiceCustomField3 = Nothing
-    , maybeInvoiceDate                  = Nothing
-    , maybeInvoiceDueDate               = Nothing
-    }
-
-
--- |
-
-defaultInvoiceLineTemplate :: Text -> Double -> InvoiceLineTemplate
-defaultInvoiceLineTemplate itemValue itemUnitPrice =
-  InvoiceLineTemplate
-    { dataTemplateToLineCustomField1 = Nothing
-    , dataTemplateToLineCustomField2 = Nothing
-    , dataTemplateToLineCustomField3 = Nothing
-    , dataTemplateToLineDescription  = Just defaultDataTemplateToLineDescription
-    , invoiceLineDetailTemplate      =
-        defaultInvoiceLineDetailTemplate itemValue itemUnitPrice
-    }
 
 
 -- |
@@ -534,14 +335,6 @@ defaultDataTemplateToLineDescription dataTemplate =
       Text.concat ["Barrels of ", Text.toLower water, " disposed of."]
 
 
--- |
 
-defaultInvoiceLineDetailTemplate :: Text -> Double -> InvoiceLineDetailTemplate
-defaultInvoiceLineDetailTemplate itemValue itemUnitPrice =
-  InvoiceLineDetailTemplate
-    { maybeItemName          = Nothing
-    , itemValue              = itemValue
-    , itemUnitPrice          = itemUnitPrice
-    , quantityLabel          = "Amount"
-    , unitPriceLabel         = "Rate"
-    }
+
+

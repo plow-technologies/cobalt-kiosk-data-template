@@ -22,23 +22,29 @@ import           Control.Lens
 import           Data.Aeson                         (Value (..), encode, toJSON)
 import           Data.Text                          (Text)
 import qualified Data.Text                          as T
+import           Text.Read                          (readEither)
 
 import           Data.ByteString.Lazy.Char8         (ByteString)
 import qualified Data.ByteString.Lazy.Char8         as B
 
 import qualified Data.Map.Strict                    as M
+
 import           Data.Maybe                         (catMaybes)
 import           Data.Monoid                        ((<>))
+
 import           Data.Time
 import           Generators
+
 import           Kiosk.Backend.Data.DataTemplate
 import           Kiosk.Backend.Data.InvoiceTemplate
 import           Kiosk.Backend.Form
-import           Language.Haskell.TH
 
+import           Language.Haskell.TH
 import           Mocks.Primitive.Generators         (GeneratorType (..),
                                                      generateInts)
+
 import           QuickBooks
+
 import           ReportTemplate.Internal
 import           System.Locale                      (defaultTimeLocale)
 import           Test.Hspec
@@ -79,20 +85,56 @@ buildInvoice = do
 --  let invoice = renderInvoice undefined
   True `shouldBe` True
 
+
 testFormTemplate :: IO [Form]
 testFormTemplate = take 1 <$> (generate . generateForm $ Static)
+
 
 testDataTemplate :: Int -> IO [DataTemplate]
 testDataTemplate i = do
           lst <- (generate .listOf. generateDataTemplate $ Static)
           return $ concat . take i $ lst
 
-data ReportContext = ReportContext { currentTime :: UTCTime }
 
+data ReportContext = ReportContext { currentTime :: UTCTime }
 type TestReportTemplate = ReportTemplate ReportContext Form Value DataTemplate ByteString
 type TestPreambleTemplate = [(ReportPreambleLabel, ReportContext -> Form -> Value)]
 type TestRowTemplate = [(ReportRowLabel, ReportContext -> DataTemplate -> ByteString)]
 
+
+testInvoiceTemplate :: InvoiceReportTemplate
+testInvoiceTemplate = buildReportTemplate [] invoiceLineTemplate
+  where
+
+    invoiceLineTemplate = [("Product/Service", const getCompanyName)
+                          ,("Description",const getLineDescription)
+                          ,("Qty", const getQty)]
+    getCompanyName :: DataTemplate -> LineElement
+    getCompanyName = genericDataTemplateRetrieval cleanCompanyName
+                                                  customProductServiceField
+                                                  ["Water Hauling Company"]
+    cleanCompanyName = T.concat
+    customProductServiceField val = LineElementCustomField
+                                      CustomField { customFieldDefinitionId = "ProductOrService"
+                                                     , customFieldName = "Product/Service"
+                                                     , customFieldType = StringType
+                                                     , customFieldStringValue = Just val
+                                                     , customFieldBooleanValue = Nothing
+                                                     , customFieldDateValue = Nothing
+                                                     , customFieldNumberValue = Nothing}
+
+    getLineDescription = genericDataTemplateRetrieval assembleDescription LineElementDescription ["Type_of_Water_Hauled"
+                                                                                                ,   "Date"
+                                                                                                ,    "Time_In"
+                                                                                                ,    "ticketid"]
+
+    assembleDescription [type', date, timeIn, ticketId] = date <> " Barrels of " <> type' <> " disposed of" <> "Ticket #" <> ticketId
+    assembleDescription _ = "Error retrieving description for this line"
+    getQty = genericDataTemplateRetrieval convertQtyToDouble makeLineElement ["amount"]
+    convertQtyToDouble doubleTextList = over _Left T.pack (readEither . T.unpack . T.concat $ doubleTextList)
+    makeLineElement = either LineElementError (  LineElementType
+                                               . LineDetailTypeSalesItemLineDetail
+                                               . (: []) . SalesItemLineDetailElementQty)
 testInvoiceReport :: Int -> IO (InvoiceReportTemplate, InvoiceReport)
 testInvoiceReport i = do
   (oneForm:_) <- testFormTemplate
@@ -151,6 +193,6 @@ testBuildADocument report = "Welcome to another fine report \n" <>
 
 renderRowString :: (RowNumber,String) -> ByteString
                      -> (RowNumber,ByteString) -> (RowNumber,ByteString)
-renderRowString (idx,lbl) val (itarget,txt)
-  | idx == itarget = (itarget, txt <>  val <> ",")
-  | otherwise = (idx, (B.pack . show $ idx) <> txt <> "\n"  <>  val <> ",")
+renderRowString (idx,lbl) val' (itarget,txt)
+  | idx == itarget = (itarget, txt <>  val' <> ",")
+  | otherwise = (idx, (B.pack . show $ idx) <> txt <> "\n"  <>  val' <> ",")

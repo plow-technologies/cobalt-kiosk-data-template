@@ -41,11 +41,11 @@ module ReportTemplate.Internal (ReportTemplate
                                   , ReportRowLabel
                                ,    ReportPreambleTemplate
                                ,    ReportRowTemplate
-                                  , buildReportTemplate
-                                  , buildReportPreambleTemplate
-                                  , buildReportRowTemplate
-                                  , reportPreambleTemplate
-                                  , reportRowsTemplate
+                               , buildReportTemplate
+                               , buildReportPreambleTemplate
+                               , buildReportRowTemplate
+                               , reportPreambleTemplate
+                               , reportRowsTemplate
                                ,    reportRowLabels
                                ,    rowTransformMap
                                ,    ReportPreamble(..)
@@ -91,7 +91,6 @@ type ReportRowLabel  = String
 data ReportTemplate context preambleSource preambleSink rowSource rowSink = ReportTemplate {
      reportPreambleTemplate :: ReportPreambleTemplate context preambleSource preambleSink
    , reportRowsTemplate     :: ReportRowTemplate context rowSource rowSink }
-
 
 buildReportTemplate
   :: [(ReportPreambleLabel,
@@ -139,15 +138,13 @@ buildReportRowTemplate labelXformList = ReportRowTemplate labelList labelMap
            labelList = fst <$> labelXformList
            labelMap  = M.fromList labelXformList
 
+
 type ReportRowRetrievalMap context rowSource rowSink =
                              Map ReportRowLabel (context -> rowSource -> rowSink)
 
 
 -- | The order that things happen is often very important so an Integer
 -- is used as the start ord value for both things
-
-
-
 data Report preambleValue rowValue = Report {
           _reportPreamble :: ReportPreamble preambleValue
         , _reportRows     :: ReportTable rowValue }
@@ -156,13 +153,9 @@ data ReportPreamble preambleValue = ReportPreamble {
         _preambleValue :: [(ReportPreambleLabel, preambleValue)]
   }
 
-
-
 -- Map sorts first by row and then by
-
 type RowNumber = Int
 type TableRowIndex = (RowNumber, ReportRowLabel)
-
 
 {-| even though the whole report here is designed around row data
     There are many times we need col based data, totals being an obvious one
@@ -185,13 +178,13 @@ data ReportTableColStyle rowValue = ReportTableColStyle {
     _colMap ::  Map TableRowIndex rowValue
  }
 
-
 renderReport :: ReportTemplate context preIn preOut rowIn rowOut ->
                   context  -> preIn -> [rowIn] ->  Report preOut rowOut
 renderReport reportTemplate context preIn rows = Report reportPreambleOut rowOut
   where
     reportPreambleOut = ReportPreamble . transformPrein context preIn preambleLabels $ preambleOutTransformMap
-    rowOut = ReportTableRowIndex (rowTransformLabels , ReportTableRowStyle . transformRows context rowTransformLabels rowOutTransformMap $ rows)
+    rowOut = ReportTableRowIndex (rowTransformLabels , ReportTableRowStyle . transformRows context rowTransformLabels
+                                   rowOutTransformMap $ rows)
     preambleOutTransformMap = preambleTransformMap.reportPreambleTemplate $ reportTemplate
     preambleLabels = reportPreambleLabel.reportPreambleTemplate $ reportTemplate
     rowOutTransformMap = rowTransformMap . reportRowsTemplate $ reportTemplate
@@ -227,9 +220,7 @@ transformRowin context rowTransformLabels mp i row  = foldr (\l mpTbl -> case M.
 
 
 -- Traversing functions
--- because we know the form of this map is tabular
--- the fold can be made a bit more useful and track
--- both the
+
 foldrTableByRowWithIndex :: (TableRowIndex ->
                             a ->
                             b -> b)
