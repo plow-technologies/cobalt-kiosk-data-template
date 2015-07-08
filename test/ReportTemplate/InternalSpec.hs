@@ -20,6 +20,7 @@ module ReportTemplate.InternalSpec (main,spec) where
 import           Control.Applicative                ((<$>))
 import           Control.Lens
 import           Data.Aeson                         (Value (..), encode, toJSON)
+import           Data.Maybe
 import           Data.Text                          (Text)
 import qualified Data.Text                          as T
 import           Text.Read                          (readEither)
@@ -81,9 +82,10 @@ buildReport = do
 buildInvoice :: Expectation
 buildInvoice = do
   let i = 7
-  dataTemplates <- testDataTemplate i
---  let invoice = renderInvoice undefined
-  True `shouldBe` True
+  (invoiceReportTemplate,invoiceReport) <- testInvoiceReport i
+  let (errs,maybeReport) = reportToInvoice invoiceReport
+  errs `shouldBe` T.empty
+  (isJust maybeReport) `shouldBe` True
 
 
 testFormTemplate :: IO [Form]
