@@ -17,39 +17,44 @@ Portability :  portable
 -}
 
 module ReportTemplate.InternalSpec (main,spec) where
-import           Control.Applicative                ((<$>))
+import           Control.Applicative                  ((<$>))
 import           Control.Lens
-import           Data.Aeson                         (Value (..), encode, toJSON)
-import           Data.Maybe
-import           Data.Text                          (Text)
-import qualified Data.Text                          as T
-import           Text.Read                          (readEither)
+import           Data.Aeson                           (Result, Value (..),
+                                                       encode, toJSON)
+import qualified Data.Aeson                           as A
 
-import           Data.ByteString.Lazy.Char8         (ByteString)
-import qualified Data.ByteString.Lazy.Char8         as B
+import           Data.Text                            (Text)
+import qualified Data.Text                            as T
+import           Text.Read                            (readEither)
 
-import qualified Data.Map.Strict                    as M
+import           Data.ByteString.Lazy.Char8           (ByteString)
+import qualified Data.ByteString.Lazy.Char8           as B
 
-import           Data.Maybe                         (catMaybes)
-import           Data.Monoid                        ((<>))
+import qualified Data.Map.Strict                      as M
+
+import           Data.Maybe                           (catMaybes, fromMaybe,
+                                                       isJust)
+import           Data.Monoid                          ((<>))
 
 import           Data.Time
 import           Generators
 
 import           Kiosk.Backend.Data.DataTemplate
+import           Kiosk.Backend.Data.DataTemplateEntry
 import           Kiosk.Backend.Data.InvoiceTemplate
 import           Kiosk.Backend.Form
 
 import           Language.Haskell.TH
-import           Mocks.Primitive.Generators         (GeneratorType (..),
-                                                     generateInts)
+import           Mocks.Primitive.Generators           (GeneratorType (..),
+                                                       generateInts)
 
 import           QuickBooks
-
+import           QuickBooks.Types
 import           ReportTemplate.Internal
-import           System.Locale                      (defaultTimeLocale)
+import           System.Locale                        (defaultTimeLocale)
 import           Test.Hspec
 import           Test.QuickCheck
+import           TestImport
 
 makeLenses ''Company
 makeLenses ''Report
@@ -79,10 +84,13 @@ buildReport = do
   mapSize `shouldBe` (i * rowTemplateLength)
   (M.size . rowTransformMap.reportRowsTemplate $ reportTemplate ) `shouldBe` rowTemplateLength
 
+
+(Just goldenDataTemplate) = A.decode newDataTemplateByteString :: Maybe DataTemplateEntry
+
 buildInvoice :: Expectation
 buildInvoice = do
   let i = 7
-  (invoiceReportTemplate,invoiceReport) <- testInvoiceReport i
+  (invoiceReportTemplate,invoiceReport) <- testInvoiceReport
   let (errs,maybeReport) = reportToInvoice invoiceReport
   errs `shouldBe` T.empty
   (isJust maybeReport) `shouldBe` True
@@ -105,17 +113,20 @@ type TestRowTemplate = [(ReportRowLabel, ReportContext -> DataTemplate -> ByteSt
 
 
 testInvoiceTemplate :: InvoiceReportTemplate
-testInvoiceTemplate = buildReportTemplate [] invoiceLineTemplate
+testInvoiceTemplate = buildReportTemplate [("Company Reference", const createInvoiceFromForm)] invoiceLineTemplate
   where
-
+    createInvoiceFromForm form = defaultInvoice [emptySalesItemLine] (Reference Nothing Nothing "1")
     invoiceLineTemplate = [("Product/Service", const getCompanyName)
                           ,("Description",const getLineDescription)
+                          ,("ItemRef",(\_ _ -> itemRef))
                           ,("Qty", const getQty)]
-    getCompanyName :: DataTemplate -> LineElement
-    getCompanyName = genericDataTemplateRetrieval cleanCompanyName
-                                                  customProductServiceField
-                                                  ["Water Hauling Company"]
-    cleanCompanyName = T.concat
+    itemRef = LineElementType . LineDetailTypeSalesItemLineDetail
+                                . (: []) . SalesItemLineDetailElementItemRef . Reference Nothing Nothing $ "1"
+    getCompanyName :: DataTemplateEntry -> LineElement
+    getCompanyName  = genericDataTemplateRetrieval cleanCompanyName
+                                                   customProductServiceField
+                                                   ["Water Hauling Company"] . _dataTemplateEntryValue
+    cleanCompanyName = T.concat . catMaybes
     customProductServiceField val = LineElementCustomField
                                       CustomField { customFieldDefinitionId = "ProductOrService"
                                                      , customFieldName = "Product/Service"
@@ -127,22 +138,24 @@ testInvoiceTemplate = buildReportTemplate [] invoiceLineTemplate
 
     getLineDescription = genericDataTemplateRetrieval assembleDescription LineElementDescription ["Type_of_Water_Hauled"
                                                                                                 ,   "Date"
-                                                                                                ,    "Time_In"
-                                                                                                ,    "ticketid"]
+                                                                                                ,    "Time_In" ] . _dataTemplateEntryValue
 
-    assembleDescription [type', date, timeIn, ticketId] = date <> " Barrels of " <> type' <> " disposed of" <> "Ticket #" <> ticketId
+    assembleDescription [mayType, mayDate, mayTimeIn, mayTicketId] = fromMaybe "date not found" mayDate <>
+                                                                     " Barrels of " <> fromMaybe "water type not found" mayType <> " disposed of"
+                                                                     <> "Ticket #" <> fromMaybe "ticketId not found" mayTicketId
     assembleDescription _ = "Error retrieving description for this line"
-    getQty = genericDataTemplateRetrieval convertQtyToDouble makeLineElement ["amount"]
-    convertQtyToDouble doubleTextList = over _Left T.pack (readEither . T.unpack . T.concat $ doubleTextList)
+    getQty = genericDataTemplateRetrieval convertQtyToDouble makeLineElement ["Amount"]  . _dataTemplateEntryValue
+    convertQtyToDouble :: [Maybe Text] -> Either Text Double
+    convertQtyToDouble doubleTextList = over _Left (packAndLog . fmap  (fromMaybe "No incoming text" ) $  doubleTextList) (readEither . T.unpack . T.concat . fmap (fromMaybe "0.8") $ doubleTextList )
+    packAndLog doubleText = const $ "Error reading text as number, recieved (" <> (T.concat doubleText) <> ")"
     makeLineElement = either LineElementError (  LineElementType
                                                . LineDetailTypeSalesItemLineDetail
                                                . (: []) . SalesItemLineDetailElementQty)
-testInvoiceReport :: Int -> IO (InvoiceReportTemplate, InvoiceReport)
-testInvoiceReport i = do
+testInvoiceReport ::  IO (InvoiceReportTemplate, InvoiceReport)
+testInvoiceReport = do
   (oneForm:_) <- testFormTemplate
-  dtes <- testDataTemplate i
   tm <- InvoiceContext <$> getCurrentTime
-  return (testInvoiceTemplate, renderReport testInvoiceTemplate tm oneForm dtes)
+  return (testInvoiceTemplate, renderReport testInvoiceTemplate tm oneForm [goldenDataTemplate])
 
 -- | this is a rendered report
 testReport :: Int -> IO (TestReportTemplate , Report Value ByteString)
@@ -168,13 +181,15 @@ rowTemplate = [("The First Item ",getItem0Text)
    getItem1Text _ dt = getValFromDataTemplate "item 1" dt
    getItemTime t _ = B.pack.formatTime defaultTimeLocale "%c" . currentTime $ t
 
+
 getFormConstant :: Form -> Value
 getFormConstant form = toJSON $ form ^. getCompany.getCompanyText
+
 
 getValFromDataTemplate ::
   Text -> DataTemplate -> ByteString
 getValFromDataTemplate l dt = B.unwords . catMaybes.
-                              (fmap (getItemMatchingLabel l)) .
+                              fmap (getItemMatchingLabel l) .
                               templateItems $ dt
 
 getItemMatchingLabel l (TemplateItem lbl inVal)
@@ -192,6 +207,7 @@ testBuildADocument report = "Welcome to another fine report \n" <>
    renderRowByRow = snd $ M.foldrWithKey renderRowString (1,"") $ report ^. (reportRows .
                                                                                    _ReportTableRowIndex._2.
                                                                                    rowMap)
+
 
 renderRowString :: (RowNumber,String) -> ByteString
                      -> (RowNumber,ByteString) -> (RowNumber,ByteString)

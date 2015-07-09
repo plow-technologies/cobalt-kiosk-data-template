@@ -12,8 +12,8 @@ Create Test forms for use in modules
 Uses regex-genex to give these forms a more realistic look
 
 -}
-{-# LANGUAGE OverloadedStrings    #-}
-{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Generators (GeneratorType (..)
@@ -24,8 +24,8 @@ module Generators (GeneratorType (..)
                   ,generatePrettyTexts
                   ,genCompany
                   ,generateCompany) where
-import           Control.Monad                   (ap)
 import           Control.Applicative             ((<$>), (<*>))
+import           Control.Monad                   (ap)
 import           Data.Aeson                      (toJSON)
 import           Data.List                       (nub)
 import qualified Data.Text                       as T
@@ -71,12 +71,12 @@ genCompany :: GeneratorType -> Gen Company
 genCompany _ = do
   ctxt <- generatePrettyTexts "Cobalt|Rockshore"
   Company `fmap` elements ctxt `ap` return []
-                       
+
 -- | Address Generator
 generateAddress :: GeneratorType -> Gen [Address]
 generateAddress _ = do atxt <- generatePrettyTexts "1114 Here we GO dr."
                        return $ Address <$> atxt <*> [[]]
-                       
+
 -- | Logo Generator
 generateLogo :: GeneratorType -> Gen [Logo]
 generateLogo _ = do atxt <- generatePrettyTexts "Rockshore.logo"
@@ -239,13 +239,14 @@ generateDataTemplateEntry gtype = do
 
 
 checkStaticGeneratorConsistency :: Int -> Gen Bool
-checkStaticGeneratorConsistency i = let x = (take i) <$> (generateDataTemplateEntry Static)
+checkStaticGeneratorConsistency i = let x = (take i) <$>
+                                               (generateDataTemplateEntry Static)
                                         y =  (take i) <$> (generateDataTemplateEntry Static)
                                     in (==) <$> (toJSON <$> x )
                                             <*> (toJSON <$> y)
 
 instance Arbitrary [DataTemplateEntry] where
-  arbitrary = generateDataTemplateEntry Dynamic 
+  arbitrary = generateDataTemplateEntry Dynamic
 
 
 

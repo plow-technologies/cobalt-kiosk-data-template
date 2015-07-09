@@ -114,14 +114,14 @@ makePrisms ''SalesItemLineDetailElement
 -- >>>     construct = LineElementDescription
 
 genericDataTemplateRetrieval :: forall intermediate final.
-                                      ([Text] -> intermediate) ->
+                                      ([Maybe Text] -> intermediate) ->
                                       (intermediate -> final )-> [Text] -> DataTemplate -> final
 genericDataTemplateRetrieval templateFcn ouputConstructor  txts dte = ouputConstructor . templateFcn $ targetTextList
   where
      inputTextLens = _InputTypeText.getInputText
-     targetTextList :: [Text]
-     targetTextList = fromMaybe "" <$> (getInputTypeByLabel inputTextLens <$>
-                                        txts <*> [dte])
+     targetTextList :: [Maybe Text]
+     targetTextList = (getInputTypeByLabel inputTextLens <$>
+                       txts <*> [dte])
 
 
 assembleSalesLineFromList :: [LineElement] -> Either Text Line
@@ -130,7 +130,7 @@ assembleSalesLineFromList elementList = makeSureRequiredFieldsArePresent =<<
                                         constructMinLine elementList
   where
     initialSalesItemLine :: Line
-    initialSalesItemLine = Line Nothing Nothing Nothing 0.0 Nothing "" Nothing Nothing Nothing Nothing Nothing
+    initialSalesItemLine = Line Nothing Nothing Nothing Nothing Nothing "" Nothing Nothing Nothing Nothing Nothing
 
     makeSureRequiredFieldsArePresent  :: Line -> Either Text Line
     makeSureRequiredFieldsArePresent notSureWhatToPutHere = Right notSureWhatToPutHere
@@ -196,7 +196,7 @@ type InvoiceReport =
 
 -- | A QuickBooks invoice report template.
 type InvoiceReportTemplate =
-  ReportTemplate InvoiceContext Form Invoice DataTemplate LineElement
+  ReportTemplate InvoiceContext Form Invoice DataTemplateEntry LineElement
 
 
 
@@ -229,15 +229,15 @@ reportToInvoice ::
   Report Invoice LineElement -> (Text, Maybe Invoice)
 reportToInvoice r = maybe (topLevelErrorMessage, Nothing) (\invoice'-> (errorsFromReport, Just invoice')) $
                     (\invoiceFromReport -> invoiceFromReport {invoiceLine=linesFromReport}) <$>
-                                                                     maybeInvoiceFromReport
+                    maybeInvoiceFromReport
  where
    topLevelErrorMessage = "unableToretrieveInvoice, line errors: " <> errorsFromReport
    maybeInvoiceFromReport :: Maybe Invoice
    maybeInvoiceFromReport = r ^? reportPreamble.preambleValue.folded._2
    lineElementsFromReport :: Maybe (ReportTableRowStyle LineElement)
    lineElementsFromReport = r ^? (reportRows. _ReportTableRowIndex._2)
-   (errorsFromReport,linesFromReport) = fromMaybe ("Missing Report Rows", []) $  makeReportLines <$> lineElementsFromReport
-
+   (errorsFromReport,linesFromReport) = fromMaybe ("Missing Report Rows", []) $  makeReportLines <$>
+                                        lineElementsFromReport
 
 -- |1. the errors in lines 2. the Values that are correct
 makeReportLines :: ReportTableRowStyle LineElement
