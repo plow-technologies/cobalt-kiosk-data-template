@@ -16,41 +16,42 @@ Portability :  portable
 -}
 
 module ReportTemplate.InternalSpec (main,spec) where
-import           Control.Applicative                  ((<$>))
+import           Control.Applicative                     ((<$>), (<*>))
 import           Control.Lens
-import           Data.Aeson                           (Result, Value (..),
-                                                       encode, toJSON)
-import qualified Data.Aeson                           as A
+import           Data.Aeson                              (Result, Value (..),
+                                                          encode, toJSON)
+import qualified Data.Aeson                              as A
 
-import           Data.Text                            (Text)
-import qualified Data.Text                            as T
-import           Text.Read                            (readEither)
+import           Data.Text                               (Text)
+import qualified Data.Text                               as T
+import           Text.Read                               (readEither)
 
-import           Data.ByteString.Lazy.Char8           (ByteString)
-import qualified Data.ByteString.Lazy.Char8           as B
+import           Data.ByteString.Lazy.Char8              (ByteString)
+import qualified Data.ByteString.Lazy.Char8              as B
 
-import qualified Data.Map.Strict                      as M
+import qualified Data.Map.Strict                         as M
 
-import           Data.Maybe                           (catMaybes, fromMaybe,
-                                                       isJust)
-import           Data.Monoid                          ((<>))
+import           Data.Maybe                              (catMaybes, fromMaybe,
+                                                          isJust)
+import           Data.Monoid                             ((<>))
 
 import           Data.Time
 import           Generators
 
 import           Kiosk.Backend.Data.DataTemplate
 import           Kiosk.Backend.Data.DataTemplateEntry
+import           Kiosk.Backend.Data.DataTemplateEntryKey
 import           Kiosk.Backend.Data.InvoiceTemplate
 import           Kiosk.Backend.Form
 
 import           Language.Haskell.TH
-import           Mocks.Primitive.Generators           (GeneratorType (..),
-                                                       generateInts)
+import           Mocks.Primitive.Generators              (GeneratorType (..),
+                                                          generateInts)
 
 import           QuickBooks
 import           QuickBooks.Types
 import           ReportTemplate.Internal
-import           System.Locale                        (defaultTimeLocale)
+import           System.Locale                           (defaultTimeLocale)
 import           Test.Hspec
 import           Test.QuickCheck
 import           TestImport
@@ -62,7 +63,8 @@ makeLenses ''ReportTableRowStyle
 makeLenses ''ReportPreamble
 makePrisms ''InputType
 makeLenses ''InputText
-
+makeLenses ''DataTemplateEntryKey
+makeLenses ''TicketId
 main :: IO ()
 main = hspec spec
 
@@ -129,7 +131,7 @@ testInvoiceTemplate = buildReportTemplate [("Company Reference", const createInv
                           ,("Qty", const getQty)
                           ,("Amt", \_ _ ->  getPrice)]
     itemRef = LineElementType . LineDetailTypeSalesItemLineDetail
-                                . (: []) . SalesItemLineDetailElementItemRef . Reference Nothing Nothing $ "1"
+                                . (: []) . SalesItemLineDetailElementItemRef . Reference Nothing Nothing $ "2"
     getCompanyName :: DataTemplateEntry -> LineElement
     getCompanyName  = genericDataTemplateRetrieval cleanCompanyName
                                                    customProductServiceField
@@ -144,9 +146,12 @@ testInvoiceTemplate = buildReportTemplate [("Company Reference", const createInv
                                                      , customFieldDateValue = Nothing
                                                      , customFieldNumberValue = Nothing}
 
-    getLineDescription = genericDataTemplateRetrieval assembleDescription LineElementDescription ["Type_of_Water_Hauled"
-                                                                                                ,   "Date"
-                                                                                                ,    "Time_In"] . _dataTemplateEntryValue
+    getLineDescription dte = over _LineElementDescription (appendTicketNumber dte) (genericDataTemplateRetrieval assembleDescription LineElementDescription ["Type_of_Water_Hauled"
+                                                                                                                                                           ,   "Date"
+                                                                                                                                                           ,    "Time_In"] . _dataTemplateEntryValue $ dte)
+    formatTicketIdCorrectly ipadNumber ticketNumber =  (T.pack.show $ ipadNumber ) <> "-" <> (T.pack.show $ ticketNumber)
+    appendTicketNumber dte txt = txt <> " ticket# " <> (dte ^. dataTemplateEntryKey.getTicketId.getTicketIdPair.runGetter (formatTicketIdCorrectly
+                                                                                                                          <$> Getter _2 <*> Getter _1 ))
 
     assembleDescription [mayType, mayDate, mayTimeIn] = fromMaybe "date not found" mayDate <>
                                                                      " Barrels of " <> fromMaybe "water type not found" mayType <> " disposed of"

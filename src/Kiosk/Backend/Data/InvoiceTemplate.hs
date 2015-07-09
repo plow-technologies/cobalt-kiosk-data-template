@@ -93,8 +93,9 @@ genericDataTemplateRetrieval templateFcn ouputConstructor  txts dte = ouputConst
   where
      inputTextLens = _InputTypeText.getInputText
      targetTextList :: [Maybe Text]
-     targetTextList = (getInputTypeByLabel inputTextLens <$>
-                       txts <*> [dte])
+     targetTextList = getInputTypeByLabel inputTextLens <$>
+                       txts <*> [dte]
+
 
 
 assembleSalesLineFromList :: [LineElement] -> Either Text Line
@@ -143,8 +144,8 @@ calculateAmount sild = calculatePrice
   errMsg = Left $ "Price or Qty missing Price:" <>
            (Text.pack.show . salesItemLineDetailUnitPrice $ sild) <>
            " Qty:" <> (Text.pack . show . salesItemLineDetailQty $ sild)
-  maybeCalculatePrice = (*) <$> (salesItemLineDetailQty sild)
-                         <*> ( salesItemLineDetailUnitPrice  sild)
+  maybeCalculatePrice = (*) <$> salesItemLineDetailQty sild
+                         <*>  salesItemLineDetailUnitPrice  sild
 
 assembleSalesItemLineDetailFromList :: [SalesItemLineDetailElement] -> Either Text SalesItemLineDetail
 assembleSalesItemLineDetailFromList salesItemLineDetailElementList  = makeSureItemRefExists .
