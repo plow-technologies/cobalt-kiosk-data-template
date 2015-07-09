@@ -70,6 +70,7 @@ type XlsxTable = ReportTable Cell
 
 -- | Excel Form Rendering Helper Functions
 -- Because the excel preamble is a full cell map
+
 getCompanyName :: (Int,Int) -> Form -> CellMap
 getCompanyName key form = makeCellMapFromText key companyName
   where
@@ -86,9 +87,6 @@ makeCellMapFromUTCTime timeFormatString key  = makeCellMapFromText key .
                                                formatTime defaultTimeLocale
                                                           timeFormatString
 
-
-
-
 -- | Row Rendering Helper Functions
 
 -- | Retrieve Cell Data
@@ -96,7 +94,6 @@ makeCellDoubleFromInputDouble :: Text -> DataTemplate -> Cell
 makeCellDoubleFromInputDouble = makeCellValueFromDataTemplate CellDouble inputDoubleLens
                                where
                                   inputDoubleLens = _InputTypeDouble.getInputDouble
-
 
 makeCellTextWithCellTemplate :: ([Text] -> Text )
                                 -> [Text] -> DataTemplate -> Cell
@@ -191,7 +188,7 @@ renderSpreadsheet report = def & wsCells .~ combinedMap
    labelToIntMap :: Map ReportRowLabel Int
    labelToIntMap = M.fromList . zip (report ^. (reportRows . _ReportTableRowIndex . _1 )  ) $ [1..]
    rowMapList  :: [CellMap]
-   rowMapList  = (foldrTableByRowWithIndex transformPositionAndMap M.empty) <$>
+   rowMapList  = foldrTableByRowWithIndex transformPositionAndMap M.empty <$>
                   (toListOf  (reportRows._ReportTableRowIndex._2) report)
    transformPositionAndMap :: (Int,String) -> Cell -> CellMap -> CellMap
    transformPositionAndMap (rowInt,label') rowVal rowMap' =  case M.lookup label' labelToIntMap of
