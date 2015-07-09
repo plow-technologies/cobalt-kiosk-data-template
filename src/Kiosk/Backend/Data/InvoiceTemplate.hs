@@ -39,31 +39,7 @@ import           Text.Read                         (readMaybe)
 --------------------------------------------------------------------------------
 -- $setup
 --
--- >>> :set -XOverloadedStrings
 --
--- >>> import qualified Data.Aeson as Aeson
--- >>> import qualified Data.ByteString.Lazy as ByteString
--- >>> import qualified Data.Maybe as Maybe
---
--- >>> :{
---   let dataTemplateObject =
---         ByteString.intercalate
---           ","
---           ["{\"Amount\":\"50\""
---           , "\"Truck_#\":\"2\""
---           , "\"Type_of_Water_Hauled\":\"Fresh Water\""
---           , "\"Name_of_Lease\":\"Harrell\""
---           , "\"Customer_Ticket_#\":\"A-1183\""
---           , "\"Water_Hauling_Permit_#\":\"\""
---           , "\"Date\":\"02/03/2015\""
---           , "\"Name_of_Lease_Operator\":\"3R Oil Corporation\""
---           , "\"Water Hauling Company\":\"Mitchell Tank Truck Services\""
---           , "\"Driver_Signature\":\"\""
---           , "\"Time_In\":\"1:33 PM\"}"
---           ]
--- :}
---
--- >>> let dataTemplate = Maybe.fromJust (Aeson.decode dataTemplateObject)
 
 
 --------------------------------------------------------------------------------
@@ -109,9 +85,6 @@ makePrisms ''SalesItemLineDetailElement
 -- used to retrieve Text
 -- Then two connection functions are ran to complete the transform
 -- from a List of Retrieved Text to a final type
--- >>> let someSpecificRetriever labels = genericDataTemplateRetrieval  template construct  labels
--- >>>     template = Text.concat
--- >>>     construct = LineElementDescription
 
 genericDataTemplateRetrieval :: forall intermediate final.
                                       ([Maybe Text] -> intermediate) ->
@@ -313,7 +286,7 @@ defaultLookupTextInDataTemplate dataTemplate label =
 
 -- |
 --
--- >>> defaultDataTemplateToLineDescription dataTemplate
+
 -- "02/03/2015 Barrels of fresh water disposed of. Ticket #A-1183"
 
 defaultDataTemplateToLineDescription :: DataTemplate -> Text
