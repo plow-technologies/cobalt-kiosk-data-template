@@ -304,7 +304,7 @@ generateLabel :: Text -> Label
 generateLabel labelText = Label labelText [LabelWidth $ WidthAttribute (12::Int)]
 
 generateRadio :: Text -> [Option] -> Radio
-generateRadio labelText options = Radio (generateLabel labelText) options [fullDefaultOptionQualifier]
+generateRadio labelText options = Radio (generateLabel labelText) [] options [fullDefaultOptionQualifier]
 
 -- | Radio
 fullDefaultOptionQualifier :: OptionQualifier
