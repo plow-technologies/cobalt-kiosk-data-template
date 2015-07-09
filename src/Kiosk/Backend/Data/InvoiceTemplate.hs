@@ -98,15 +98,18 @@ genericDataTemplateRetrieval templateFcn ouputConstructor  txts dte = ouputConst
 
 
 assembleSalesLineFromList :: [LineElement] -> Either Text Line
-assembleSalesLineFromList elementList = makeSureRequiredFieldsArePresent =<<
+assembleSalesLineFromList elementList = buildAmountUp  =<<
                                         splitSalesLineDetailAndConstruct elementList =<<
                                         constructMinLine elementList
   where
     initialSalesItemLine :: Line
-    initialSalesItemLine = Line Nothing Nothing Nothing Nothing Nothing "" Nothing Nothing Nothing Nothing Nothing
+    initialSalesItemLine = Line Nothing Nothing Nothing Nothing Nothing "SalesItemLineDetail" Nothing Nothing Nothing Nothing Nothing
 
-    makeSureRequiredFieldsArePresent  :: Line -> Either Text Line
-    makeSureRequiredFieldsArePresent notSureWhatToPutHere = Right notSureWhatToPutHere
+    buildAmountUp  :: Line -> Either Text Line
+    buildAmountUp almostFinalLine = do
+        sild <-  maybe (Left "detail not found") Right (lineSalesItemLineDetail almostFinalLine)
+        amt <- calculateAmount sild
+        return $ almostFinalLine {lineAmount = Just amt}
 
     splitSalesLineDetailAndConstruct :: [LineElement] -> Line -> Either Text Line
     splitSalesLineDetailAndConstruct elementList' initialLineElement = foldr foldrOverFilteredList (Right initialLineElement) elementList'
@@ -132,6 +135,17 @@ assembleSalesLineFromList elementList = makeSureRequiredFieldsArePresent =<<
 -- | None of the fields are marked as required in a sales Item line detail soooo the easiest fold element is an empty one
 -- ItemRef is actually requered by the standard however so its existence is checked at the last step
 -- Items later in the list have precedence over items earlier in it.
+
+calculateAmount :: SalesItemLineDetail -> Either Text Double
+calculateAmount sild = calculatePrice
+ where
+  calculatePrice = maybe errMsg Right maybeCalculatePrice
+  errMsg = Left $ "Price or Qty missing Price:" <>
+           (Text.pack.show . salesItemLineDetailUnitPrice $ sild) <>
+           " Qty:" <> (Text.pack . show . salesItemLineDetailQty $ sild)
+  maybeCalculatePrice = (*) <$> (salesItemLineDetailQty sild)
+                         <*> ( salesItemLineDetailUnitPrice  sild)
+
 assembleSalesItemLineDetailFromList :: [SalesItemLineDetailElement] -> Either Text SalesItemLineDetail
 assembleSalesItemLineDetailFromList salesItemLineDetailElementList  = makeSureItemRefExists .
                                                                       foldrSalesItemLineDetail $ salesItemLineDetailElementList

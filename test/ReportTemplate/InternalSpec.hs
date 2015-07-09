@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 
-
 {- |
 Module      :  ReportTemplate.InternalSpec
 Description :  Tests for ReportTemplate Generation
@@ -112,14 +111,23 @@ type TestPreambleTemplate = [(ReportPreambleLabel, ReportContext -> Form -> Valu
 type TestRowTemplate = [(ReportRowLabel, ReportContext -> DataTemplate -> ByteString)]
 
 
+testSendInvoice = do
+ let oauth = OAuthToken "qyprdB9yMcB3a5FeDA8h8AcfCbYkwhIDMBvYnGRQNewbt4KQ" "Ll9zlcjp7OIp9Xk1lyn2jadeenNhhHKxjAOVpGBM"
+ (_,ir) <- testInvoiceReport
+ let (errs,(Just inv)) = reportToInvoice ir
+ print . A.encode $ inv
+ createInvoice oauth inv
+
+
 testInvoiceTemplate :: InvoiceReportTemplate
 testInvoiceTemplate = buildReportTemplate [("Company Reference", const createInvoiceFromForm)] invoiceLineTemplate
   where
-    createInvoiceFromForm form = defaultInvoice [emptySalesItemLine] (Reference Nothing Nothing "1")
+    createInvoiceFromForm form = defaultInvoice [emptySalesItemLine] (Reference Nothing Nothing "21")
     invoiceLineTemplate = [("Product/Service", const getCompanyName)
                           ,("Description",const getLineDescription)
-                          ,("ItemRef",(\_ _ -> itemRef))
-                          ,("Qty", const getQty)]
+                          ,("ItemRef",\_ _ -> itemRef)
+                          ,("Qty", const getQty)
+                          ,("Amt", \_ _ ->  getPrice)]
     itemRef = LineElementType . LineDetailTypeSalesItemLineDetail
                                 . (: []) . SalesItemLineDetailElementItemRef . Reference Nothing Nothing $ "1"
     getCompanyName :: DataTemplateEntry -> LineElement
@@ -138,19 +146,20 @@ testInvoiceTemplate = buildReportTemplate [("Company Reference", const createInv
 
     getLineDescription = genericDataTemplateRetrieval assembleDescription LineElementDescription ["Type_of_Water_Hauled"
                                                                                                 ,   "Date"
-                                                                                                ,    "Time_In" ] . _dataTemplateEntryValue
+                                                                                                ,    "Time_In"] . _dataTemplateEntryValue
 
-    assembleDescription [mayType, mayDate, mayTimeIn, mayTicketId] = fromMaybe "date not found" mayDate <>
+    assembleDescription [mayType, mayDate, mayTimeIn] = fromMaybe "date not found" mayDate <>
                                                                      " Barrels of " <> fromMaybe "water type not found" mayType <> " disposed of"
-                                                                     <> "Ticket #" <> fromMaybe "ticketId not found" mayTicketId
-    assembleDescription _ = "Error retrieving description for this line"
-    getQty = genericDataTemplateRetrieval convertQtyToDouble makeLineElement ["Amount"]  . _dataTemplateEntryValue
+
+    assembleDescription strLst = "Error retrieving description for this line" <> (T.pack . show $  strLst)
+    getQty = genericDataTemplateRetrieval convertQtyToDouble (makeLineElement SalesItemLineDetailElementQty) ["Amount"]  . _dataTemplateEntryValue
+    getPrice = makeLineElement SalesItemLineDetailElementUnitPrice .Right $  0.4
     convertQtyToDouble :: [Maybe Text] -> Either Text Double
     convertQtyToDouble doubleTextList = over _Left (packAndLog . fmap  (fromMaybe "No incoming text" ) $  doubleTextList) (readEither . T.unpack . T.concat . fmap (fromMaybe "0.8") $ doubleTextList )
     packAndLog doubleText = const $ "Error reading text as number, recieved (" <> (T.concat doubleText) <> ")"
-    makeLineElement = either LineElementError (  LineElementType
-                                               . LineDetailTypeSalesItemLineDetail
-                                               . (: []) . SalesItemLineDetailElementQty)
+    makeLineElement salesItemConstructor = either LineElementError (  LineElementType
+                                                                    . LineDetailTypeSalesItemLineDetail
+                                                                    . (: []) . salesItemConstructor)
 testInvoiceReport ::  IO (InvoiceReportTemplate, InvoiceReport)
 testInvoiceReport = do
   (oneForm:_) <- testFormTemplate
