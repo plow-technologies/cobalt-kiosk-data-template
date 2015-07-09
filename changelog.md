@@ -1,3 +1,6 @@
+# Version 1.7.0
+* Version bump form template(1.6.0)
+* Added Xlsx stuff
 # Version 1.6.2
 * Added Xlsx Report functions to work with the templating system
 # Version 1.6.0
