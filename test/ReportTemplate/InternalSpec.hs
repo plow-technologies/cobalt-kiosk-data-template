@@ -165,6 +165,7 @@ testInvoiceTemplate = buildReportTemplate [("Company Reference", const createInv
     makeLineElement salesItemConstructor = either LineElementError (  LineElementType
                                                                     . LineDetailTypeSalesItemLineDetail
                                                                     . (: []) . salesItemConstructor)
+
 testInvoiceReport ::  IO (InvoiceReportTemplate, InvoiceReport)
 testInvoiceReport = do
   (oneForm:_) <- testFormTemplate
