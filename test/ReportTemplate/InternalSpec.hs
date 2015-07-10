@@ -3,8 +3,8 @@
 
 {- |
 Module      :  ReportTemplate.InternalSpec
-Description :  Tests for ReportTemplate Generation
-Copyright   :  Plow Technologies LLC
+Description :  Tests for Repo.LazyrtTemplate Generation
+Copyright   :  Plow Technolog.Lazyies LLC
 License     :  MIT License
 
 Maintainer  :  Scott Murphy
@@ -16,7 +16,7 @@ Portability :  portable
 -}
 
 module ReportTemplate.InternalSpec (main,spec) where
-import           Control.Applicative                     ((<$>), (<*>))
+import           Control.Applicative                     (pure, (<$>), (<*>))
 import           Control.Lens
 import           Data.Aeson                              (Result, Value (..),
                                                           encode, toJSON)
@@ -28,7 +28,8 @@ import           Text.Read                               (readEither)
 
 import           Data.ByteString.Lazy.Char8              (ByteString)
 import qualified Data.ByteString.Lazy.Char8              as B
-
+import           Data.HashMap.Lazy                       (HashMap)
+import qualified Data.HashMap.Lazy                       as HM
 import qualified Data.Map.Strict                         as M
 
 import           Data.Maybe                              (catMaybes, fromMaybe,
@@ -169,7 +170,7 @@ testInvoiceTemplate = buildReportTemplate [("Company Reference", const createInv
 testInvoiceReport ::  IO (InvoiceReportTemplate, InvoiceReport)
 testInvoiceReport = do
   (oneForm:_) <- testFormTemplate
-  tm <- InvoiceContext <$> getCurrentTime
+  tm <- InvoiceContext <$> getCurrentTime <*> pure HM.empty <*> pure HM.empty
   return (testInvoiceTemplate, renderReport testInvoiceTemplate tm oneForm [goldenDataTemplate])
 
 -- | this is a rendered report

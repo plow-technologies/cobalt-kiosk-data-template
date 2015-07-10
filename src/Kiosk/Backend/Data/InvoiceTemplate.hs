@@ -22,6 +22,8 @@
 module Kiosk.Backend.Data.InvoiceTemplate where
 import           Control.Applicative               ((<$>), (<*>))
 import           Control.Lens
+import           Data.HashMap.Lazy                 (HashMap)
+import qualified Data.HashMap.Lazy                 as HM
 import qualified Data.Map                          as M
 import           Data.Map.Lazy                     (Map)
 import           Data.Maybe                        (fromMaybe)
@@ -197,7 +199,9 @@ type InvoiceReportTemplate =
 -- | A QuickBooks invoice report context.
 
 data InvoiceContext = InvoiceContext
-  { invoiceContextTime :: UTCTime
+  {  invoiceContextTime   :: UTCTime
+    ,invoiceCompanyRefMap :: HashMap Text CustomerRef
+    ,invoiceItemRefMap    :: HashMap Text ItemRef
 --  , invoiceTemplate     :: InvoiceTemplate
 --  , invoiceLineTemplate :: InvoiceLineTemplate
   }

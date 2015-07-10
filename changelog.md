@@ -1,6 +1,6 @@
-# 2015.7.09.xx.xx
-* data-template (0.7.0)
-* 
+# Version 1.7.1
+* changelog err
+* added item and company lookup hashmaps to InvoiceContext
 # Version 1.7.0
 * Version bump form template(1.6.0)
 * Added Xlsx stuff

@@ -1,5 +1,5 @@
 Name:                   cobalt-kiosk-data-template
-Version:                1.7.0
+Version:                1.7.1
 Author:                 Lingpo Huang <lingpo.huang@plowtech.net>
 Maintainer:             Scott Murphy <scott.murphy@plowtech.net>
 License:                BSD3
@@ -43,6 +43,7 @@ Library
                       , old-locale >= 1.0.0.6
                       , plow-extras-time  >= 0.1.1
                       , quickbooks >= 0.2.0
+
                       , regex-tdfa >= 1.2.0
                       , regex-tdfa-text >= 1.0.0.2
                       , text >= 1.1
