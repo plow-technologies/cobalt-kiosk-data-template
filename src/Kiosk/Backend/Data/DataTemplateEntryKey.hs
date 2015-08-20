@@ -41,14 +41,13 @@ import           Data.UUID           (UUID, fromString, toString)
 import qualified Data.Vector         as V
 
 -- |Key for Data Template
-newtype TicketId = TicketId {_getTicketIdPair :: (Int,Int) } deriving (Eq, Ord, Show)
+newtype TicketId = TicketId {_getTicketIdPair :: (String,Int) } deriving (Eq, Ord, Show)
 
 decodeTicketID :: Value -> Parser TicketId
 decodeTicketID (String s) = do
          let (s1, s2) = splitString s
-         i1 <- parserRead "TicketId s1 fail" s1
          i2 <- parserRead "TicketId s2 fail" s2
-         return $ TicketId (i1, i2)
+         return $ TicketId (s1, i2)
 decodeTicketID _ = fail "Expected String, Received Other"
 
 ticketIdToString :: TicketId -> String

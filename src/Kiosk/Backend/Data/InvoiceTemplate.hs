@@ -15,8 +15,6 @@
 -- Stability   :
 -- Portability :
 --
---
---
 --------------------------------------------------------------------------------
 
 module Kiosk.Backend.Data.InvoiceTemplate where

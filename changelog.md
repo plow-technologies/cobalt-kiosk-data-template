@@ -1,3 +1,5 @@
+# Version 1.8.0
+* Changed the way TicketId stores its types
 # Version 1.7.1
 * changelog err
 * added item and company lookup hashmaps to InvoiceContext
