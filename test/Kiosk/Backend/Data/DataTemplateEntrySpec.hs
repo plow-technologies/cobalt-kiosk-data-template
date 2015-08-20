@@ -2,7 +2,7 @@
 
 module Kiosk.Backend.Data.DataTemplateEntrySpec where
 
-import           Codec.Xlsx.Types                     (Worksheet(..))
+import           Codec.Xlsx.Types                     (Worksheet (..))
 import           Data.List                            (nub)
 import qualified Data.Map                             as M (keys, size)
 import           Data.Maybe                           (fromJust)
@@ -13,7 +13,7 @@ import           Test.Hspec
 import           Test.Hspec.QuickCheck
 import           Test.QuickCheck                      (property)
 
-import           Kiosk.Backend.Data hiding (fromDataTemplateEntryToXlsxWorksheet)
+import           Kiosk.Backend.Data                   hiding (fromDataTemplateEntryToXlsxWorksheet)
 import           Kiosk.Backend.Form
 
 main :: IO ()
@@ -83,14 +83,14 @@ testDataTemplateEntryKey1,testDataTemplateEntryKey2 :: DataTemplateEntryKey
 testDataTemplateEntryKey1 = DataTemplateEntryKey
   { _getDate     = 1
   , _getUUID     = fromJust (fromString "c2cc10e1-57d6-4b6f-9899-38d972112d8c")
-  , _getTicketId = TicketId (1,1)
+  , _getTicketId = TicketId ("Test",1)
   , _getFormId   = 1
   }
 
 testDataTemplateEntryKey2 = DataTemplateEntryKey
   { _getDate     = 2
   , _getUUID     = fromJust (fromString "c2cc10e1-57d6-4b6f-9899-38d972112d8c")
-  , _getTicketId = TicketId (2,2)
+  , _getTicketId = TicketId ("Test",2)
   , _getFormId   = 2
   }
 
