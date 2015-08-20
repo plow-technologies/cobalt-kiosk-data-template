@@ -32,7 +32,6 @@ import           Kiosk.Backend.Data.DataTemplate
 -- import           Kiosk.Backend.Data.DataTemplateEntry
 import           Kiosk.Backend.Form
 import           ReportTemplate.Internal
-import           System.Locale
 type KioskReportTemplate context preOut rowOut= ReportTemplate context Form preOut DataTemplate rowOut
 
 

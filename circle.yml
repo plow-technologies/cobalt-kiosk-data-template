@@ -1,6 +1,6 @@
 machine:
   ghc:
-    version: 7.8.3
+    version: 7.10.1
 
   environment:
     PATH: $HOME/.cabal/bin:$CIRCLE_ARTIFACTS:$PATH/$HOME/cobalt-kiosk-data-template/.cabal-sandbox/bin
@@ -10,6 +10,7 @@ dependencies:
     - "~/cobalt-kiosk-data-template/.cabal-sandbox"
 
   override:
+    - if cabal --version | grep 1.23.0.0; then echo "Version 1.23.0.0"; else cd ~/ && git clone https://github.com/plow-technologies/cabal.git && cd cabal && cabal --no-require-sandbox install -j2 Cabal/ cabal-install/; fi
     - git clone git@github.com:plow-technologies/plow-scripts.git
     - cp plow-scripts/config $HOME/.cabal/config
     - cabal update

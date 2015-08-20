@@ -22,8 +22,6 @@ import Kiosk.Backend.Data.Migrations.Standardization
 
 
 import Regex.Genex
-import Text.Regex.TDFA ((=~))
-import Text.Regex.TDFA.Text ()
 import Test.QuickCheck
 import Control.Arrow ((***))
 
