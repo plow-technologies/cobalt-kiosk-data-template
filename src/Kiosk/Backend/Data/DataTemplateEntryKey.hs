@@ -51,7 +51,7 @@ decodeTicketID (String s) = do
 decodeTicketID _ = fail "Expected String, Received Other"
 
 ticketIdToString :: TicketId -> String
-ticketIdToString (TicketId (a,b)) = show a ++ "_" ++ show b
+ticketIdToString (TicketId (a,b)) = a ++ "_" ++ show b
 
 intTimeToHumanTime :: Int -> String
 intTimeToHumanTime intTime = formatTime defaultTimeLocale "%Y/%m/%dT%H:%M:%S %Z" time
@@ -73,7 +73,7 @@ decodeUUID v = do
                 Nothing -> fail "Unable to parse UUID, please check String format."
 
 instance ToJSON TicketId where
-  toJSON (TicketId (a,b)) = toJSON (show a ++ "-" ++ show b)
+  toJSON (TicketId (a,b)) = toJSON (a ++ "-" ++ show b)
 
 data DataTemplateEntryKey = DataTemplateEntryKey {
                           _getDate     :: Int ,
