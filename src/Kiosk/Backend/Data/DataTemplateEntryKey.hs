@@ -15,11 +15,10 @@ module Kiosk.Backend.Data.DataTemplateEntryKey (DataTemplateEntryKey (..)
                                                ,TicketId(..)
                                                ,decodeUUID) where
 
-import           Data.Time           (formatTime, utcToZonedTime)
+import           Data.Time           (defaultTimeLocale, formatTime, utcToZonedTime)
 import           Plow.Extras.Time    (intToUTCTime)
 import           Text.Read           (readMaybe)
 
-import           System.Locale       (defaultTimeLocale)
 
 import           Data.Time.LocalTime (TimeZone (..))
 

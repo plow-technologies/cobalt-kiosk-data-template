@@ -52,7 +52,6 @@ import           Mocks.Primitive.Generators              (GeneratorType (..),
 import           QuickBooks
 import           QuickBooks.Types
 import           ReportTemplate.Internal
-import           System.Locale                           (defaultTimeLocale)
 import           Test.Hspec
 import           Test.QuickCheck
 import           TestImport

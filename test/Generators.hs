@@ -40,7 +40,6 @@ import           Mocks.Primitive.Generators      (GeneratorType (..),
                                                   generateInts)
 import           Test.QuickCheck
 
-
 import           Regex.Genex
 -- | Form Generator
 
@@ -189,7 +188,6 @@ generateTableTopHeader _ = fmap TableTopHeader <$>
 generateTableLefts :: GeneratorType -> Gen [TableLeftHeader]
 generateTableLefts _ = fmap TableLeftHeader  <$>
                             generatePrettyTexts "LeftTableLabel"
-
 
 -- | DataTemplate Generators
 generatePrettyTexts :: String -> Gen [T.Text]

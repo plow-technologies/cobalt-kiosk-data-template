@@ -132,7 +132,6 @@ emptyStandardizer = Standardizer HM.empty
 
 
 
-
 standardize :: Standardizer -> Text -> Text
 standardize (Standardizer s) txt = fromMaybe txt $ HM.foldrWithKey generateAndRunParser Nothing s  
   where                                                     
