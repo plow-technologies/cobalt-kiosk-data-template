@@ -8,6 +8,7 @@ cabal-dev
 .virthualenv
 .hsenv
 .cabal-sandbox/
+cabal.config
 cabal.sandbox.config
 /TAGS
 /example.xlsx
