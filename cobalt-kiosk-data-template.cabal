@@ -98,6 +98,8 @@ Test-Suite spec
                       , xlsx
                       , array
                       , regex-base
+                      , mtl
+                      , stream-monad
 
 Source-Repository head
   Type:                 git
