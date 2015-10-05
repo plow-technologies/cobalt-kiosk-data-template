@@ -30,7 +30,7 @@ Library
 
   Other-Modules:        
                          
-  Build-Depends:        aeson      == 0.9.0.0
+  Build-Depends:        aeson      == 0.9.0.1
                       , base       >= 4.8   && < 5
                       , bytestring >= 0.10.4.0
                       , cassava    >= 0.4.0.0
@@ -65,7 +65,7 @@ Test-Suite spec
   Main-Is:              Spec.hs
   Build-Depends:        HUnit
                       , QuickCheck
-                      , aeson      == 0.9.0.0
+                      , aeson      == 0.9.0.1
                       , aeson-serialize
                       , attoparsec >= 0.13.0.1
                       , base       >= 4.8   && < 5
