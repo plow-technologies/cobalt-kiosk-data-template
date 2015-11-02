@@ -33,7 +33,7 @@ import           Kiosk.Backend.Data
 import           Kiosk.Backend.Data.ReportTemplate
 import           Kiosk.Backend.Form
 import           QuickBooks
-import           ReportTemplate.Internal
+import           ReportTemplate.Report
 import           Text.Read                         (readMaybe)
 
 --------------------------------------------------------------------------------

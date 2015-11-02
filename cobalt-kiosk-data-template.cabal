@@ -26,7 +26,6 @@ Library
                         Kiosk.Backend.Data.InvoiceTemplate
                         Kiosk.Backend.Data.ReportTemplate
                         Kiosk.Backend.Data.DataTemplateEntryKey
-                        ReportTemplate.Internal
 
   Other-Modules:        
                          
@@ -54,6 +53,7 @@ Library
                       , mtl
                       , array
                       , regex-base
+                      , report-template
 
 
 Test-Suite spec

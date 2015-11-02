@@ -18,7 +18,7 @@ Data Templates and Form Helpers for making ReportTemplates
 
 module Kiosk.Backend.Data.ReportTemplate where
 
-import           Codec.Xlsx
+import           Codec.Xlsx (Cell(..), CellMap, CellValue(..), def, cellValue, wsCells, Worksheet(..))
 import           Control.Applicative             ((<$>), (<*>))
 import           Control.Lens
 import           Data.Map                        (Map)
@@ -31,7 +31,8 @@ import           Data.Time
 import           Kiosk.Backend.Data.DataTemplate
 -- import           Kiosk.Backend.Data.DataTemplateEntry
 import           Kiosk.Backend.Form
-import           ReportTemplate.Internal
+import           ReportTemplate.Report
+
 type KioskReportTemplate context preOut rowOut= ReportTemplate context Form preOut DataTemplate rowOut
 
 
