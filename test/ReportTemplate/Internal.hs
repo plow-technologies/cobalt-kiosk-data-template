@@ -15,7 +15,7 @@ Portability :  portable
 
 -}
 
-module ReportTemplate.InternalSpec (main,spec) where
+module ReportTemplate.Internal (main,spec) where
 import           Control.Applicative                     (pure, (<$>), (<*>))
 import           Control.Lens
 import           Data.Aeson                              (Result, Value (..),
@@ -51,7 +51,7 @@ import           Mocks.Primitive.Generators              (GeneratorType (..),
 
 import           QuickBooks
 import           QuickBooks.Types
-import           ReportTemplate.Internal
+import           ReportTemplate.Report
 import           Test.Hspec
 import           Test.QuickCheck
 import           TestImport
