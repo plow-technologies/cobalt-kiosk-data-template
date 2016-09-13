@@ -1,33 +1,33 @@
 machine:
-  ghc:
-    version: 7.10.1
+  pre:
+    - sudo apt-get update
+    - sudo apt-get install gcc-4.8
+    - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 90
+    - gcc --version
+    - echo 'deb http://download.fpcomplete.com/ubuntu precise main'|sudo tee /etc/apt/sources.list.d/fpco.list
+    - sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 575159689BEFB442
+    - sudo apt-get update
+    - sudo apt-get install stack -y
 
   environment:
-    PATH: $HOME/.cabal/bin:$CIRCLE_ARTIFACTS:$PATH/$HOME/cobalt-kiosk-data-template/.cabal-sandbox/bin
+    PATH: $HOME/.local/bin:$HOME/.cabal/bin:$CIRCLE_ARTIFACTS:$PATH:$HOME/$CIRCLE_PROJECT_REPONAME/.cabal-sandbox/bin
 
 dependencies:
   cache_directories:
-    - "~/cobalt-kiosk-data-template/.cabal-sandbox"
-
+    - ".stack-work"
+    - "~/.stack"
   override:
-    - if cabal --version | grep 1.23.0.0; then echo "Version 1.23.0.0"; else cd ~/ && git clone https://github.com/plow-technologies/cabal.git && cd cabal && cabal --no-require-sandbox install -j2 Cabal/ cabal-install/; fi
-    - git clone git@github.com:plow-technologies/plow-scripts.git
-    - cp plow-scripts/config $HOME/.cabal/config
-    - cp plow-scripts/cabal.config-lts-3.1 cabal.config
-    - cabal update
-    - cabal sandbox init
-    - cabal install   --only-dependencies --enable-tests -j2 --force-reinstalls
+    - cd ~ && git clone git@github.com:plow-technologies/plow-scripts.git
+    - stack setup
+    - stack install hscolour
+    - stack test --only-dependencies
 
 test:
   override:
-    - cabal configure --enable-tests 
-    - cabal build -j2:
-        timeout: 3000
-    - cabal test --show-details=streaming -j2:
-        timeout: 3000
-        
+    - stack test cobalt-kiosk-data-template -j2
+
 deployment:
   staging:
     branch: master
     commands:
-      - sh plow-scripts/hackage.sh
+       - sh plow-scripts/hackage.sh

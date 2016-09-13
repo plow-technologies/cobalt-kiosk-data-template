@@ -29,6 +29,7 @@ import qualified Data.ByteString.Lazy              as L
 import           Data.Text                         (Text)
 import qualified Data.Text                         as T
 import           Data.Time
+import           Data.Time.Clock.POSIX
 
 -- import           Kiosk.Backend.Data.DataTemplate
 import           Data.Map.Lazy                     (Map)
@@ -42,14 +43,15 @@ import           Language.Haskell.TH
 
 import           Codec.Xlsx
 
--- import           Mocks.Primitive.Generators        (GeneratorType (..),
---                                                     generateInts)
 import           Data.Monoid                       ((<>))
-import           ReportTemplate.Internal
+-- import           ReportTemplate.Internal hiding    (spec)
+import           ReportTemplate.Report
 import           System.Locale                     (defaultTimeLocale)
 import           System.Time
 import           Test.Hspec
 import           Test.QuickCheck
+
+
 main :: IO ()
 main = hspec spec
 
@@ -113,7 +115,7 @@ dispayReportValues = do
 -- | Generate report
 
 makeXlsxFile = do
-      ct <- getClockTime
+      ct <- getPOSIXTime
       xl <- generateReportXlsx
       L.writeFile "example.xlsx" $ fromXlsx ct xl
 
