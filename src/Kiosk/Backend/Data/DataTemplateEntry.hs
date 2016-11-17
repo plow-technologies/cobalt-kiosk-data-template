@@ -37,7 +37,6 @@ import           Data.Aeson                              (FromJSON, ToJSON,
                                                           parseJSON, toJSON,
                                                           (.:), (.=))
 import           Data.ByteString.Lazy                    (ByteString)
---import qualified Data.ByteString                         as BS  (ByteString)
 import qualified Data.ByteString.Lazy                    as LBS
 import           Data.Foldable                           (foldl, foldr)
 import qualified Data.List                               as L
@@ -202,13 +201,13 @@ fromDataTemplateEntryToXlsxWithHeaders headers_ data_ = def { _wsCells = headerC
                                [numDefaultKeyHeaders+1..]
 
 mkHeaderCells :: [Text] -> CellMap
-mkHeaderCells names = fst $ foldl fn (mempty, 1) names
+mkHeaderCells names = fst $ foldl insertHeaderCell (mempty, 1) names
 
-fn :: (CellMap, ColumnIndex) -> Text -> (CellMap, ColumnIndex)
-fn (cellMap, col) name = (cellMap', col + 1)
+insertHeaderCell :: (CellMap,ColumnIndex) -> Text -> (CellMap,ColumnIndex)
+insertHeaderCell (headerCells,columnIndex) headerName =
+  (insert (1,columnIndex) headerCell headerCells,columnIndex + 1)
   where
-    cell     = def{ _cellValue = Just (CellText name) }
-    cellMap' = insert (1,col) cell cellMap
+    headerCell = def { _cellValue = Just (CellText headerName) }
 
 mkCellsFromRecord :: [(Header,ColumnIndex)]
                   -> DataTemplateEntry
